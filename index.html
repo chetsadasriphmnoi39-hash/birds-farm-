@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V26 (Landscape Layout)</title>
+  <title>Farm Sook - Pro System V27</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -132,8 +132,8 @@
         gender: getVal('bird-gender') || "ผู้",
         dnaCert: getVal('bird-dna'),
         photoUrl: getVal('bird-photo'),
-        fatherId: getVal('bird-father'),
-        motherId: getVal('bird-mother'),
+        fatherId: getVal('bird-father') || "",
+        motherId: getVal('bird-mother') || "",
         hatchDate: getVal('bird-hatch'),
         arrivalDate: getVal('bird-arrival'),
         rearing: getVal('bird-rearing') || "ป้อนมือ (Hand-fed)",
@@ -482,14 +482,24 @@
     onSnapshot(collection(db, "birds"), (snapshot) => {
       globalBirds = [];
       const list = document.getElementById('birds-list');
-      const fatherSelect = document.getElementById('select-father');
-      const motherSelect = document.getElementById('select-mother');
+      const fatherSelect = document.getElementById('bird-father');
+      const motherSelect = document.getElementById('bird-mother');
+      const pairFatherSelect = document.getElementById('select-father');
+      const pairMotherSelect = document.getElementById('select-mother');
       const healthBirdSelect = document.getElementById('health-bird-select');
       
       list.innerHTML = "";
-      fatherSelect.innerHTML = '<option value="">-- เลือกพ่อพันธุ์ (♂) --</option>';
-      motherSelect.innerHTML = '<option value="">-- เลือกแม่พันธุ์ (♀) --</option>';
-      healthBirdSelect.innerHTML = '<option value="">-- เลือกรหัสนก --</option>';
+      const defaultFatherOpt = '<option value="">-- ไม่ระบุพ่อพันธุ์ --</option>';
+      const defaultMotherOpt = '<option value="">-- ไม่ระบุแม่พันธุ์ --</option>';
+      const pairFatherOpt = '<option value="">-- เลือกพ่อพันธุ์ (♂) --</option>';
+      const pairMotherOpt = '<option value="">-- เลือกแม่พันธุ์ (♀) --</option>';
+      const healthOpt = '<option value="">-- เลือกรหัสนก --</option>';
+
+      fatherSelect.innerHTML = defaultFatherOpt;
+      motherSelect.innerHTML = defaultMotherOpt;
+      pairFatherSelect.innerHTML = pairFatherOpt;
+      pairMotherSelect.innerHTML = pairMotherOpt;
+      healthBirdSelect.innerHTML = healthOpt;
 
       snapshot.forEach(docSnap => {
         const item = { id: docSnap.id, ...docSnap.data() };
@@ -527,8 +537,14 @@
           </div>`;
 
         const option = `<option value="${item.id}">${item.name} (${item.visualColor || item.species})</option>`;
-        if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') fatherSelect.innerHTML += option;
-        if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') motherSelect.innerHTML += option;
+        if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') {
+          fatherSelect.innerHTML += option;
+          pairFatherSelect.innerHTML += option;
+        }
+        if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') {
+          motherSelect.innerHTML += option;
+          pairMotherSelect.innerHTML += option;
+        }
         healthBirdSelect.innerHTML += option;
       });
 
@@ -706,7 +722,7 @@
         <span class="text-2xl">🌿</span>
         <div>
           <h1 class="text-base font-extrabold tracking-wide">Farm Sook</h1>
-          <p class="text-[9px] text-emerald-200">Pro System V26 (Landscape Layout)</p>
+          <p class="text-[9px] text-emerald-200">Pro System V27 (Landscape & Optional Parents)</p>
         </div>
       </div>
       <button onclick="openModal('modal-bird')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm">
@@ -864,8 +880,8 @@
 
           <div class="grid grid-cols-3 gap-2.5">
             <div><label class="block text-xs text-slate-500 mb-1">เลขใบเซอร์ DNA</label><input id="bird-dna" placeholder="เช่น DNA-12345" class="w-full border rounded-xl p-2 text-sm"></div>
-            <div><label class="block text-xs text-slate-500 mb-1">พ่อพันธุ์</label><select id="bird-father" class="w-full border rounded-xl p-2 text-sm"></select></div>
-            <div><label class="block text-xs text-slate-500 mb-1">แม่พันธุ์</label><select id="bird-mother" class="w-full border rounded-xl p-2 text-sm"></select></div>
+            <div><label class="block text-xs text-slate-500 mb-1">พ่อพันธุ์ (ไม่บังคับ)</label><select id="bird-father" class="w-full border rounded-xl p-2 text-sm"><option value="">-- ไม่ระบุพ่อพันธุ์ --</option></select></div>
+            <div><label class="block text-xs text-slate-500 mb-1">แม่พันธุ์ (ไม่บังคับ)</label><select id="bird-mother" class="w-full border rounded-xl p-2 text-sm"><option value="">-- ไม่ระบุแม่พันธุ์ --</option></select></div>
           </div>
           
           <div class="grid grid-cols-3 gap-2.5">
