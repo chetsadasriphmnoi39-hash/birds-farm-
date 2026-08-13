@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V28</title>
+  <title>Farm Sook - Pro System V30 (Portrait)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -121,38 +121,40 @@
 
     window.submitAddBird = async (event) => {
       event.preventDefault();
-      const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : "";
-
-      const name = getVal('bird-name');
+      
+      const name = document.getElementById('bird-name').value.trim();
       if (!name) {
         alert("กรุณากรอกรหัสหรือชื่อนก");
+        document.getElementById('bird-name').focus();
         return;
       }
 
       const birdData = {
         name: name,
-        ringNo: getVal('bird-ring'),
-        species: getVal('bird-species'),
-        visualColor: getVal('bird-visual'),
-        splitColor: getVal('bird-split'),
-        gender: getVal('bird-gender') || "ผู้",
-        dnaCert: getVal('bird-dna'),
-        photoUrl: getVal('bird-photo'),
-        fatherId: getVal('bird-father') || "",
-        motherId: getVal('bird-mother') || "",
-        hatchDate: getVal('bird-hatch'),
-        arrivalDate: getVal('bird-arrival'),
-        rearing: getVal('bird-rearing') || "ป้อนมือ (Hand-fed)",
+        ringNo: document.getElementById('bird-ring').value.trim(),
+        species: document.getElementById('bird-species').value,
+        visualColor: document.getElementById('bird-visual').value,
+        splitColor: document.getElementById('bird-split').value,
+        gender: document.getElementById('bird-gender').value || "ผู้",
+        dnaCert: document.getElementById('bird-dna').value.trim(),
+        photoUrl: document.getElementById('bird-photo').value.trim(),
+        fatherId: document.getElementById('bird-father').value || "",
+        motherId: document.getElementById('bird-mother').value || "",
+        hatchDate: document.getElementById('bird-hatch').value,
+        arrivalDate: document.getElementById('bird-arrival').value,
+        rearing: document.getElementById('bird-rearing').value || "ป้อนมือ (Hand-fed)",
         createdAt: new Date()
       };
 
       try {
         await addDoc(collection(db, "birds"), birdData);
-        alert("บันทึกข้อมูลนกเข้าทะเบียนเรียบร้อย!");
+        alert("✅ บันทึกข้อมูลนกเข้าทะเบียนเรียบร้อย!");
         closeModal('modal-bird');
         document.getElementById('form-bird').reset();
         window.updateMutationDropdowns();
-      } catch (err) { alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message); }
+      } catch (err) {
+        alert("❌ เกิดข้อผิดพลาดในการบันทึก: " + err.message);
+      }
     };
 
     window.submitAddPair = async (e) => {
@@ -314,7 +316,7 @@
         maleVisName,
         m_cin,
         m_ys,
-        fatherVis.dil || fatherSpl.dil || motherVis.dil || motherSpl.dil,
+        fatherVis.dil || fatherSpl.dil || motherVis.dil || motherVis.dil,
         fatherVis.tur || fatherSpl.tur || motherVis.tur || motherSpl.tur,
         true
       );
@@ -340,15 +342,15 @@
             <span>🧬</span> <span>ผลคาดการณ์สีและยีนแฝงลูกนก:</span>
           </div>
           
-          <div class="grid grid-cols-2 gap-2">
+          <div class="space-y-1.5">
             <div class="p-2.5 bg-blue-100/70 rounded-xl text-blue-950 space-y-0.5">
               <span class="font-bold block text-xs text-blue-800">♂ ลูกตัวผู้ (Male):</span>
-              <div class="text-sm font-extrabold text-blue-900">${maleVisName}<span class="text-[10px] font-semibold block text-blue-700">${maleSplitText}</span></div>
+              <div class="text-sm font-extrabold text-blue-900">${maleVisName}<span class="text-xs font-semibold text-blue-700">${maleSplitText}</span></div>
             </div>
 
             <div class="p-2.5 bg-pink-100/70 rounded-xl text-pink-950 space-y-0.5">
               <span class="font-bold block text-xs text-pink-800">♀ ลูกตัวเมีย (Female):</span>
-              <div class="text-sm font-extrabold text-pink-900">${femaleVisName}<span class="text-[10px] font-semibold block text-pink-700">${femaleSplitText}</span></div>
+              <div class="text-sm font-extrabold text-pink-900">${femaleVisName}<span class="text-xs font-semibold text-pink-700">${femaleSplitText}</span></div>
             </div>
           </div>
         </div>`;
@@ -412,7 +414,7 @@
           </div>
         </div>
         <div class="mt-4 flex space-x-2">
-          <button onclick="downloadCertPdf()" class="w-full bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-bold shadow">💾 บันทึกใบเซอร์ (Download PDF)</button>
+          <button type="button" onclick="downloadCertPdf()" class="w-full bg-emerald-700 text-white py-2.5 rounded-xl text-xs font-bold shadow">💾 บันทึกใบเซอร์ (Download PDF)</button>
         </div>
       `;
 
@@ -448,7 +450,7 @@
           <p class="text-[9px] text-slate-400">สแกน QR Code เพื่อดูประวัติและข้อมูลเต็ม</p>
         </div>
         <div class="mt-4 flex space-x-2">
-          <button onclick="downloadCageTagPdf()" class="w-full bg-slate-800 text-white py-2.5 rounded-xl text-xs font-bold shadow">🏷️ พิมพ์แท็กติดหน้ากรง (Print Tag)</button>
+          <button type="button" onclick="downloadCageTagPdf()" class="w-full bg-slate-800 text-white py-2.5 rounded-xl text-xs font-bold shadow">🏷️ พิมพ์แท็กติดหน้ากรง (Print Tag)</button>
         </div>
       `;
 
@@ -494,18 +496,18 @@
       const pairMotherSelect = document.getElementById('select-mother');
       const healthBirdSelect = document.getElementById('health-bird-select');
       
-      list.innerHTML = "";
+      if(list) list.innerHTML = "";
       const defaultFatherOpt = '<option value="">-- ไม่ระบุพ่อพันธุ์ --</option>';
       const defaultMotherOpt = '<option value="">-- ไม่ระบุแม่พันธุ์ --</option>';
       const pairFatherOpt = '<option value="">-- เลือกพ่อพันธุ์ (♂) --</option>';
       const pairMotherOpt = '<option value="">-- เลือกแม่พันธุ์ (♀) --</option>';
       const healthOpt = '<option value="">-- เลือกรหัสนก --</option>';
 
-      fatherSelect.innerHTML = defaultFatherOpt;
-      motherSelect.innerHTML = defaultMotherOpt;
-      pairFatherSelect.innerHTML = pairFatherOpt;
-      pairMotherSelect.innerHTML = pairMotherOpt;
-      healthBirdSelect.innerHTML = healthOpt;
+      if(fatherSelect) fatherSelect.innerHTML = defaultFatherOpt;
+      if(motherSelect) motherSelect.innerHTML = defaultMotherOpt;
+      if(pairFatherSelect) pairFatherSelect.innerHTML = pairFatherOpt;
+      if(pairMotherSelect) pairMotherSelect.innerHTML = pairMotherOpt;
+      if(healthBirdSelect) healthBirdSelect.innerHTML = healthOpt;
 
       snapshot.forEach(docSnap => {
         const item = { id: docSnap.id, ...docSnap.data() };
@@ -516,50 +518,54 @@
 
         const ageText = calculateDuration(item.hatchDate);
 
-        list.innerHTML += `
-          <div class="p-3 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between space-y-2">
-            <div class="flex justify-between items-center">
-              <div class="flex items-center space-x-2">
-                ${item.photoUrl ? `<img src="${item.photoUrl}" class="w-8 h-8 rounded-full object-cover border border-slate-200">` : ''}
-                <div>
-                  <span class="font-bold text-slate-800 text-sm">${item.name}</span>
-                  ${item.ringNo ? `<span class="bg-amber-50 text-amber-700 border border-amber-100 px-1.5 py-0.5 rounded text-[10px] font-mono ml-1">💍 ${item.ringNo}</span>` : ''}
-                  <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ml-1 ${badgeColor}">${genderBadge}</span>
+        if(list) {
+          list.innerHTML += `
+            <div class="p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-2">
+              <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                  ${item.photoUrl ? `<img src="${item.photoUrl}" class="w-8 h-8 rounded-full object-cover border border-slate-200">` : ''}
+                  <div>
+                    <span class="font-bold text-slate-800 text-sm">${item.name}</span>
+                    ${item.ringNo ? `<span class="bg-amber-50 text-amber-700 border border-amber-100 px-1.5 py-0.5 rounded text-[10px] font-mono ml-1">💍 ${item.ringNo}</span>` : ''}
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ml-1 ${badgeColor}">${genderBadge}</span>
+                  </div>
+                </div>
+                <div class="flex space-x-1">
+                  <button type="button" onclick="generateCert('${item.id}')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg text-[10px] font-bold hover:bg-emerald-100">📜 เซอร์</button>
+                  <button type="button" onclick='generateCageTag(${JSON.stringify(item)}, "bird")' class="bg-slate-50 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-lg text-[10px] font-bold hover:bg-slate-100">🏷️ แท็ก</button>
+                  <button type="button" onclick="deleteBird('${item.id}', '${item.name}')" class="text-rose-400 hover:text-rose-600 text-xs font-medium px-1">🗑️</button>
                 </div>
               </div>
-              <div class="flex space-x-1">
-                <button onclick="generateCert('${item.id}')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg text-[10px] font-bold hover:bg-emerald-100">📜 เซอร์</button>
-                <button onclick='generateCageTag(${JSON.stringify(item)}, "bird")' class="bg-slate-50 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-lg text-[10px] font-bold hover:bg-slate-100">🏷️ แท็ก</button>
-                <button onclick="deleteBird('${item.id}', '${item.name}')" class="text-rose-400 hover:text-rose-600 text-xs font-medium px-1">🗑️</button>
-              </div>
-            </div>
 
-            <div class="grid grid-cols-4 gap-2 text-[11px] text-slate-500 bg-slate-50/70 p-2 rounded-xl">
-              <div><span class="text-slate-400 block">สายพันธุ์:</span> <strong>${item.species}</strong></div>
-              <div><span class="text-slate-400 block">สีหลัก:</span> <strong>${item.visualColor || item.species}</strong></div>
-              <div><span class="text-slate-400 block">ยีนแฝง:</span> <strong>${item.splitColor || '-'}</strong></div>
-              <div><span class="text-slate-400 block">🎂 อายุ:</span> <strong class="text-emerald-700">${ageText ? ageText : (item.hatchDate || '-')}</strong></div>
-            </div>
-          </div>`;
+              <div class="grid grid-cols-2 gap-1 text-[11px] text-slate-500 bg-slate-50/70 p-2.5 rounded-xl">
+                <div><span class="text-slate-400">สายพันธุ์:</span> <strong>${item.species}</strong></div>
+                <div><span class="text-slate-400">สีหลัก:</span> <strong>${item.visualColor || item.species}</strong></div>
+                <div><span class="text-slate-400">ยีนแฝง:</span> <strong>${item.splitColor || '-'}</strong></div>
+                <div><span class="text-slate-400">🎂 อายุ:</span> <strong class="text-emerald-700">${ageText ? ageText : (item.hatchDate || '-')}</strong></div>
+              </div>
+            </div>`;
+        }
 
         const option = `<option value="${item.id}">${item.name} (${item.visualColor || item.species})</option>`;
         if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') {
-          fatherSelect.innerHTML += option;
-          pairFatherSelect.innerHTML += option;
+          if(fatherSelect) fatherSelect.innerHTML += option;
+          if(pairFatherSelect) pairFatherSelect.innerHTML += option;
         }
         if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') {
-          motherSelect.innerHTML += option;
-          pairMotherSelect.innerHTML += option;
+          if(motherSelect) motherSelect.innerHTML += option;
+          if(pairMotherSelect) pairMotherSelect.innerHTML += option;
         }
-        healthBirdSelect.innerHTML += option;
+        if(healthBirdSelect) healthBirdSelect.innerHTML += option;
       });
 
-      document.getElementById('total-birds').innerText = snapshot.size + " ตัว";
+      const totalBirdsEl = document.getElementById('total-birds');
+      if(totalBirdsEl) totalBirdsEl.innerText = snapshot.size + " ตัว";
     });
 
     onSnapshot(collection(db, "health_records"), (snapshot) => {
       globalHealth = [];
       const list = document.getElementById('health-records-list');
+      if(!list) return;
       list.innerHTML = "";
 
       snapshot.forEach(docSnap => {
@@ -585,36 +591,39 @@
       const list = document.getElementById('pairs-list');
       const pairSelect = document.getElementById('select-pair');
       
-      list.innerHTML = "";
-      pairSelect.innerHTML = '<option value="">-- เลือกคู่พ่อแม่พันธุ์ --</option>';
+      if(list) list.innerHTML = "";
+      if(pairSelect) pairSelect.innerHTML = '<option value="">-- เลือกคู่พ่อแม่พันธุ์ --</option>';
 
       snapshot.forEach(docSnap => {
         const item = { id: docSnap.id, ...docSnap.data() };
         globalPairs.push(item);
 
-        list.innerHTML += `
-          <div class="p-3 bg-white rounded-2xl border border-rose-100 shadow-sm text-xs space-y-1">
-            <div class="flex justify-between items-center">
-              <div class="font-bold text-rose-800 text-sm">❤️ ${item.name}</div>
-              <button onclick='generateCageTag(${JSON.stringify(item)}, "pair")' class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-lg text-[10px] font-bold hover:bg-rose-100">🏷️ พิมพ์แท็กติดกรง</button>
-            </div>
-            <div class="text-slate-600">♂ พ่อ: <strong>${item.fatherName}</strong> <span class="text-slate-400">(${item.fatherSpecies})</span></div>
-            <div class="text-slate-600">♀ แม่: <strong>${item.motherName}</strong> <span class="text-slate-400">(${item.motherSpecies})</span></div>
-            <div id="analytics-${item.id}" class="text-[10px] text-amber-800 bg-amber-50 p-1.5 rounded-lg border border-amber-100 mt-1">กำลังคำนวณสถิติ...</div>
-          </div>`;
+        if(list) {
+          list.innerHTML += `
+            <div class="p-3.5 bg-white rounded-2xl border border-rose-100 shadow-sm text-xs space-y-1">
+              <div class="flex justify-between items-center">
+                <div class="font-bold text-rose-800 text-sm">❤️ ${item.name}</div>
+                <button type="button" onclick='generateCageTag(${JSON.stringify(item)}, "pair")' class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-lg text-[10px] font-bold hover:bg-rose-100">🏷️ พิมพ์แท็กติดกรง</button>
+              </div>
+              <div class="text-slate-600">♂ พ่อ: <strong>${item.fatherName}</strong> <span class="text-slate-400">(${item.fatherSpecies})</span></div>
+              <div class="text-slate-600">♀ แม่: <strong>${item.motherName}</strong> <span class="text-slate-400">(${item.motherSpecies})</span></div>
+              <div id="analytics-${item.id}" class="text-[10px] text-amber-800 bg-amber-50 p-1.5 rounded-lg border border-amber-100 mt-1">กำลังคำนวณสถิติ...</div>
+            </div>`;
+        }
 
-        pairSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+        if(pairSelect) pairSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
       });
 
-      document.getElementById('total-pairs').innerText = snapshot.size + " คู่";
+      const totalPairsEl = document.getElementById('total-pairs');
+      if(totalPairsEl) totalPairsEl.innerText = snapshot.size + " คู่";
     });
 
     onSnapshot(collection(db, "egg_details"), (snapshot) => {
       globalEggs = [];
       const list = document.getElementById('egg-details-list');
       const reminderList = document.getElementById('reminder-list');
-      list.innerHTML = "";
-      reminderList.innerHTML = "";
+      if(list) list.innerHTML = "";
+      if(reminderList) reminderList.innerHTML = "";
 
       let totalEggsCount = 0;
       let totalHatchedCount = 0;
@@ -634,13 +643,13 @@
         if (data.status === 'มีเชื้อ' || data.status === 'ฟักแล้ว') pairStats[data.pairId].fertile++;
         if (data.status === 'ฟักแล้ว') pairStats[data.pairId].hatched++;
 
-        if (data.status === 'รอส่องเชื้อ') {
+        if (data.status === 'รอส่องเชื้อ' && reminderList) {
           reminderCount++;
           reminderList.innerHTML += `<div class="p-2 bg-amber-50 text-amber-800 rounded-xl border border-amber-200 text-xs flex justify-between items-center">
             <span>🔦 ส่องเชื้อไข่ (${data.species || 'นก'}): <strong>${data.pairName}</strong> (ใบที่ ${data.eggNo})</span>
             <span class="text-[10px] bg-amber-200 font-bold px-2 py-0.5 rounded">${data.candlingDate || 'ครบ 6 วัน'}</span>
           </div>`;
-        } else if (data.status === 'มีเชื้อ') {
+        } else if (data.status === 'มีเชื้อ' && reminderList) {
           reminderCount++;
           reminderList.innerHTML += `<div class="p-2 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 text-xs flex justify-between items-center">
             <span>🐣 ใกล้กำหนดฟัก (${data.species || 'นก'}): <strong>${data.pairName}</strong> (ใบที่ ${data.eggNo})</span>
@@ -662,7 +671,7 @@
         }
       }
 
-      if (reminderCount === 0) {
+      if (reminderCount === 0 && reminderList) {
         reminderList.innerHTML = `<p class="text-xs text-slate-400">ไม่มีรายการแจ้งเตือนด่วนในขณะนี้</p>`;
       }
 
@@ -687,28 +696,36 @@
             </div>`;
         });
 
-        list.innerHTML += `
-          <div class="bg-white p-3 rounded-2xl border border-amber-100 shadow-sm space-y-2">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-              <span class="font-bold text-slate-800 text-xs">🪺 ${pairName}</span>
-              <span class="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-100 px-2.5 py-0.5 rounded-full">รวม ${eggs.length} ใบ</span>
-            </div>
-            <div class="space-y-1.5">${eggsHtml}</div>
-          </div>`;
+        if(list) {
+          list.innerHTML += `
+            <div class="bg-white p-3.5 rounded-2xl border border-amber-100 shadow-sm space-y-2">
+              <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                <span class="font-bold text-slate-800 text-xs">🪺 ${pairName}</span>
+                <span class="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-100 px-2.5 py-0.5 rounded-full">รวม ${eggs.length} ใบ</span>
+              </div>
+              <div class="space-y-1.5">${eggsHtml}</div>
+            </div>`;
+        }
       }
 
-      document.getElementById('total-eggs').innerText = totalEggsCount + " ใบ";
-      document.getElementById('total-chicks').innerText = totalHatchedCount + " ตัว";
+      const totalEggsEl = document.getElementById('total-eggs');
+      const totalChicksEl = document.getElementById('total-chicks');
+      if(totalEggsEl) totalEggsEl.innerText = totalEggsCount + " ใบ";
+      if(totalChicksEl) totalChicksEl.innerText = totalHatchedCount + " ตัว";
     });
 
     window.openModal = (id) => {
-      document.getElementById(id).classList.remove('hidden');
+      const modal = document.getElementById(id);
+      if(modal) modal.classList.remove('hidden');
       if (id === 'modal-bird') {
         window.updateMutationDropdowns();
       }
     };
-    window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
-    window.closeOnBackdrop = (e, id) => { if (e.target === e.currentTarget) closeModal(id); };
+    window.closeModal = (id) => {
+      const modal = document.getElementById(id);
+      if(modal) modal.classList.add('hidden');
+    };
+    window.closeOnBackdrop = (e, id) => { if (e.target === e.currentTarget) window.closeModal(id); };
 
     window.addEventListener('DOMContentLoaded', () => {
       window.updateMutationDropdowns();
@@ -722,153 +739,155 @@
 <body class="bg-slate-50 min-h-screen pb-12">
 
   <!-- Header -->
-  <header class="w-full bg-emerald-800 text-white p-3 sticky top-0 z-10 shadow-md">
-    <div class="w-full max-w-5xl mx-auto flex justify-between items-center">
+  <header class="w-full bg-emerald-800 text-white p-4 sticky top-0 z-10 shadow-md">
+    <div class="w-full max-w-md mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-2">
         <span class="text-2xl">🌿</span>
         <div>
-          <h1 class="text-base font-extrabold tracking-wide">Farm Sook</h1>
-          <p class="text-[9px] text-emerald-200">Pro System V28</p>
+          <h1 class="text-lg font-extrabold tracking-wide">Farm Sook</h1>
+          <p class="text-[10px] text-emerald-200">Pro System V30 (Portrait)</p>
         </div>
       </div>
-      <button onclick="openModal('modal-bird')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm">
+      <button type="button" onclick="openModal('modal-bird')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm">
         + เพิ่มนก
       </button>
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="p-4 space-y-4 max-w-5xl mx-auto">
+  <!-- Main Content (Portrait) -->
+  <main class="p-4 space-y-4 max-w-md mx-auto">
     
     <!-- Dashboard Stats -->
-    <div class="grid grid-cols-4 gap-3">
+    <div class="grid grid-cols-2 gap-2.5">
       <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-2.5">
-        <div class="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center text-base">🦜</div>
+        <div class="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center text-lg">🦜</div>
         <div>
           <p class="text-[10px] text-slate-400">นกในฟาร์ม</p>
-          <h3 class="text-sm font-extrabold text-slate-800" id="total-birds">0 ตัว</h3>
+          <h3 class="text-base font-extrabold text-slate-800" id="total-birds">0 ตัว</h3>
         </div>
       </div>
       <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-2.5">
-        <div class="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-base">❤️</div>
+        <div class="w-9 h-9 rounded-xl bg-rose-50 flex items-center justify-center text-lg">❤️</div>
         <div>
           <p class="text-[10px] text-slate-400">คู่พ่อแม่พันธุ์</p>
-          <h3 class="text-sm font-extrabold text-slate-800" id="total-pairs">0 คู่</h3>
+          <h3 class="text-base font-extrabold text-slate-800" id="total-pairs">0 คู่</h3>
         </div>
       </div>
       <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-2.5">
-        <div class="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-base">🥚</div>
+        <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-lg">🥚</div>
         <div>
           <p class="text-[10px] text-slate-400">ไข่รวมทั้งหมด</p>
-          <h3 class="text-sm font-extrabold text-amber-600" id="total-eggs">0 ใบ</h3>
+          <h3 class="text-base font-extrabold text-amber-600" id="total-eggs">0 ใบ</h3>
         </div>
       </div>
       <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-2.5">
-        <div class="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-base">🐣</div>
+        <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-lg">🐣</div>
         <div>
           <p class="text-[10px] text-slate-400">ลูกนกที่ฟักแล้ว</p>
-          <h3 class="text-sm font-extrabold text-emerald-600" id="total-chicks">0 ตัว</h3>
+          <h3 class="text-base font-extrabold text-emerald-600" id="total-chicks">0 ตัว</h3>
         </div>
+      </div>
+    </div>
+
+    <!-- SMART REMINDERS BOX -->
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-200 space-y-2">
+      <h3 class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
+        <span>⏰</span> <span class="text-amber-800">การแจ้งเตือนกำหนดการฟาร์ม (Smart Reminders)</span>
+      </h3>
+      <div id="reminder-list" class="space-y-1.5">
+        <p class="text-xs text-slate-400">กำลังโหลดรายการแจ้งเตือน...</p>
       </div>
     </div>
 
     <!-- Action Grid Menu -->
-    <div class="grid grid-cols-4 gap-2.5">
-      <button onclick="openModal('modal-bird')" class="p-3 bg-gradient-to-br from-teal-500 to-emerald-600 text-white rounded-2xl shadow-sm text-left flex items-center justify-between">
+    <div class="grid grid-cols-2 gap-2">
+      <button type="button" onclick="openModal('modal-bird')" class="p-3 bg-gradient-to-br from-teal-500 to-emerald-600 text-white rounded-2xl shadow-sm text-left flex items-center justify-between">
         <div><div class="text-[10px] text-teal-100">ทะเบียน</div><div class="font-bold text-xs">+ เพิ่มนกใหม่</div></div>
-        <span class="text-lg">🦜</span>
+        <span class="text-xl">🦜</span>
       </button>
 
-      <button onclick="openModal('modal-calc')" class="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl shadow-sm text-left flex items-center justify-between">
+      <button type="button" onclick="openModal('modal-calc')" class="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl shadow-sm text-left flex items-center justify-between">
         <div><div class="text-[10px] text-indigo-100">พันธุกรรม</div><div class="font-bold text-xs">🧬 คำนวณสี & เพศ</div></div>
-        <span class="text-lg">🧪</span>
+        <span class="text-xl">🧪</span>
       </button>
 
-      <button onclick="openModal('modal-health')" class="p-3 bg-gradient-to-br from-rose-500 to-red-600 text-white rounded-2xl shadow-sm text-left flex items-center justify-between">
+      <button type="button" onclick="openModal('modal-health')" class="p-3 bg-gradient-to-br from-rose-500 to-red-600 text-white rounded-2xl shadow-sm text-left flex items-center justify-between">
         <div><div class="text-[10px] text-rose-100">สุขภาพ</div><div class="font-bold text-xs">🩺 สุขภาพ / ยา</div></div>
-        <span class="text-lg">💊</span>
+        <span class="text-xl">💊</span>
       </button>
 
-      <button onclick="openModal('modal-egg')" class="p-3 bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-2xl shadow-sm text-left flex items-center justify-between">
+      <button type="button" onclick="openModal('modal-egg')" class="p-3 bg-gradient-to-br from-amber-500 to-orange-500 text-white rounded-2xl shadow-sm text-left flex items-center justify-between">
         <div><div class="text-[10px] text-amber-100">รอบไข่</div><div class="font-bold text-xs">🥚 บันทึกไข่รายใบ</div></div>
-        <span class="text-lg">🪺</span>
+        <span class="text-xl">🪺</span>
       </button>
     </div>
 
-    <!-- SMART REMINDERS & HEALTH -->
-    <div class="grid grid-cols-2 gap-3">
-      <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-amber-200 space-y-2">
-        <h3 class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
-          <span>⏰</span> <span class="text-amber-800">การแจ้งเตือนกำหนดการฟาร์ม</span>
-        </h3>
-        <div id="reminder-list" class="space-y-1.5">
-          <p class="text-xs text-slate-400">กำลังโหลดรายการแจ้งเตือน...</p>
-        </div>
+    <!-- สรุปประวัติสุขภาพ -->
+    <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 space-y-2">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-slate-800 text-xs">🩺 ประวัติสุขภาพและการรักษาล่าสุด</h3>
+        <button type="button" onclick="openModal('modal-health')" class="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-lg text-[10px] font-bold border border-rose-100">+ บันทึกการยา</button>
       </div>
-
-      <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 space-y-2">
-        <div class="flex justify-between items-center">
-          <h3 class="font-bold text-slate-800 text-xs">🩺 ประวัติสุขภาพและการรักษาล่าสุด</h3>
-          <button onclick="openModal('modal-health')" class="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-lg text-[10px] font-bold border border-rose-100">+ บันทึก</button>
-        </div>
-        <div id="health-records-list" class="space-y-1.5">
-          <p class="text-xs text-slate-400">กำลังโหลดข้อมูลสุขภาพ...</p>
-        </div>
+      <div id="health-records-list" class="space-y-1.5">
+        <p class="text-xs text-slate-400">ยังไม่มีบันทึกประวัติสุขภาพ</p>
       </div>
     </div>
 
     <!-- รายชื่อนกในฟาร์ม -->
     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-3">
       <h3 class="font-bold text-slate-800 text-sm">🦜 รายชื่อนก & พิมพ์ใบเซอร์ DNA / แท็ก</h3>
-      <div id="birds-list" class="grid grid-cols-2 gap-2">
-        <p class="text-xs text-slate-400 col-span-2">ยังไม่มีข้อมูลนก</p>
+      <div id="birds-list" class="space-y-2">
+        <p class="text-xs text-slate-400">ยังไม่มีข้อมูลนก</p>
       </div>
     </div>
 
-    <!-- ตารางติดตามการไข่ & คู่พ่อแม่ -->
-    <div class="grid grid-cols-2 gap-3">
-      <div class="space-y-2">
-        <h3 class="font-bold text-slate-800 text-sm">🪺 ตารางติดตามการไข่ & วันฟัก</h3>
-        <div id="egg-details-list" class="space-y-2">
-          <p class="text-xs text-slate-400">กำลังโหลดข้อมูล...</p>
-        </div>
+    <!-- ตารางติดตามการไข่ -->
+    <div class="space-y-2">
+      <h3 class="font-bold text-slate-800 text-sm">🪺 ตารางติดตามการไข่ & วันฟัก</h3>
+      <div id="egg-details-list" class="space-y-3">
+        <p class="text-xs text-slate-400">กำลังโหลดข้อมูล...</p>
       </div>
+    </div>
 
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-3">
-        <h3 class="font-bold text-slate-800 text-sm">❤️ คู่พ่อแม่พันธุ์ & สถิติประสิทธิภาพ</h3>
-        <div id="pairs-list" class="space-y-2">
-          <p class="text-xs text-slate-400">ยังไม่มีข้อมูลคู่พันธุ์</p>
-        </div>
+    <!-- คู่พ่อแม่พันธุ์ & สถิติประสิทธิภาพ -->
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-3">
+      <h3 class="font-bold text-slate-800 text-sm">❤️ คู่พ่อแม่พันธุ์ & สถิติประสิทธิภาพ (Breeding Analytics)</h3>
+      <div id="pairs-list" class="space-y-2">
+        <p class="text-xs text-slate-400">ยังไม่มีข้อมูลคู่พันธุ์</p>
       </div>
     </div>
 
   </main>
 
-  <!-- MODAL 1: เพิ่มนก (V28 Fixed Scrolling & Button View) -->
+  <!-- MODAL 1: เพิ่มนก (Portrait Form) -->
   <div id="modal-bird" onclick="closeOnBackdrop(event, 'modal-bird')" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-3 hidden z-50 overflow-y-auto">
-    <div class="bg-white w-full max-w-2xl rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl relative max-h-[92vh] flex flex-col my-auto">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl relative max-h-[92vh] flex flex-col my-auto">
       <div class="flex justify-between items-center border-b pb-3 mb-3 shrink-0">
         <h3 class="font-bold text-base text-slate-800">🦜 บันทึกทะเบียนนก (Farm Sook)</h3>
         <button type="button" onclick="closeModal('modal-bird')" class="text-slate-400 hover:text-slate-600 text-xl font-bold px-2 py-1">✕</button>
       </div>
 
-      <!-- Scrollable Form Area -->
       <div class="overflow-y-auto pr-1 space-y-3 flex-1 pb-16">
         <form id="form-bird" onsubmit="submitAddBird(event)" class="space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <div><label class="block text-xs text-slate-500 mb-1">รหัส/ชื่อนก *</label><input id="bird-name" required placeholder="เช่น GC-001" class="w-full border rounded-xl p-2 text-sm bg-slate-50"></div>
-            <div><label class="block text-xs text-slate-500 mb-1">เลขห่วงขา</label><input id="bird-ring" placeholder="เช่น TH-FS-26" class="w-full border rounded-xl p-2 text-sm bg-slate-50"></div>
-            <div>
-              <label class="block text-xs text-slate-500 mb-1">ตระกูล / สายพันธุ์หลัก</label>
-              <select id="bird-species" onchange="updateMutationDropdowns()" class="w-full border rounded-xl p-2 text-sm font-bold text-emerald-800 bg-emerald-50/50 border-emerald-200">
-                <option value="Green-cheeked Conure">🟢 Green-cheeked Conure</option>
-                <option value="Sun Conure">🟡 Sun Conure</option>
-                <option value="Conure Other">🦜 Conure สายพันธุ์อื่นๆ</option>
-              </select>
-            </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="block text-xs text-slate-500 mb-1">รหัส/ชื่อนก *</label><input type="text" id="bird-name" placeholder="เช่น GC-001" class="w-full border rounded-xl p-2 text-sm bg-slate-50" autocomplete="off"></div>
+            <div><label class="block text-xs text-slate-500 mb-1">เลขห่วงขา</label><input type="text" id="bird-ring" placeholder="เช่น TH-FS-26" class="w-full border rounded-xl p-2 text-sm bg-slate-50"></div>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-500 mb-1">ตระกูล / สายพันธุ์หลัก</label>
+            <select id="bird-species" onchange="updateMutationDropdowns()" class="w-full border rounded-xl p-2 text-sm font-bold text-emerald-800 bg-emerald-50/50 border-emerald-200">
+              <option value="Green-cheeked Conure">🟢 Green-cheeked Conure</option>
+              <option value="Sun Conure">🟡 Sun Conure</option>
+              <option value="Conure Other">🦜 Conure สายพันธุ์อื่นๆ</option>
+            </select>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div>
+            <label class="block text-xs text-slate-500 mb-1">📸 ลิงก์รูปถ่ายนก (URL รูปภาพ)</label>
+            <input type="text" id="bird-photo" placeholder="https://..." class="w-full border rounded-xl p-2 text-sm bg-slate-50">
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-xs text-slate-500 mb-1">สีหลัก (Visual Mutation)</label>
               <select id="bird-visual" class="w-full border rounded-xl p-2 text-sm bg-slate-50"></select>
@@ -877,41 +896,33 @@
               <label class="block text-xs text-slate-500 mb-1">ยีนแฝง (Split Genetics)</label>
               <select id="bird-split" class="w-full border rounded-xl p-2 text-sm bg-slate-50"></select>
             </div>
-            <div>
-              <label class="block text-xs text-slate-500 mb-1">เพศ</label>
-              <select id="bird-gender" class="w-full border rounded-xl p-2 text-sm bg-slate-50">
-                <option value="ผู้">♂ ผู้</option><option value="เมีย">♀ เมีย</option><option value="ไม่ระบุ">❓ ไม่ระบุ</option>
-              </select>
-            </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <div><label class="block text-xs text-slate-500 mb-1">เลขใบเซอร์ DNA</label><input id="bird-dna" placeholder="เช่น DNA-12345" class="w-full border rounded-xl p-2 text-sm bg-slate-50"></div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="block text-xs text-slate-500 mb-1">เพศ</label><select id="bird-gender" class="w-full border rounded-xl p-2 text-sm bg-slate-50"><option value="ผู้">♂ ผู้</option><option value="เมีย">♀ เมีย</option><option value="ไม่ระบุ">❓ ไม่ระบุ</option></select></div>
+            <div><label class="block text-xs text-slate-500 mb-1">เลขใบเซอร์ DNA</label><input type="text" id="bird-dna" placeholder="เช่น DNA-12345" class="w-full border rounded-xl p-2 text-sm bg-slate-50"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 border-t pt-2">
             <div><label class="block text-xs text-slate-500 mb-1">พ่อพันธุ์ (ไม่บังคับ)</label><select id="bird-father" class="w-full border rounded-xl p-2 text-sm bg-slate-50"><option value="">-- ไม่ระบุพ่อพันธุ์ --</option></select></div>
             <div><label class="block text-xs text-slate-500 mb-1">แม่พันธุ์ (ไม่บังคับ)</label><select id="bird-mother" class="w-full border rounded-xl p-2 text-sm bg-slate-50"><option value="">-- ไม่ระบุแม่พันธุ์ --</option></select></div>
           </div>
           
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div class="grid grid-cols-2 gap-2">
             <div><label class="block text-xs text-slate-500 mb-1">🎂 วันที่ฟัก (Hatch Date)</label><input type="date" id="bird-hatch" class="w-full border rounded-xl p-2 text-sm bg-slate-50"></div>
             <div><label class="block text-xs text-slate-500 mb-1">🏡 วันที่รับเข้าฟาร์ม (Arrival)</label><input type="date" id="bird-arrival" class="w-full border rounded-xl p-2 text-sm bg-slate-50"></div>
-            <div>
-              <label class="block text-xs text-slate-500 mb-1">รูปแบบการเลี้ยง</label>
-              <select id="bird-rearing" class="w-full border rounded-xl p-2 text-sm bg-slate-50">
-                <option value="ป้อนมือ (Hand-fed)">🍼 ป้อนมือ</option>
-                <option value="พ่อแม่เลี้ยง (Parent-reared)">🪺 พ่อแม่เลี้ยง</option>
-              </select>
-            </div>
           </div>
 
           <div>
-            <label class="block text-xs text-slate-500 mb-1">📸 ลิงก์รูปถ่ายนก (URL)</label>
-            <input id="bird-photo" placeholder="https://..." class="w-full border rounded-xl p-2 text-sm bg-slate-50">
+            <label class="block text-xs text-slate-500 mb-1">รูปแบบการเลี้ยง</label>
+            <select id="bird-rearing" class="w-full border rounded-xl p-2 text-sm bg-slate-50">
+              <option value="ป้อนมือ (Hand-fed)">🍼 ป้อนมือ</option>
+              <option value="พ่อแม่เลี้ยง (Parent-reared)">🪺 พ่อแม่เลี้ยง</option>
+            </select>
           </div>
 
-          <!-- Fixed Bottom Buttons Inside Form -->
           <div class="flex space-x-2 pt-4 sticky bottom-0 bg-white pb-2 border-t mt-4">
             <button type="button" onclick="closeModal('modal-bird')" class="w-1/2 border py-3 rounded-xl text-sm font-bold text-slate-600 bg-slate-100">ยกเลิก</button>
-            <button type="submit" class="w-1/2 bg-emerald-700 hover:bg-emerald-600 text-white py-3 rounded-xl text-sm font-bold shadow-lg">💾 บันทึกข้อมูลนก</button>
+            <button type="submit" class="w-1/2 bg-emerald-700 hover:bg-emerald-600 text-white py-3 rounded-xl text-sm font-bold shadow-lg">💾 บันทึก</button>
           </div>
         </form>
       </div>
@@ -920,87 +931,86 @@
 
   <!-- MODAL 2: คำนวณสีพันธุกรรม -->
   <div id="modal-calc" onclick="closeOnBackdrop(event, 'modal-calc')" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
-    <div class="bg-white w-full max-w-lg rounded-3xl p-5 shadow-2xl space-y-3 relative max-h-[85vh] overflow-y-auto">
-      <button onclick="closeModal('modal-calc')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold">✕</button>
+    <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-3 relative max-h-[85vh] overflow-y-auto">
+      <button type="button" onclick="closeModal('modal-calc')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold">✕</button>
       <h3 class="font-bold text-base text-slate-800 pr-6">🧬 คำนวณสี & คาดการณ์เพศลูกนก</h3>
       <div class="space-y-3">
-        <div class="grid grid-cols-2 gap-3">
-          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-            <div class="font-bold text-xs text-blue-800">♂ พ่อพันธุ์ (Father Genetics)</div>
-            <div>
-              <label class="block text-[11px] text-slate-500 mb-0.5">สีหลักพ่อพันธุ์</label>
-              <select id="calc-father-color" class="w-full border rounded-xl p-2 text-xs">
-                <option value="Normal">Normal (เขียว)</option>
-                <option value="Cinnamon">Cinnamon</option>
-                <option value="Yellow-sided">Yellow-sided (Opaline)</option>
-                <option value="Pineapple">Pineapple</option>
-                <option value="Dilute">Dilute</option>
-                <option value="Yellow-sided Dilute">Yellow-sided Dilute</option>
-                <option value="Suncheek">Suncheek</option>
-                <option value="Turquoise Normal">Turquoise Normal (Blue)</option>
-                <option value="Turquoise Cinnamon">Turquoise Cinnamon</option>
-                <option value="Turquoise Yellow-sided">Turquoise Yellow-sided</option>
-                <option value="Turquoise Pineapple">Turquoise Pineapple</option>
-                <option value="Mint">Mint</option>
-                <option value="Opamint">Opamint</option>
-                <option value="Cinnamint">Cinnamint</option>
-                <option value="Mooncheek">Mooncheek</option>
-                <option value="Violet Factor">Violet Series</option>
-                <option value="High Red Factor">High Red / Extreme Red</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-[11px] text-slate-500 mb-0.5">ยีนแฝงพ่อพันธุ์ (Split ♂)</label>
-              <select id="calc-father-split" class="w-full border rounded-xl p-2 text-xs">
-                <option value="ไม่มีสปลิต">ไม่มีสปลิต</option>
-                <option value="Split Turquoise">Split Turquoise</option>
-                <option value="Split Dilute">Split Dilute</option>
-                <option value="Split Cinnamon (Sex-linked)">Split Cinnamon (♂ เท่านั้น)</option>
-                <option value="Split Yellow-sided (Sex-linked)">Split Yellow-sided (♂ เท่านั้น)</option>
-                <option value="Split Turquoise & Dilute">Split Turquoise & Dilute</option>
-                <option value="Split Suncheek">Split Suncheek</option>
-                <option value="Split Mooncheek">Split Mooncheek</option>
-                <option value="Split Mint">Split Mint</option>
-              </select>
-            </div>
+        <div class="p-2.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+          <div class="font-bold text-xs text-blue-800">♂ พ่อพันธุ์ (Father Genetics)</div>
+          <div>
+            <label class="block text-[11px] text-slate-500 mb-0.5">สีหลักพ่อพันธุ์</label>
+            <select id="calc-father-color" class="w-full border rounded-xl p-2 text-sm">
+              <option value="Normal">Normal (เขียว)</option>
+              <option value="Cinnamon">Cinnamon</option>
+              <option value="Yellow-sided">Yellow-sided (Opaline)</option>
+              <option value="Pineapple">Pineapple</option>
+              <option value="Dilute">Dilute</option>
+              <option value="Yellow-sided Dilute">Yellow-sided Dilute</option>
+              <option value="Suncheek">Suncheek</option>
+              <option value="Turquoise Normal">Turquoise Normal (Blue)</option>
+              <option value="Turquoise Cinnamon">Turquoise Cinnamon</option>
+              <option value="Turquoise Yellow-sided">Turquoise Yellow-sided</option>
+              <option value="Turquoise Pineapple">Turquoise Pineapple</option>
+              <option value="Mint">Mint</option>
+              <option value="Opamint">Opamint</option>
+              <option value="Cinnamint">Cinnamint</option>
+              <option value="Mooncheek">Mooncheek</option>
+              <option value="Violet Factor">Violet Series</option>
+              <option value="High Red Factor">High Red / Extreme Red</option>
+            </select>
           </div>
-
-          <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-            <div class="font-bold text-xs text-pink-800">♀ แม่พันธุ์ (Mother Genetics)</div>
-            <div>
-              <label class="block text-[11px] text-slate-500 mb-0.5">สีหลักแม่พันธุ์</label>
-              <select id="calc-mother-color" class="w-full border rounded-xl p-2 text-xs">
-                <option value="Normal">Normal (เขียว)</option>
-                <option value="Cinnamon">Cinnamon</option>
-                <option value="Yellow-sided">Yellow-sided</option>
-                <option value="Pineapple">Pineapple</option>
-                <option value="Dilute">Dilute</option>
-                <option value="Yellow-sided Dilute">Yellow-sided Dilute</option>
-                <option value="Suncheek">Suncheek</option>
-                <option value="Turquoise Normal">Turquoise Normal (Blue)</option>
-                <option value="Turquoise Cinnamon">Turquoise Cinnamon</option>
-                <option value="Turquoise Yellow-sided">Turquoise Yellow-sided</option>
-                <option value="Turquoise Pineapple">Turquoise Pineapple</option>
-                <option value="Mint">Mint</option>
-                <option value="Opamint">Opamint</option>
-                <option value="Cinnamint">Cinnamint</option>
-                <option value="Mooncheek">Mooncheek</option>
-                <option value="Violet Factor">Violet Series</option>
-                <option value="High Red Factor">High Red / Extreme Red</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-[11px] text-slate-500 mb-0.5">ยีนแฝงแม่พันธุ์ (Split ♀)</label>
-              <select id="calc-mother-split" class="w-full border rounded-xl p-2 text-xs">
-                <option value="ไม่มีสปลิต">ไม่มีสปลิต</option>
-                <option value="Split Turquoise">Split Turquoise</option>
-                <option value="Split Dilute">Split Dilute</option>
-                <option value="Split Turquoise & Dilute">Split Turquoise & Dilute</option>
-              </select>
-            </div>
+          <div>
+            <label class="block text-[11px] text-slate-500 mb-0.5">ยีนแฝงพ่อพันธุ์ (Split ♂)</label>
+            <select id="calc-father-split" class="w-full border rounded-xl p-2 text-sm">
+              <option value="ไม่มีสปลิต">ไม่มีสปลิต</option>
+              <option value="Split Turquoise">Split Turquoise</option>
+              <option value="Split Dilute">Split Dilute</option>
+              <option value="Split Cinnamon (Sex-linked)">Split Cinnamon (♂ เท่านั้น)</option>
+              <option value="Split Yellow-sided (Sex-linked)">Split Yellow-sided (♂ เท่านั้น)</option>
+              <option value="Split Turquoise & Dilute">Split Turquoise & Dilute</option>
+              <option value="Split Suncheek">Split Suncheek</option>
+              <option value="Split Mooncheek">Split Mooncheek</option>
+              <option value="Split Mint">Split Mint</option>
+            </select>
           </div>
         </div>
-        <button onclick="calculateGenetics()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-xs font-bold shadow">⚡ ประมวลผลพันธุกรรม & เพศ</button>
+
+        <div class="p-2.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+          <div class="font-bold text-xs text-pink-800">♀ แม่พันธุ์ (Mother Genetics)</div>
+          <div>
+            <label class="block text-[11px] text-slate-500 mb-0.5">สีหลักแม่พันธุ์</label>
+            <select id="calc-mother-color" class="w-full border rounded-xl p-2 text-sm">
+              <option value="Normal">Normal (เขียว)</option>
+              <option value="Cinnamon">Cinnamon</option>
+              <option value="Yellow-sided">Yellow-sided</option>
+              <option value="Pineapple">Pineapple</option>
+              <option value="Dilute">Dilute</option>
+              <option value="Yellow-sided Dilute">Yellow-sided Dilute</option>
+              <option value="Suncheek">Suncheek</option>
+              <option value="Turquoise Normal">Turquoise Normal (Blue)</option>
+              <option value="Turquoise Cinnamon">Turquoise Cinnamon</option>
+              <option value="Turquoise Yellow-sided">Turquoise Yellow-sided</option>
+              <option value="Turquoise Pineapple">Turquoise Pineapple</option>
+              <option value="Mint">Mint</option>
+              <option value="Opamint">Opamint</option>
+              <option value="Cinnamint">Cinnamint</option>
+              <option value="Mooncheek">Mooncheek</option>
+              <option value="Violet Factor">Violet Series</option>
+              <option value="High Red Factor">High Red / Extreme Red</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] text-slate-500 mb-0.5">ยีนแฝงแม่พันธุ์ (Split ♀)</label>
+            <select id="calc-mother-split" class="w-full border rounded-xl p-2 text-sm">
+              <option value="ไม่มีสปลิต">ไม่มีสปลิต</option>
+              <option value="Split Turquoise">Split Turquoise</option>
+              <option value="Split Dilute">Split Dilute</option>
+              <option value="Split Turquoise & Dilute">Split Turquoise & Dilute</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="button" onclick="calculateGenetics()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-xs font-bold shadow">⚡ ประมวลผลพันธุกรรม & เพศ</button>
         <div id="calc-result"></div>
       </div>
     </div>
@@ -1009,7 +1019,7 @@
   <!-- MODAL 3: บันทึกสุขภาพและการรักษา -->
   <div id="modal-health" onclick="closeOnBackdrop(event, 'modal-health')" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-3 relative max-h-[85vh] overflow-y-auto">
-      <button onclick="closeModal('modal-health')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold">✕</button>
+      <button type="button" onclick="closeModal('modal-health')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold">✕</button>
       <h3 class="font-bold text-base text-slate-800 pr-6">🩺 บันทึกประวัติสุขภาพ & ยา</h3>
       <form id="form-health" onsubmit="submitHealthRecord(event)" class="space-y-3">
         <div><label class="block text-xs text-slate-500 mb-1">เลือกรหัสนก</label><select id="health-bird-select" required class="w-full border rounded-xl p-2 text-sm"></select></div>
@@ -1022,8 +1032,8 @@
             <option value="ตรวจสุขภาพทั่วไป">🩺 ตรวจสุขภาพทั่วไป</option>
           </select>
         </div>
-        <div><label class="block text-xs text-slate-500 mb-1">รายละเอียด / อาการ</label><input id="health-detail" required placeholder="เช่น ถ่ายพยาธิตามรอบ 6 เดือน" class="w-full border rounded-xl p-2 text-sm"></div>
-        <div><label class="block text-xs text-slate-500 mb-1">ชื่อยา / โดสที่ใช้</label><input id="health-medicine" placeholder="เช่น Ronivet-S 1 ช้อน / น้ำ 1 ลิตร" class="w-full border rounded-xl p-2 text-sm"></div>
+        <div><label class="block text-xs text-slate-500 mb-1">รายละเอียด / อาการ</label><input type="text" id="health-detail" required placeholder="เช่น ถ่ายพยาธิตามรอบ 6 เดือน" class="w-full border rounded-xl p-2 text-sm"></div>
+        <div><label class="block text-xs text-slate-500 mb-1">ชื่อยา / โดสที่ใช้</label><input type="text" id="health-medicine" placeholder="เช่น Ronivet-S 1 ช้อน / น้ำ 1 ลิตร" class="w-full border rounded-xl p-2 text-sm"></div>
         <div><label class="block text-xs text-slate-500 mb-1">วันที่</label><input type="date" id="health-date" required class="w-full border rounded-xl p-2 text-sm"></div>
         <div class="flex space-x-2 pt-2"><button type="button" onclick="closeModal('modal-health')" class="w-1/2 border py-2 rounded-xl text-sm">ยกเลิก</button><button type="submit" class="w-1/2 bg-rose-600 text-white py-2 rounded-xl text-sm font-bold">บันทึกประวัติ</button></div>
       </form>
@@ -1033,7 +1043,7 @@
   <!-- MODAL 4: บันทึกไข่รายใบ -->
   <div id="modal-egg" onclick="closeOnBackdrop(event, 'modal-egg')" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-3 relative max-h-[85vh] overflow-y-auto">
-      <button onclick="closeModal('modal-egg')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold">✕</button>
+      <button type="button" onclick="closeModal('modal-egg')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold">✕</button>
       <h3 class="font-bold text-base text-slate-800 pr-6">🥚 บันทึกข้อมูลไข่รายใบ</h3>
       <form id="form-egg" onsubmit="submitAddEgg(event)" class="space-y-3">
         <div><label class="block text-xs text-slate-500 mb-1">เลือกคู่พ่อแม่พันธุ์</label><select id="select-pair" required class="w-full border rounded-xl p-2 text-sm"></select></div>
@@ -1066,7 +1076,7 @@
   <!-- MODAL 5: ใบเซอร์ & QR Tag -->
   <div id="modal-cert" onclick="closeOnBackdrop(event, 'modal-cert')" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50 overflow-y-auto">
     <div class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl relative my-auto max-h-[85vh] overflow-y-auto">
-      <button onclick="closeModal('modal-cert')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold z-10">✕</button>
+      <button type="button" onclick="closeModal('modal-cert')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold z-10">✕</button>
       <div id="cert-modal-body"></div>
     </div>
   </div>
