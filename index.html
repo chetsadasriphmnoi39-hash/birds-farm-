@@ -12,7 +12,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // ค่า Firebase Config ของคุณ
     const firebaseConfig = {
       apiKey: "AIzaSyDWi5aJTt4fhY6eHgup0IFzq8maOc30cZI",
       authDomain: "farm-cce21.firebaseapp.com",
@@ -23,59 +22,105 @@
       measurementId: "G-7ZXW7LELNF"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 1. ฟังก์ชันเพิ่มนก
+    // 1. เพิ่มนก (ระบุสายพันธุ์)
     window.addBirdPrompt = async () => {
-      const name = prompt("ใส่รหัส/ชื่อนก (เช่น GC-001 หรือ กรีนชีค):");
+      const name = prompt("1. ใส่รหัส/ชื่อนก (เช่น GC-001):");
       if (!name) return;
+      const species = prompt("2. ระบุสายพันธุ์ (เช่น Green-cheeked Conure, Sun Conure):") || "ไม่ระบุสายพันธุ์";
+      
       try {
-        await addDoc(collection(db, "birds"), { name: name, createdAt: new Date() });
+        await addDoc(collection(db, "birds"), {
+          name: name,
+          species: species,
+          createdAt: new Date()
+        });
         alert("บันทึกข้อมูลนกสำเร็จ!");
       } catch (e) { alert("เกิดข้อผิดพลาด: " + e.message); }
     };
 
-    // 2. ฟังก์ชันเพิ่มคู่พันธุ์
+    // 2. เพิ่มคู่พ่อแม่พันธุ์ (ระบุสายพันธุ์)
     window.addPairPrompt = async () => {
-      const pairName = prompt("ใส่ชื่อ/รหัสคู่พ่อแม่พันธุ์ (เช่น คู่ที่ 1 - Green-cheek):");
+      const pairName = prompt("1. ตั้งชื่อคู่ผสม (เช่น คู่ที่ 1 - พ่อกรีนชีค x แม่ซัน):");
       if (!pairName) return;
+      const fatherSpecies = prompt("2. สายพันธุ์พ่อพันธุ์ (เช่น Green-cheeked Conure):") || "ไม่ระบุ";
+      const motherSpecies = prompt("3. สายพันธุ์แม่พันธุ์:") || "ไม่ระบุ";
+
       try {
-        await addDoc(collection(db, "pairs"), { name: pairName, createdAt: new Date() });
-        alert("บันทึกคู่พ่อแม่พันธุ์สำเร็จ!");
+        await addDoc(collection(db, "pairs"), {
+          name: pairName,
+          fatherSpecies: fatherSpecies,
+          motherSpecies: motherSpecies,
+          totalEggs: 0,
+          totalChicks: 0,
+          createdAt: new Date()
+        });
+        alert("เพิ่มคู่พ่อแม่พันธุ์สำเร็จ!");
       } catch (e) { alert("เกิดข้อผิดพลาด: " + e.message); }
     };
 
-    // 3. ฟังก์ชันเพิ่มรายรับ
-    window.addIncomePrompt = async () => {
-      const amount = prompt("ใส่จำนวนเงินรายรับ (บาท):");
-      if (!amount || isNaN(amount)) return alert("กรุณาใส่ตัวเลขจำนวนเงิน");
-      const detail = prompt("รายละเอียด (เช่น ขายลูกนก):") || "รายรับ";
+    // 3. บันทึกการไข่ / ลูกนก ของคู่พ่อแม่พันธุ์
+    window.addEggPrompt = async () => {
+      const pairName = prompt("1. ระบุชื่อคู่ที่ไข่ (เช่น คู่ที่ 1):");
+      if (!pairName) return;
+      const eggDate = prompt("2. วันที่ไข่ (เช่น 13 ส.ค. 69):") || new Date().toLocaleDateString('th-TH');
+      const eggCount = prompt("3. จำนวนไข่ในรอบนี้ (ใบ):") || "1";
+      const chickCount = prompt("4. ฟักเป็นลูกนกกี่ตัว (ตัว):") || "0";
+
       try {
-        await addDoc(collection(db, "transactions"), { type: "income", amount: Number(amount), detail: detail, createdAt: new Date() });
-        alert("บันทึกรายรับสำเร็จ!");
+        await addDoc(collection(db, "eggs"), {
+          pairName: pairName,
+          eggDate: eggDate,
+          eggCount: Number(eggCount),
+          chickCount: Number(chickCount),
+          createdAt: new Date()
+        });
+        alert("บันทึกข้อมูลการไข่และลูกนกสำเร็จ!");
       } catch (e) { alert("เกิดข้อผิดพลาด: " + e.message); }
     };
 
-    // 4. ฟังก์ชันเพิ่มรายจ่าย
-    window.addExpensePrompt = async () => {
-      const amount = prompt("ใส่จำนวนเงินรายจ่าย (บาท):");
-      if (!amount || isNaN(amount)) return alert("กรุณาใส่ตัวเลขจำนวนเงิน");
-      const detail = prompt("รายละเอียด (เช่น ค่าวิตามิน, อาหาร):") || "รายจ่าย";
-      try {
-        await addDoc(collection(db, "transactions"), { type: "expense", amount: Number(amount), detail: detail, createdAt: new Date() });
-        alert("บันทึกรายจ่ายสำเร็จ!");
-      } catch (e) { alert("เกิดข้อผิดพลาด: " + e.message); }
-    };
-
-    // ดึงข้อมูล Realtime มาแสดงบนหน้าจอ
+    // Realtime Updates
     onSnapshot(collection(db, "birds"), (snapshot) => {
       document.getElementById('total-birds').innerText = snapshot.size + " ตัว";
+      const list = document.getElementById('birds-list');
+      list.innerHTML = "";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        list.innerHTML += `<div class="p-2 bg-slate-50 rounded border flex justify-between text-xs"><span><strong>${data.name}</strong></span><span class="text-slate-500">${data.species}</span></div>`;
+      });
     });
 
     onSnapshot(collection(db, "pairs"), (snapshot) => {
       document.getElementById('total-pairs').innerText = snapshot.size + " คู่";
+      const list = document.getElementById('pairs-list');
+      list.innerHTML = "";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        list.innerHTML += `<div class="p-2.5 bg-slate-50 rounded-lg border text-xs space-y-1">
+          <div class="font-bold text-slate-800">${data.name}</div>
+          <div class="text-slate-500">พ่อ: ${data.fatherSpecies} | แม่: ${data.motherSpecies}</div>
+        </div>`;
+      });
+    });
+
+    onSnapshot(collection(db, "eggs"), (snapshot) => {
+      let eggs = 0;
+      let chicks = 0;
+      const list = document.getElementById('eggs-list');
+      list.innerHTML = "";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        eggs += data.eggCount || 0;
+        chicks += data.chickCount || 0;
+        list.innerHTML += `<div class="p-2 bg-amber-50 rounded border border-amber-100 text-xs flex justify-between">
+          <span>❤️ <strong>${data.pairName}</strong> (วันที่ ${data.eggDate})</span>
+          <span class="font-medium text-amber-800">🥚 ${data.eggCount} ใบ | 🐣 ${data.chickCount} ตัว</span>
+        </div>`;
+      });
+      document.getElementById('total-eggs').innerText = eggs + " ใบ";
+      document.getElementById('total-chicks').innerText = chicks + " ตัว";
     });
   </script>
 
@@ -85,47 +130,67 @@
 </head>
 <body class="bg-slate-50 min-h-screen pb-12">
 
-  <!-- Header มือถือ -->
+  <!-- Header -->
   <header class="bg-[#0f172a] text-white p-4 flex justify-between items-center sticky top-0 z-10 shadow">
     <div>
       <h1 class="text-lg font-bold">Birds My Boss</h1>
-      <p class="text-xs text-slate-400">Farm System V2</p>
+      <p class="text-xs text-slate-400">Farm System V3</p>
     </div>
     <button onclick="addBirdPrompt()" class="bg-[#0d9488] text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-teal-700">
       + เพิ่มนก
     </button>
   </header>
 
-  <!-- เนื้อหาหลัก -->
+  <!-- Content Main -->
   <main class="p-4 space-y-4">
     <!-- Stat Cards -->
     <div class="grid grid-cols-2 gap-3">
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+      <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-100">
         <p class="text-xs text-slate-500">นกทั้งหมด</p>
-        <h3 class="text-xl font-bold text-slate-800 mt-1" id="total-birds">0 ตัว</h3>
+        <h3 class="text-xl font-bold text-slate-800 mt-0.5" id="total-birds">0 ตัว</h3>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+      <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-100">
         <p class="text-xs text-slate-500">คู่พ่อแม่พันธุ์</p>
-        <h3 class="text-xl font-bold text-slate-800 mt-1" id="total-pairs">0 คู่</h3>
+        <h3 class="text-xl font-bold text-slate-800 mt-0.5" id="total-pairs">0 คู่</h3>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-        <p class="text-xs text-slate-500">ไข่</p>
-        <h3 class="text-xl font-bold text-slate-800 mt-1">0 ใบ</h3>
+      <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-500">ไข่รวม</p>
+        <h3 class="text-xl font-bold text-amber-600 mt-0.5" id="total-eggs">0 ใบ</h3>
       </div>
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-        <p class="text-xs text-slate-500">ลูกนก</p>
-        <h3 class="text-xl font-bold text-slate-800 mt-1">0 ตัว</h3>
+      <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-500">ลูกนกรวม</p>
+        <h3 class="text-xl font-bold text-emerald-600 mt-0.5" id="total-chicks">0 ตัว</h3>
       </div>
     </div>
 
-    <!-- ทางลัด Quick Actions -->
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-      <h3 class="font-bold text-slate-800 text-sm mb-3">⚡ ทางลัดจัดการฟาร์ม</h3>
-      <div class="grid grid-cols-2 gap-2">
-        <button onclick="addBirdPrompt()" class="bg-[#0d9488] text-white py-2 rounded-lg text-sm font-medium">+ เพิ่มนก</button>
-        <button onclick="addPairPrompt()" class="border border-slate-200 text-slate-700 py-2 rounded-lg text-sm hover:bg-slate-50">❤️ เพิ่มคู่</button>
-        <button onclick="addExpensePrompt()" class="border border-slate-200 text-slate-700 py-2 rounded-lg text-sm hover:bg-slate-50">+ รายจ่าย</button>
-        <button onclick="addIncomePrompt()" class="border border-slate-200 text-slate-700 py-2 rounded-lg text-sm hover:bg-slate-50">+ รายรับ</button>
+    <!-- ปุ่มทางลัด -->
+    <div class="grid grid-cols-3 gap-2">
+      <button onclick="addBirdPrompt()" class="bg-[#0d9488] text-white py-2 rounded-lg text-xs font-medium">+ เพิ่มนก</button>
+      <button onclick="addPairPrompt()" class="bg-rose-500 text-white py-2 rounded-lg text-xs font-medium">❤️ จับคู่</button>
+      <button onclick="addEggPrompt()" class="bg-amber-500 text-white py-2 rounded-lg text-xs font-medium">🥚 บันทึกไข่/ลูกนก</button>
+    </div>
+
+    <!-- รายชื่อคู่พ่อแม่พันธุ์ -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-2">
+      <h3 class="font-bold text-slate-800 text-sm">❤️ คู่พ่อแม่พันธุ์ & สายพันธุ์</h3>
+      <div id="pairs-list" class="space-y-2">
+        <p class="text-xs text-slate-400">ยังไม่มีข้อมูลคู่พันธุ์</p>
+      </div>
+    </div>
+
+    <!-- บันทึกรอบการไข่ล่าสุด -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-2">
+      <h3 class="font-bold text-slate-800 text-sm">🪺 บันทึกการไข่ & ฟักลูกนก</h3>
+      <div id="eggs-list" class="space-y-1.5">
+        <p class="text-xs text-slate-400">ยังไม่มีประวัติการไข่</p>
+      </div>
+    </div>
+
+    <!-- ทะเบียนนกทั้งหมด -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-2">
+      <h3 class="font-bold text-slate-800 text-sm">🦜 รายชื่อนกทั้งหมด</h3>
+      <div id="birds-list" class="space-y-1.5">
+        <p class="text-xs text-slate-400">ยังไม่มีข้อมูลนก</p>
       </div>
     </div>
   </main>
