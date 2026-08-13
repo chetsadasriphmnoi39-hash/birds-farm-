@@ -27,25 +27,55 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ฟังก์ชันกดเพิ่มนก
+    // 1. ฟังก์ชันเพิ่มนก
     window.addBirdPrompt = async () => {
       const name = prompt("ใส่รหัส/ชื่อนก (เช่น GC-001 หรือ กรีนชีค):");
       if (!name) return;
-
       try {
-        await addDoc(collection(db, "birds"), {
-          name: name,
-          createdAt: new Date()
-        });
+        await addDoc(collection(db, "birds"), { name: name, createdAt: new Date() });
         alert("บันทึกข้อมูลนกสำเร็จ!");
-      } catch (e) {
-        alert("เกิดข้อผิดพลาด: " + e.message);
-      }
+      } catch (e) { alert("เกิดข้อผิดพลาด: " + e.message); }
     };
 
-    // นับจำนวนนกแบบ Realtime
+    // 2. ฟังก์ชันเพิ่มคู่พันธุ์
+    window.addPairPrompt = async () => {
+      const pairName = prompt("ใส่ชื่อ/รหัสคู่พ่อแม่พันธุ์ (เช่น คู่ที่ 1 - Green-cheek):");
+      if (!pairName) return;
+      try {
+        await addDoc(collection(db, "pairs"), { name: pairName, createdAt: new Date() });
+        alert("บันทึกคู่พ่อแม่พันธุ์สำเร็จ!");
+      } catch (e) { alert("เกิดข้อผิดพลาด: " + e.message); }
+    };
+
+    // 3. ฟังก์ชันเพิ่มรายรับ
+    window.addIncomePrompt = async () => {
+      const amount = prompt("ใส่จำนวนเงินรายรับ (บาท):");
+      if (!amount || isNaN(amount)) return alert("กรุณาใส่ตัวเลขจำนวนเงิน");
+      const detail = prompt("รายละเอียด (เช่น ขายลูกนก):") || "รายรับ";
+      try {
+        await addDoc(collection(db, "transactions"), { type: "income", amount: Number(amount), detail: detail, createdAt: new Date() });
+        alert("บันทึกรายรับสำเร็จ!");
+      } catch (e) { alert("เกิดข้อผิดพลาด: " + e.message); }
+    };
+
+    // 4. ฟังก์ชันเพิ่มรายจ่าย
+    window.addExpensePrompt = async () => {
+      const amount = prompt("ใส่จำนวนเงินรายจ่าย (บาท):");
+      if (!amount || isNaN(amount)) return alert("กรุณาใส่ตัวเลขจำนวนเงิน");
+      const detail = prompt("รายละเอียด (เช่น ค่าวิตามิน, อาหาร):") || "รายจ่าย";
+      try {
+        await addDoc(collection(db, "transactions"), { type: "expense", amount: Number(amount), detail: detail, createdAt: new Date() });
+        alert("บันทึกรายจ่ายสำเร็จ!");
+      } catch (e) { alert("เกิดข้อผิดพลาด: " + e.message); }
+    };
+
+    // ดึงข้อมูล Realtime มาแสดงบนหน้าจอ
     onSnapshot(collection(db, "birds"), (snapshot) => {
       document.getElementById('total-birds').innerText = snapshot.size + " ตัว";
+    });
+
+    onSnapshot(collection(db, "pairs"), (snapshot) => {
+      document.getElementById('total-pairs').innerText = snapshot.size + " คู่";
     });
   </script>
 
@@ -66,7 +96,7 @@
     </button>
   </header>
 
-  <!-- เนื้อหาหลัก (จัด Layout ให้พอดีจอมือถือ) -->
+  <!-- เนื้อหาหลัก -->
   <main class="p-4 space-y-4">
     <!-- Stat Cards -->
     <div class="grid grid-cols-2 gap-3">
@@ -76,7 +106,7 @@
       </div>
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
         <p class="text-xs text-slate-500">คู่พ่อแม่พันธุ์</p>
-        <h3 class="text-xl font-bold text-slate-800 mt-1">0 คู่</h3>
+        <h3 class="text-xl font-bold text-slate-800 mt-1" id="total-pairs">0 คู่</h3>
       </div>
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
         <p class="text-xs text-slate-500">ไข่</p>
@@ -93,9 +123,9 @@
       <h3 class="font-bold text-slate-800 text-sm mb-3">⚡ ทางลัดจัดการฟาร์ม</h3>
       <div class="grid grid-cols-2 gap-2">
         <button onclick="addBirdPrompt()" class="bg-[#0d9488] text-white py-2 rounded-lg text-sm font-medium">+ เพิ่มนก</button>
-        <button class="border border-slate-200 text-slate-700 py-2 rounded-lg text-sm">❤️ เพิ่มคู่</button>
-        <button class="border border-slate-200 text-slate-700 py-2 rounded-lg text-sm">+ รายจ่าย</button>
-        <button class="border border-slate-200 text-slate-700 py-2 rounded-lg text-sm">+ รายรับ</button>
+        <button onclick="addPairPrompt()" class="border border-slate-200 text-slate-700 py-2 rounded-lg text-sm hover:bg-slate-50">❤️ เพิ่มคู่</button>
+        <button onclick="addExpensePrompt()" class="border border-slate-200 text-slate-700 py-2 rounded-lg text-sm hover:bg-slate-50">+ รายจ่าย</button>
+        <button onclick="addIncomePrompt()" class="border border-slate-200 text-slate-700 py-2 rounded-lg text-sm hover:bg-slate-50">+ รายรับ</button>
       </div>
     </div>
   </main>
