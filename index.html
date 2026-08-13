@@ -3,11 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Birds My Boss - Farm System</title>
-  <!-- Tailwind CSS -->
+  <title>Birds - Full System V6</title>
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -25,103 +23,233 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 1. เพิ่มนก (ระบุสายพันธุ์)
-    window.addBirdPrompt = async () => {
-      const name = prompt("1. ใส่รหัส/ชื่อนก (เช่น GC-001):");
-      if (!name) return;
-      const species = prompt("2. ระบุสายพันธุ์ (เช่น Green-cheeked Conure, Sun Conure):") || "ไม่ระบุสายพันธุ์";
-      
+    let globalBirds = [];
+    let globalPairs = [];
+
+    // 1. ระบบเพิ่มนก
+    window.submitAddBird = async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('bird-name').value;
+      const species = document.getElementById('bird-species').value;
+      const gender = document.getElementById('bird-gender').value;
+
       try {
-        await addDoc(collection(db, "birds"), {
-          name: name,
-          species: species,
-          createdAt: new Date()
-        });
-        alert("บันทึกข้อมูลนกสำเร็จ!");
-      } catch (e) { alert("เกิดข้อผิดพลาด: " + e.message); }
+        await addDoc(collection(db, "birds"), { name, species, gender, createdAt: new Date() });
+        alert("บันทึกนกเข้าทะเบียนเรียบร้อย!");
+        closeModal('modal-bird');
+        document.getElementById('form-bird').reset();
+      } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
     };
 
-    // 2. เพิ่มคู่พ่อแม่พันธุ์ (ระบุสายพันธุ์)
-    window.addPairPrompt = async () => {
-      const pairName = prompt("1. ตั้งชื่อคู่ผสม (เช่น คู่ที่ 1 - พ่อกรีนชีค x แม่ซัน):");
-      if (!pairName) return;
-      const fatherSpecies = prompt("2. สายพันธุ์พ่อพันธุ์ (เช่น Green-cheeked Conure):") || "ไม่ระบุ";
-      const motherSpecies = prompt("3. สายพันธุ์แม่พันธุ์:") || "ไม่ระบุ";
+    // 2. ระบบจับคู่
+    window.submitAddPair = async (e) => {
+      e.preventDefault();
+      const fatherId = document.getElementById('select-father').value;
+      const motherId = document.getElementById('select-mother').value;
+      const pairName = document.getElementById('pair-custom-name').value;
+
+      const father = globalBirds.find(b => b.id === fatherId);
+      const mother = globalBirds.find(b => b.id === motherId);
+
+      if (!father || !mother) return alert("กรุณาเลือกพ่อและแม่พันธุ์");
 
       try {
         await addDoc(collection(db, "pairs"), {
-          name: pairName,
-          fatherSpecies: fatherSpecies,
-          motherSpecies: motherSpecies,
-          totalEggs: 0,
-          totalChicks: 0,
+          name: pairName || `คู่ ${father.name} x ${mother.name}`,
+          fatherName: father.name, fatherSpecies: father.species,
+          motherName: mother.name, motherSpecies: mother.species,
           createdAt: new Date()
         });
-        alert("เพิ่มคู่พ่อแม่พันธุ์สำเร็จ!");
-      } catch (e) { alert("เกิดข้อผิดพลาด: " + e.message); }
+        alert("จับคู่พ่อแม่พันธุ์สำเร็จ!");
+        closeModal('modal-pair');
+        document.getElementById('form-pair').reset();
+      } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
     };
 
-    // 3. บันทึกการไข่ / ลูกนก ของคู่พ่อแม่พันธุ์
-    window.addEggPrompt = async () => {
-      const pairName = prompt("1. ระบุชื่อคู่ที่ไข่ (เช่น คู่ที่ 1):");
-      if (!pairName) return;
-      const eggDate = prompt("2. วันที่ไข่ (เช่น 13 ส.ค. 69):") || new Date().toLocaleDateString('th-TH');
-      const eggCount = prompt("3. จำนวนไข่ในรอบนี้ (ใบ):") || "1";
-      const chickCount = prompt("4. ฟักเป็นลูกนกกี่ตัว (ตัว):") || "0";
+    // 3. ระบบบันทึกไข่รายใบ
+    window.submitAddEgg = async (e) => {
+      e.preventDefault();
+      const pairId = document.getElementById('select-pair').value;
+      const eggNo = document.getElementById('egg-number').value;
+      const eggDate = document.getElementById('egg-date').value;
+      const eggStatus = document.getElementById('egg-status').value;
+
+      const pair = globalPairs.find(p => p.id === pairId);
+      if (!pair) return alert("กรุณาเลือกคู่พ่อแม่พันธุ์");
+
+      const layDateObj = new Date(eggDate);
+      const hatchDateObj = new Date(layDateObj);
+      hatchDateObj.setDate(hatchDateObj.getDate() + 18);
+      const estHatchDate = hatchDateObj.toISOString().split('T')[0];
 
       try {
-        await addDoc(collection(db, "eggs"), {
-          pairName: pairName,
-          eggDate: eggDate,
-          eggCount: Number(eggCount),
-          chickCount: Number(chickCount),
-          createdAt: new Date()
+        await addDoc(collection(db, "egg_details"), {
+          pairId: pair.id, pairName: pair.name, eggNo: Number(eggNo),
+          layDate: eggDate, estHatchDate, status: eggStatus, createdAt: new Date()
         });
-        alert("บันทึกข้อมูลการไข่และลูกนกสำเร็จ!");
-      } catch (e) { alert("เกิดข้อผิดพลาด: " + e.message); }
+        alert(`บันทึกไข่ใบที่ ${eggNo} เรียบร้อย!`);
+        closeModal('modal-egg');
+        document.getElementById('form-egg').reset();
+      } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
     };
 
-    // Realtime Updates
+    // 4. ระบบการเงิน (บันทึกรายรับ/รายจ่าย)
+    window.submitFinance = async (e) => {
+      e.preventDefault();
+      const type = document.getElementById('finance-type').value;
+      const category = document.getElementById('finance-category').value;
+      const amount = Number(document.getElementById('finance-amount').value);
+      const detail = document.getElementById('finance-detail').value;
+      const date = document.getElementById('finance-date').value;
+
+      try {
+        await addDoc(collection(db, "transactions"), {
+          type, category, amount, detail, date, createdAt: new Date()
+        });
+        alert(`บันทึก${type === 'income' ? 'รายรับ' : 'รายจ่าย'} เรียบร้อย!`);
+        closeModal('modal-finance');
+        document.getElementById('form-finance').reset();
+      } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
+    };
+
+    // Realtime Sync Data
     onSnapshot(collection(db, "birds"), (snapshot) => {
-      document.getElementById('total-birds').innerText = snapshot.size + " ตัว";
+      globalBirds = [];
       const list = document.getElementById('birds-list');
+      const fatherSelect = document.getElementById('select-father');
+      const motherSelect = document.getElementById('select-mother');
+      
       list.innerHTML = "";
+      fatherSelect.innerHTML = '<option value="">-- เลือกพ่อพันธุ์ (♂) --</option>';
+      motherSelect.innerHTML = '<option value="">-- เลือกแม่พันธุ์ (♀) --</option>';
+
       snapshot.forEach(doc => {
-        const data = doc.data();
-        list.innerHTML += `<div class="p-2 bg-slate-50 rounded border flex justify-between text-xs"><span><strong>${data.name}</strong></span><span class="text-slate-500">${data.species}</span></div>`;
+        const item = { id: doc.id, ...doc.data() };
+        globalBirds.push(item);
+
+        const genderBadge = item.gender === 'ผู้' ? '♂ ผู้' : (item.gender === 'เมีย' ? '♀ เมีย' : '❓ ไม่ระบุ');
+        const badgeColor = item.gender === 'ผู้' ? 'bg-blue-100 text-blue-700' : (item.gender === 'เมีย' ? 'bg-pink-100 text-pink-700' : 'bg-slate-100 text-slate-600');
+        
+        list.innerHTML += `<div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center text-xs">
+          <div><span class="font-bold text-slate-800 text-sm">${item.name}</span> <span class="text-slate-500 ml-1">(${item.species})</span></div>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${genderBadge}</span>
+        </div>`;
+
+        const option = `<option value="${item.id}">${item.name} (${item.species})</option>`;
+        if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') fatherSelect.innerHTML += option;
+        if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') motherSelect.innerHTML += option;
       });
+
+      document.getElementById('total-birds').innerText = snapshot.size + " ตัว";
     });
 
     onSnapshot(collection(db, "pairs"), (snapshot) => {
-      document.getElementById('total-pairs').innerText = snapshot.size + " คู่";
+      globalPairs = [];
       const list = document.getElementById('pairs-list');
+      const pairSelect = document.getElementById('select-pair');
+      
       list.innerHTML = "";
+      pairSelect.innerHTML = '<option value="">-- เลือกคู่พ่อแม่พันธุ์ --</option>';
+
       snapshot.forEach(doc => {
-        const data = doc.data();
-        list.innerHTML += `<div class="p-2.5 bg-slate-50 rounded-lg border text-xs space-y-1">
-          <div class="font-bold text-slate-800">${data.name}</div>
-          <div class="text-slate-500">พ่อ: ${data.fatherSpecies} | แม่: ${data.motherSpecies}</div>
+        const item = { id: doc.id, ...doc.data() };
+        globalPairs.push(item);
+
+        list.innerHTML += `<div class="p-3 bg-white rounded-xl border border-rose-100 shadow-sm text-xs space-y-1">
+          <div class="font-bold text-rose-900 text-sm">❤️ ${item.name}</div>
+          <div class="text-slate-600">♂ พ่อ: <strong>${item.fatherName}</strong> <span class="text-slate-400">(${item.fatherSpecies})</span></div>
+          <div class="text-slate-600">♀ แม่: <strong>${item.motherName}</strong> <span class="text-slate-400">(${item.motherSpecies})</span></div>
         </div>`;
+
+        pairSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
       });
+
+      document.getElementById('total-pairs').innerText = snapshot.size + " คู่";
     });
 
-    onSnapshot(collection(db, "eggs"), (snapshot) => {
-      let eggs = 0;
-      let chicks = 0;
-      const list = document.getElementById('eggs-list');
+    onSnapshot(collection(db, "egg_details"), (snapshot) => {
+      const list = document.getElementById('egg-details-list');
       list.innerHTML = "";
+      let totalEggsCount = 0;
+      let totalHatchedCount = 0;
+
+      const groupedEggs = {};
       snapshot.forEach(doc => {
         const data = doc.data();
-        eggs += data.eggCount || 0;
-        chicks += data.chickCount || 0;
-        list.innerHTML += `<div class="p-2 bg-amber-50 rounded border border-amber-100 text-xs flex justify-between">
-          <span>❤️ <strong>${data.pairName}</strong> (วันที่ ${data.eggDate})</span>
-          <span class="font-medium text-amber-800">🥚 ${data.eggCount} ใบ | 🐣 ${data.chickCount} ตัว</span>
-        </div>`;
+        totalEggsCount++;
+        if(data.status === 'ฟักแล้ว') totalHatchedCount++;
+        if (!groupedEggs[data.pairName]) groupedEggs[data.pairName] = [];
+        groupedEggs[data.pairName].push(data);
       });
-      document.getElementById('total-eggs').innerText = eggs + " ใบ";
-      document.getElementById('total-chicks').innerText = chicks + " ตัว";
+
+      for (const pairName in groupedEggs) {
+        const eggs = groupedEggs[pairName].sort((a,b) => a.eggNo - b.eggNo);
+        let eggsHtml = '';
+        eggs.forEach(egg => {
+          let statusBg = 'bg-slate-100 text-slate-700';
+          if (egg.status === 'มีเชื้อ') statusBg = 'bg-emerald-100 text-emerald-800';
+          if (egg.status === 'ฟักแล้ว') statusBg = 'bg-teal-600 text-white font-bold';
+          if (egg.status === 'ไม่มีเชื้อ') statusBg = 'bg-rose-100 text-rose-700';
+
+          eggsHtml += `
+            <div class="p-2 bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center text-xs">
+              <div>
+                <span class="font-bold text-amber-900">🥚 ใบที่ ${egg.eggNo}</span>
+                <span class="text-[11px] text-slate-500 ml-2">ไข่: ${egg.layDate}</span>
+                <div class="text-[10px] text-teal-600">🐣 ฟักประมาณ: ${egg.estHatchDate}</div>
+              </div>
+              <span class="px-2 py-1 rounded text-[10px] ${statusBg}">${egg.status}</span>
+            </div>`;
+        });
+
+        list.innerHTML += `
+          <div class="bg-white p-3 rounded-xl border border-amber-200 shadow-sm space-y-2">
+            <div class="flex justify-between items-center border-b pb-2">
+              <span class="font-bold text-slate-800 text-xs">🪺 ${pairName}</span>
+              <span class="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">รวม ${eggs.length} ใบ</span>
+            </div>
+            <div class="space-y-1.5">${eggsHtml}</div>
+          </div>`;
+      }
+
+      document.getElementById('total-eggs').innerText = totalEggsCount + " ใบ";
+      document.getElementById('total-chicks').innerText = totalHatchedCount + " ตัว";
     });
+
+    // Sync การเงิน Realtime
+    onSnapshot(collection(db, "transactions"), (snapshot) => {
+      let incomeSum = 0;
+      let expenseSum = 0;
+      const list = document.getElementById('finance-list');
+      list.innerHTML = "";
+
+      snapshot.forEach(doc => {
+        const item = doc.data();
+        if (item.type === 'income') incomeSum += item.amount;
+        if (item.type === 'expense') expenseSum += item.amount;
+
+        const isIncome = item.type === 'income';
+        const color = isIncome ? 'text-emerald-600' : 'text-rose-600';
+        const sign = isIncome ? '+' : '-';
+
+        list.innerHTML += `
+          <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-100 flex justify-between items-center text-xs">
+            <div>
+              <div class="font-bold text-slate-800">${item.detail || item.category}</div>
+              <div class="text-[10px] text-slate-400">${item.date} | ${item.category}</div>
+            </div>
+            <div class="font-bold ${color} text-sm">${sign}฿${item.amount.toLocaleString()}</div>
+          </div>`;
+      });
+
+      const netBalance = incomeSum - expenseSum;
+      document.getElementById('stat-income').innerText = "฿" + incomeSum.toLocaleString();
+      document.getElementById('stat-expense').innerText = "฿" + expenseSum.toLocaleString();
+      document.getElementById('stat-balance').innerText = "฿" + netBalance.toLocaleString();
+    });
+
+    window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
+    window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
   </script>
 
   <style>
@@ -134,16 +262,17 @@
   <header class="bg-[#0f172a] text-white p-4 flex justify-between items-center sticky top-0 z-10 shadow">
     <div>
       <h1 class="text-lg font-bold">Birds My Boss</h1>
-      <p class="text-xs text-slate-400">Farm System V3</p>
+      <p class="text-xs text-slate-400">Farm System V6 Full</p>
     </div>
-    <button onclick="addBirdPrompt()" class="bg-[#0d9488] text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-teal-700">
+    <button onclick="openModal('modal-bird')" class="bg-[#0d9488] text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-teal-700">
       + เพิ่มนก
     </button>
   </header>
 
-  <!-- Content Main -->
-  <main class="p-4 space-y-4">
-    <!-- Stat Cards -->
+  <!-- Main Content -->
+  <main class="p-4 space-y-4 max-w-lg mx-auto">
+    
+    <!-- Stat Dashboard (นก / ไข่) -->
     <div class="grid grid-cols-2 gap-3">
       <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-100">
         <p class="text-xs text-slate-500">นกทั้งหมด</p>
@@ -154,46 +283,215 @@
         <h3 class="text-xl font-bold text-slate-800 mt-0.5" id="total-pairs">0 คู่</h3>
       </div>
       <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-100">
-        <p class="text-xs text-slate-500">ไข่รวม</p>
+        <p class="text-xs text-slate-500">ไข่รวมทั้งหมด</p>
         <h3 class="text-xl font-bold text-amber-600 mt-0.5" id="total-eggs">0 ใบ</h3>
       </div>
       <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-100">
-        <p class="text-xs text-slate-500">ลูกนกรวม</p>
+        <p class="text-xs text-slate-500">ลูกนกที่ฟักแล้ว</p>
         <h3 class="text-xl font-bold text-emerald-600 mt-0.5" id="total-chicks">0 ตัว</h3>
       </div>
     </div>
 
-    <!-- ปุ่มทางลัด -->
-    <div class="grid grid-cols-3 gap-2">
-      <button onclick="addBirdPrompt()" class="bg-[#0d9488] text-white py-2 rounded-lg text-xs font-medium">+ เพิ่มนก</button>
-      <button onclick="addPairPrompt()" class="bg-rose-500 text-white py-2 rounded-lg text-xs font-medium">❤️ จับคู่</button>
-      <button onclick="addEggPrompt()" class="bg-amber-500 text-white py-2 rounded-lg text-xs font-medium">🥚 บันทึกไข่/ลูกนก</button>
+    <!-- สรุปการเงิน Dashboard -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-3">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-slate-800 text-sm">💰 สรุปการเงินฟาร์ม</h3>
+        <button onclick="openModal('modal-finance')" class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-xs font-semibold">+ บันทึกการเงิน</button>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+        <div>
+          <span class="text-[10px] text-slate-400 block">รายรับ</span>
+          <span id="stat-income" class="font-bold text-emerald-600 text-sm">฿0</span>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 block">รายจ่าย</span>
+          <span id="stat-expense" class="font-bold text-rose-600 text-sm">฿0</span>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 block">คงเหลือสุทธิ</span>
+          <span id="stat-balance" class="font-bold text-slate-800 text-sm">฿0</span>
+        </div>
+      </div>
     </div>
 
-    <!-- รายชื่อคู่พ่อแม่พันธุ์ -->
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-2">
-      <h3 class="font-bold text-slate-800 text-sm">❤️ คู่พ่อแม่พันธุ์ & สายพันธุ์</h3>
+    <!-- Quick Buttons -->
+    <div class="grid grid-cols-4 gap-1.5">
+      <button onclick="openModal('modal-bird')" class="bg-[#0d9488] text-white py-2 rounded-lg text-[11px] font-semibold">+ นกใหม่</button>
+      <button onclick="openModal('modal-pair')" class="bg-rose-500 text-white py-2 rounded-lg text-[11px] font-semibold">❤️ จับคู่</button>
+      <button onclick="openModal('modal-egg')" class="bg-amber-500 text-white py-2 rounded-lg text-[11px] font-semibold">🥚 บันทึกไข่</button>
+      <button onclick="openModal('modal-finance')" class="bg-emerald-600 text-white py-2 rounded-lg text-[11px] font-semibold">💰 บันทึกเงิน</button>
+    </div>
+
+    <!-- ประวัติธุรกรรมการเงินล่าสุด -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-3">
+      <h3 class="font-bold text-slate-800 text-sm">💵 ประวัติรายรับ - รายจ่ายล่าสุด</h3>
+      <div id="finance-list" class="space-y-2">
+        <p class="text-xs text-slate-400">ยังไม่มีประวัติการเงิน</p>
+      </div>
+    </div>
+
+    <!-- ตารางติดตามการไข่ -->
+    <div class="space-y-2">
+      <h3 class="font-bold text-slate-800 text-sm">🪺 ตารางติดตามการไข่ & วันฟัก</h3>
+      <div id="egg-details-list" class="space-y-3">
+        <p class="text-xs text-slate-400">กำลังโหลดข้อมูล...</p>
+      </div>
+    </div>
+
+    <!-- คู่พ่อแม่พันธุ์ -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-3">
+      <h3 class="font-bold text-slate-800 text-sm">❤️ คู่พ่อแม่พันธุ์ในฟาร์ม</h3>
       <div id="pairs-list" class="space-y-2">
         <p class="text-xs text-slate-400">ยังไม่มีข้อมูลคู่พันธุ์</p>
       </div>
     </div>
 
-    <!-- บันทึกรอบการไข่ล่าสุด -->
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-2">
-      <h3 class="font-bold text-slate-800 text-sm">🪺 บันทึกการไข่ & ฟักลูกนก</h3>
-      <div id="eggs-list" class="space-y-1.5">
-        <p class="text-xs text-slate-400">ยังไม่มีประวัติการไข่</p>
-      </div>
-    </div>
-
-    <!-- ทะเบียนนกทั้งหมด -->
-    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-2">
+    <!-- รายชื่อนกทั้งหมด -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-3">
       <h3 class="font-bold text-slate-800 text-sm">🦜 รายชื่อนกทั้งหมด</h3>
-      <div id="birds-list" class="space-y-1.5">
+      <div id="birds-list" class="space-y-2">
         <p class="text-xs text-slate-400">ยังไม่มีข้อมูลนก</p>
       </div>
     </div>
+
   </main>
+
+  <!-- MODAL 1: เพิ่มนก -->
+  <div id="modal-bird" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-4">
+      <h3 class="font-bold text-lg text-slate-800">🦜 เพิ่มนกใหม่เข้าฟาร์ม</h3>
+      <form id="form-bird" onsubmit="submitAddBird(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">รหัส / ชื่อนก</label>
+          <input id="bird-name" required placeholder="เช่น GC-001 หรือ Sun-01" class="w-full border rounded-lg p-2 text-sm focus:outline-teal-500">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">สายพันธุ์</label>
+          <input id="bird-species" required placeholder="เช่น Green-cheeked Conure" class="w-full border rounded-lg p-2 text-sm focus:outline-teal-500">
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">เพศ</label>
+          <select id="bird-gender" class="w-full border rounded-lg p-2 text-sm focus:outline-teal-500">
+            <option value="ผู้">♂ ผู้ (Male)</option>
+            <option value="เมีย">♀ เมีย (Female)</option>
+            <option value="ไม่ระบุ">❓ ไม่ระบุเพศ</option>
+          </select>
+        </div>
+        <div class="flex space-x-2 pt-2">
+          <button type="button" onclick="closeModal('modal-bird')" class="w-1/2 border py-2 rounded-lg text-sm">ยกเลิก</button>
+          <button type="submit" class="w-1/2 bg-[#0d9488] text-white py-2 rounded-lg text-sm font-semibold">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: จับคู่ -->
+  <div id="modal-pair" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-4">
+      <h3 class="font-bold text-lg text-slate-800">❤️ จับคู่พ่อแม่พันธุ์</h3>
+      <form id="form-pair" onsubmit="submitAddPair(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">เลือกพ่อพันธุ์ (♂)</label>
+          <select id="select-father" required class="w-full border rounded-lg p-2 text-sm focus:outline-rose-500"></select>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">เลือกแม่พันธุ์ (♀)</label>
+          <select id="select-mother" required class="w-full border rounded-lg p-2 text-sm focus:outline-rose-500"></select>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">ตั้งชื่อคู่ (เช่น คู่ที่ 1)</label>
+          <input id="pair-custom-name" placeholder="เช่น คู่ที่ 1 - กรีนชีค" class="w-full border rounded-lg p-2 text-sm focus:outline-rose-500">
+        </div>
+        <div class="flex space-x-2 pt-2">
+          <button type="button" onclick="closeModal('modal-pair')" class="w-1/2 border py-2 rounded-lg text-sm">ยกเลิก</button>
+          <button type="submit" class="w-1/2 bg-rose-500 text-white py-2 rounded-lg text-sm font-semibold">บันทึกจับคู่</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: บันทึกไข่รายใบ -->
+  <div id="modal-egg" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-4">
+      <h3 class="font-bold text-lg text-slate-800">🥚 บันทึกข้อมูลไข่รายใบ</h3>
+      <form id="form-egg" onsubmit="submitAddEgg(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">เลือกคู่พ่อแม่พันธุ์</label>
+          <select id="select-pair" required class="w-full border rounded-lg p-2 text-sm focus:outline-amber-500"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs text-slate-500 mb-1">ไข่ใบที่</label>
+            <input type="number" id="egg-number" value="1" min="1" required class="w-full border rounded-lg p-2 text-sm focus:outline-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-500 mb-1">วันที่ไข่</label>
+            <input type="date" id="egg-date" required class="w-full border rounded-lg p-2 text-sm focus:outline-amber-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">สถานะไข่</label>
+          <select id="egg-status" class="w-full border rounded-lg p-2 text-sm focus:outline-amber-500">
+            <option value="รอส่องเชื้อ">🥚 รอส่องเชื้อ</option>
+            <option value="มีเชื้อ">🟢 มีเชื้อ (Fertile)</option>
+            <option value="ไม่มีเชื้อ">🔴 ไม่มีเชื้อ/ไข่ลม</option>
+            <option value="ฟักแล้ว">🐣 ฟักแล้ว (Hatched)</option>
+            <option value="แตก/เสีย">❌ แตก/เสีย</option>
+          </select>
+        </div>
+        <div class="flex space-x-2 pt-2">
+          <button type="button" onclick="closeModal('modal-egg')" class="w-1/2 border py-2 rounded-lg text-sm">ยกเลิก</button>
+          <button type="submit" class="w-1/2 bg-amber-500 text-white py-2 rounded-lg text-sm font-semibold">บันทึกไข่</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: บันทึกการเงิน (รายรับ - รายจ่าย) -->
+  <div id="modal-finance" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-5 shadow-xl space-y-4">
+      <h3 class="font-bold text-lg text-slate-800">💰 บันทึกรายรับ / รายจ่าย</h3>
+      <form id="form-finance" onsubmit="submitFinance(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">ประเภทรายการ</label>
+          <select id="finance-type" class="w-full border rounded-lg p-2 text-sm font-bold focus:outline-emerald-500">
+            <option value="income" class="text-emerald-600">🟢 รายรับ (Income)</option>
+            <option value="expense" class="text-rose-600">🔴 รายจ่าย (Expense)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">หมวดหมู่</label>
+          <select id="finance-category" class="w-full border rounded-lg p-2 text-sm focus:outline-emerald-500">
+            <option value="ขายลูกนก">ขายลูกนก</option>
+            <option value="ขายพ่อแม่พันธุ์/นกโต">ขายพ่อแม่พันธุ์ / นกโต</option>
+            <option value="ขายไข่">ขายไข่</option>
+            <option value="ค่าอาหาร/ธัญพืช">ค่าอาหาร / ธัญพืช</option>
+            <option value="ค่าวิตามิน/อาหารเสริม/ยา">ค่าวิตามิน / อาหารเสริม / ยา</option>
+            <option value="ค่ากรง/อุปกรณ์">ค่ากรง / อุปกรณ์</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs text-slate-500 mb-1">จำนวนเงิน (บาท)</label>
+            <input type="number" id="finance-amount" required placeholder="0" class="w-full border rounded-lg p-2 text-sm focus:outline-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-500 mb-1">วันที่ทำรายการ</label>
+            <input type="date" id="finance-date" required class="w-full border rounded-lg p-2 text-sm focus:outline-emerald-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">รายละเอียดเพิ่มเติม</label>
+          <input id="finance-detail" placeholder="เช่น ขายลูกนกกรีนชีค 1 ตัว" class="w-full border rounded-lg p-2 text-sm focus:outline-emerald-500">
+        </div>
+        <div class="flex space-x-2 pt-2">
+          <button type="button" onclick="closeModal('modal-finance')" class="w-1/2 border py-2 rounded-lg text-sm">ยกเลิก</button>
+          <button type="submit" class="w-1/2 bg-emerald-600 text-white py-2 rounded-lg text-sm font-semibold">บันทึกธุรกรรม</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
 </body>
 </html>
