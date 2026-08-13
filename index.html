@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V22</title>
+  <title>Farm Sook - Pro System V23</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -30,20 +30,43 @@
     let globalEggs = [];
     let globalHealth = [];
 
+    // รายการสีมาตรฐานกรีนชีคและกลุ่มบลู V23
+    const greenCheekMutationsHtml = `
+      <option value="Normal">Normal (เขียว)</option>
+      <option value="Cinnamon">Cinnamon</option>
+      <option value="Yellow-sided">Yellow-sided (Opaline)</option>
+      <option value="Pineapple">Pineapple (Cinnamon + YS)</option>
+      <option value="Dilute">Dilute</option>
+      <option value="Yellow-sided Dilute">Yellow-sided Dilute (YS + Dilute)</option>
+      <option value="Suncheek">Suncheek (Cinnamon + YS + Dilute)</option>
+      <option value="Turquoise Normal">Turquoise Normal (Blue)</option>
+      <option value="Turquoise Cinnamon">Turquoise Cinnamon (American Cinnamon)</option>
+      <option value="Turquoise Yellow-sided">Turquoise Yellow-sided (Turquoise Opaline)</option>
+      <option value="Turquoise Pineapple">Turquoise Pineapple (Turquoise Cinnamon + YS)</option>
+      <option value="Mint">Mint (Turquoise Dilute)</option>
+      <option value="Opamint">Opamint (Turquoise YS Dilute)</option>
+      <option value="Cinnamint">Cinnamint (Turquoise Cinnamon Dilute)</option>
+      <option value="Mooncheek">Mooncheek (Turquoise Suncheek)</option>
+      <option value="Violet Factor">Violet Series</option>
+      <option value="High Red Factor">High Red / Extreme Red</option>
+    `;
+
+    const sunConureMutationsHtml = `
+      <option value="Sun Conure Normal">Sun Conure Normal (ส้ม/เหลือง)</option>
+      <option value="Red Factor">Red Factor / High Red</option>
+      <option value="Single Factor Pied">Single Factor Pied</option>
+      <option value="Double Factor Pied">Double Factor Pied</option>
+      <option value="Dominant Pied">Dominant Pied</option>
+      <option value="Lutino / Yellow">Lutino (เหลืองตาแดง)</option>
+    `;
+
     window.updateMutationDropdowns = () => {
       const species = document.getElementById('bird-species').value;
       const visualSelect = document.getElementById('bird-visual');
       const splitSelect = document.getElementById('bird-split');
 
       if (species === 'Sun Conure') {
-        visualSelect.innerHTML = `
-          <option value="Sun Conure Normal">Sun Conure Normal (ส้ม/เหลือง)</option>
-          <option value="Red Factor">Red Factor / High Red</option>
-          <option value="Single Factor Pied">Single Factor Pied</option>
-          <option value="Double Factor Pied">Double Factor Pied</option>
-          <option value="Dominant Pied">Dominant Pied</option>
-          <option value="Lutino / Yellow">Lutino (เหลืองตาแดง)</option>
-        `;
+        visualSelect.innerHTML = sunConureMutationsHtml;
         splitSelect.innerHTML = `
           <option value="ไม่มีสปลิต">ไม่มีสปลิต / ไม่ระบุ</option>
           <option value="Split Blue (Turquoise)">Split Blue (Turquoise)</option>
@@ -51,24 +74,7 @@
           <option value="Split Lutino">Split Lutino</option>
         `;
       } else {
-        visualSelect.innerHTML = `
-          <option value="Normal">Normal (เขียว)</option>
-          <option value="Cinnamon">Cinnamon</option>
-          <option value="Yellow-sided">Yellow-sided (Opaline)</option>
-          <option value="Pineapple">Pineapple</option>
-          <option value="Turquoise Normal">Turquoise Normal (Blue)</option>
-          <option value="Turquoise Cinnamon">Turquoise Cinnamon</option>
-          <option value="Turquoise Yellow-sided">Turquoise Yellow-sided</option>
-          <option value="Turquoise Pineapple">Turquoise Pineapple</option>
-          <option value="Dilute">Dilute</option>
-          <option value="Suncheek">Suncheek</option>
-          <option value="Mooncheek">Mooncheek</option>
-          <option value="Mint">Mint</option>
-          <option value="Opamint">Opamint</option>
-          <option value="Cinnamint">Cinnamint</option>
-          <option value="Violet Factor">Violet Series</option>
-          <option value="High Red Factor">High Red / Extreme Red</option>
-        `;
+        visualSelect.innerHTML = greenCheekMutationsHtml;
         splitSelect.innerHTML = `
           <option value="ไม่มีสปลิต">ไม่มีสปลิต / ไม่ระบุ</option>
           <option value="Split Turquoise">Split Turquoise</option>
@@ -244,7 +250,7 @@
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
     };
 
-    // 🧬 6. ระบบคำนวณพันธุกรรม V22 (รองรับยีนแฝงแม่พันธุ์ Split ♀)
+    // 🧬 6. ระบบคำนวณพันธุกรรม V23 (รองรับกลุ่มบลูและยีนผสมครบถ้วน)
     window.calculateGenetics = () => {
       const fColor = document.getElementById('calc-father-color').value;
       const fSplit = document.getElementById('calc-father-split').value;
@@ -259,7 +265,7 @@
         if (s.includes("Cinnamon")) genes.cin = true;
         if (s.includes("Yellow-sided") || s.includes("Opamint")) genes.ys = true;
         if (s.includes("Pineapple") || s.includes("Suncheek") || s.includes("Mooncheek")) { genes.cin = true; genes.ys = true; }
-        if (s.includes("Dilute") || s.includes("Suncheek") || s.includes("Mooncheek") || s.includes("Mint") || s.includes("Opamint") || s.includes("Cinnamint")) genes.dil = true;
+        if (s.includes("Dilute") || s.includes("Yellow-sided Dilute") || s.includes("Suncheek") || s.includes("Mooncheek") || s.includes("Mint") || s.includes("Opamint") || s.includes("Cinnamint")) genes.dil = true;
         if (s.includes("Turquoise") || s.includes("Mooncheek") || s.includes("Mint") || s.includes("Opamint") || s.includes("Cinnamint")) genes.tur = true;
 
         return genes;
@@ -281,6 +287,7 @@
         if (tur) return "Turquoise Normal";
         
         if (dil && cin && ys) return "Suncheek";
+        if (dil && ys) return "Yellow-sided Dilute";
         if (cin && ys) return "Pineapple";
         if (ys) return "Yellow-sided";
         if (cin) return "Cinnamon";
@@ -730,7 +737,7 @@
         <span class="text-2xl">🌿</span>
         <div>
           <h1 class="text-lg font-extrabold tracking-wide">Farm Sook</h1>
-          <p class="text-[10px] text-emerald-200">Pro System V22 (Mother Split Supported)</p>
+          <p class="text-[10px] text-emerald-200">Pro System V23 (Blue Series & Hybrid Mutations)</p>
         </div>
       </div>
       <button onclick="openModal('modal-bird')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm">
@@ -814,7 +821,7 @@
         <button onclick="openModal('modal-health')" class="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-lg text-[10px] font-bold border border-rose-100">+ บันทึกการยา</button>
       </div>
       <div id="health-records-list" class="space-y-1.5">
-        <p class="text-xs text-slate-400">กำลังโหลดข้อมูลสุขภาพ...</p>
+        <p class="text-xs text-slate-400">ยังไม่มีบันทึกประวัติสุขภาพ</p>
       </div>
     </div>
 
@@ -880,16 +887,17 @@
                 <option value="Cinnamon">Cinnamon</option>
                 <option value="Yellow-sided">Yellow-sided (Opaline)</option>
                 <option value="Pineapple">Pineapple</option>
+                <option value="Dilute">Dilute</option>
+                <option value="Yellow-sided Dilute">Yellow-sided Dilute</option>
+                <option value="Suncheek">Suncheek</option>
                 <option value="Turquoise Normal">Turquoise Normal (Blue)</option>
                 <option value="Turquoise Cinnamon">Turquoise Cinnamon</option>
                 <option value="Turquoise Yellow-sided">Turquoise Yellow-sided</option>
                 <option value="Turquoise Pineapple">Turquoise Pineapple</option>
-                <option value="Dilute">Dilute</option>
-                <option value="Suncheek">Suncheek</option>
-                <option value="Mooncheek">Mooncheek</option>
                 <option value="Mint">Mint</option>
                 <option value="Opamint">Opamint</option>
                 <option value="Cinnamint">Cinnamint</option>
+                <option value="Mooncheek">Mooncheek</option>
                 <option value="Violet Factor">Violet Series</option>
                 <option value="High Red Factor">High Red / Extreme Red</option>
               </select>
@@ -941,7 +949,7 @@
     </div>
   </div>
 
-  <!-- MODAL 2: คำนวณสีพันธุกรรม (เพิ่ม Split แม่พันธุ์ ♀ V22) -->
+  <!-- MODAL 2: คำนวณสีพันธุกรรม (V23) -->
   <div id="modal-calc" onclick="closeOnBackdrop(event, 'modal-calc')" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-3 relative max-h-[85vh] overflow-y-auto">
       <button onclick="closeModal('modal-calc')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold">✕</button>
@@ -955,19 +963,20 @@
             <label class="block text-[11px] text-slate-500 mb-0.5">สีหลักพ่อพันธุ์</label>
             <select id="calc-father-color" class="w-full border rounded-xl p-2 text-sm">
               <option value="Normal">Normal (เขียว)</option>
-              <option value="Cinnamon">Cinnamon (Sex-linked)</option>
-              <option value="Yellow-sided">Yellow-sided (Sex-linked)</option>
+              <option value="Cinnamon">Cinnamon</option>
+              <option value="Yellow-sided">Yellow-sided (Opaline)</option>
               <option value="Pineapple">Pineapple</option>
+              <option value="Dilute">Dilute</option>
+              <option value="Yellow-sided Dilute">Yellow-sided Dilute</option>
+              <option value="Suncheek">Suncheek</option>
               <option value="Turquoise Normal">Turquoise Normal (Blue)</option>
               <option value="Turquoise Cinnamon">Turquoise Cinnamon</option>
               <option value="Turquoise Yellow-sided">Turquoise Yellow-sided</option>
               <option value="Turquoise Pineapple">Turquoise Pineapple</option>
-              <option value="Dilute">Dilute</option>
-              <option value="Suncheek">Suncheek</option>
-              <option value="Mooncheek">Mooncheek</option>
               <option value="Mint">Mint</option>
               <option value="Opamint">Opamint</option>
               <option value="Cinnamint">Cinnamint</option>
+              <option value="Mooncheek">Mooncheek</option>
               <option value="Violet Factor">Violet Series</option>
               <option value="High Red Factor">High Red / Extreme Red</option>
             </select>
@@ -998,16 +1007,17 @@
               <option value="Cinnamon">Cinnamon</option>
               <option value="Yellow-sided">Yellow-sided</option>
               <option value="Pineapple">Pineapple</option>
+              <option value="Dilute">Dilute</option>
+              <option value="Yellow-sided Dilute">Yellow-sided Dilute</option>
+              <option value="Suncheek">Suncheek</option>
               <option value="Turquoise Normal">Turquoise Normal (Blue)</option>
               <option value="Turquoise Cinnamon">Turquoise Cinnamon</option>
               <option value="Turquoise Yellow-sided">Turquoise Yellow-sided</option>
               <option value="Turquoise Pineapple">Turquoise Pineapple</option>
-              <option value="Dilute">Dilute</option>
-              <option value="Suncheek">Suncheek</option>
-              <option value="Mooncheek">Mooncheek</option>
               <option value="Mint">Mint</option>
               <option value="Opamint">Opamint</option>
               <option value="Cinnamint">Cinnamint</option>
+              <option value="Mooncheek">Mooncheek</option>
               <option value="Violet Factor">Violet Series</option>
               <option value="High Red Factor">High Red / Extreme Red</option>
             </select>
