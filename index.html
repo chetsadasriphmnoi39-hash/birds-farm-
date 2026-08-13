@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Farm Sook - Pro Max System V9</title>
+  <title>Farm Sook - Pro System V12</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   
@@ -27,14 +27,39 @@
     let globalBirds = [];
     let globalPairs = [];
 
-    // 1. เพิ่มนก (แก้ไขระบบป้องกัน บันทึกไม่ได้)
+    // ฟังก์ชันคำนวณระยะเวลา (อายุ / เวลาที่รับมา)
+    window.calculateDuration = (fromDateStr) => {
+      if (!fromDateStr) return null;
+      const start = new Date(fromDateStr);
+      const now = new Date();
+      if (isNaN(start.getTime()) || start > now) return null;
+
+      let years = now.getFullYear() - start.getFullYear();
+      let months = now.getMonth() - start.getMonth();
+      let days = now.getDate() - start.getDate();
+
+      if (days < 0) {
+        months -= 1;
+        const prevMonthLastDay = new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+        days += prevMonthLastDay;
+      }
+      if (months < 0) {
+        years -= 1;
+        months += 12;
+      }
+
+      let result = [];
+      if (years > 0) result.push(`${years} ปี`);
+      if (months > 0) result.push(`${months} เดือน`);
+      if (days > 0 || result.length === 0) result.push(`${days} วัน`);
+
+      return result.join(" ");
+    };
+
+    // 1. เพิ่มนก
     window.submitAddBird = async (e) => {
       e.preventDefault();
-      
-      const getVal = (id) => {
-        const el = document.getElementById(id);
-        return el ? el.value : "";
-      };
+      const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : "";
 
       const birdData = {
         name: getVal('bird-name'),
@@ -47,6 +72,7 @@
         fatherId: getVal('bird-father'),
         motherId: getVal('bird-mother'),
         hatchDate: getVal('bird-hatch'),
+        arrivalDate: getVal('bird-arrival'),
         rearing: getVal('bird-rearing') || "ป้อนมือ (Hand-fed)",
         createdAt: new Date()
       };
@@ -56,9 +82,7 @@
         alert("บันทึกข้อมูลนกเข้าทะเบียนเรียบร้อย!");
         closeModal('modal-bird');
         document.getElementById('form-bird').reset();
-      } catch (err) { 
-        alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message + "\n\nหากยังบันทึกไม่ได้ กรุณาเช็ค Rules ใน Firebase ของคุณอีกครั้งครับ"); 
-      }
+      } catch (err) { alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message); }
     };
 
     // 2. จับคู่
@@ -86,32 +110,48 @@
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
     };
 
-    // 3. บันทึกไข่รายใบ
+    // 3. บันทึกไข่รายใบ (คำนวณตามสายพันธุ์นกอย่างแม่นยำ V12)
     window.submitAddEgg = async (e) => {
       e.preventDefault();
       const pairId = document.getElementById('select-pair').value;
       const eggNo = document.getElementById('egg-number').value;
       const eggDate = document.getElementById('egg-date').value;
       const eggStatus = document.getElementById('egg-status').value;
+      const birdSpecies = document.getElementById('egg-species').value;
 
       const pair = globalPairs.find(p => p.id === pairId);
       if (!pair) return alert("กรุณาเลือกคู่พ่อแม่พันธุ์");
 
+      // กำหนดจำนวนวันฟักและวันใส่ห่วงขาตามสายพันธุ์
+      const isSunConure = birdSpecies === 'Sun Conure';
+      const hatchDays = isSunConure ? 24 : 19; // ซันคอนัวร์ 24 วัน / กรีนชีค 19 วัน
+      const ringDaysAfterHatch = isSunConure ? 12 : 9; // ซันคอนัวร์ ใส่ห่วงหลังฟัก 12 วัน / กรีนชีค 9 วัน
+
       const layDateObj = new Date(eggDate);
-      const candlingObj = new Date(layDateObj); candlingObj.setDate(candlingObj.getDate() + 6);
-      const hatchDateObj = new Date(layDateObj); hatchDateObj.setDate(hatchDateObj.getDate() + 19);
-      const ringDateObj = new Date(layDateObj); ringDateObj.setDate(ringDateObj.getDate() + 30);
+      
+      // วันส่องเชื้อ (+6 วัน)
+      const candlingObj = new Date(layDateObj); 
+      candlingObj.setDate(candlingObj.getDate() + 6);
+      
+      // วันฟักตามสายพันธุ์
+      const hatchDateObj = new Date(layDateObj); 
+      hatchDateObj.setDate(hatchDateObj.getDate() + hatchDays);
+
+      // วันใส่ห่วงขา
+      const ringDateObj = new Date(hatchDateObj); 
+      ringDateObj.setDate(ringDateObj.getDate() + ringDaysAfterHatch);
 
       try {
         await addDoc(collection(db, "egg_details"), {
           pairId: pair.id, pairName: pair.name, eggNo: Number(eggNo),
+          species: birdSpecies,
           layDate: eggDate, 
           candlingDate: candlingObj.toISOString().split('T')[0],
           estHatchDate: hatchDateObj.toISOString().split('T')[0],
           estRingDate: ringDateObj.toISOString().split('T')[0],
           status: eggStatus, createdAt: new Date()
         });
-        alert(`บันทึกไข่ใบที่ ${eggNo} เรียบร้อย!`);
+        alert(`บันทึกไข่ใบที่ ${eggNo} เรียบร้อย!\n(${birdSpecies} กำหนดฟักประมาณ ${hatchDays} วัน)`);
         closeModal('modal-egg');
         document.getElementById('form-egg').reset();
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
@@ -136,25 +176,55 @@
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
     };
 
-    // 5. คำนวณพันธุกรรมสี
+    // 5. ระบบคำนวณพันธุกรรมสี & คาดการณ์เพศ
     window.calculateGenetics = () => {
       const fColor = document.getElementById('calc-father-color').value;
+      const fSplit = document.getElementById('calc-father-split').value;
       const mColor = document.getElementById('calc-mother-color').value;
       const resultDiv = document.getElementById('calc-result');
 
       let outcomes = [];
-      if (fColor === 'Suncheek' && mColor === 'Suncheek') {
-        outcomes = ["100% Suncheek (ทั้งผู้และเมีย)"];
-      } else if (fColor === 'Mooncheek' || mColor === 'Mooncheek') {
-        outcomes = ["50% Mooncheek / Suncheek", "50% Visual Suncheek"];
-      } else {
-        outcomes = ["50% Visual Mutation ตามสีข่มหลัก", "25% Split Dilute / Turquoise", "25% Normal Green-cheeked"];
+
+      if (fColor === 'Mooncheek' && mColor === 'Mooncheek') {
+        outcomes.push("• 100% Mooncheek (ทั้งตัวผู้ ♂ และตัวเมีย ♀)");
+      } 
+      else if (fColor === 'Suncheek' && mColor === 'Suncheek') {
+        outcomes.push("• 100% Suncheek (ทั้งตัวผู้ ♂ และตัวเมีย ♀)");
+        if (fSplit.includes('Turquoise')) {
+          outcomes.push("• 25% Mooncheek (หากทั้งพ่อและแม่เป็น Split Turquoise)");
+        }
+      }
+      else if ((fColor === 'Suncheek' || fColor === 'Pineapple' || fColor === 'Cinnamon') && (mColor === 'Normal' || mColor.includes('Turquoise'))) {
+        outcomes.push("• ♀ ลูกตัวเมีย: แสดงสี Sex-linked (" + fColor + ") 100%");
+        outcomes.push("• ♂ ลูกตัวผู้: แสดงสีข่มหลัก และเป็น Split " + fColor + " 100%");
+      }
+      else if (fSplit.includes('Sex-linked') || fSplit.includes('Cinnamon') || fSplit.includes('Opaline')) {
+        outcomes.push("• ♀ ลูกตัวเมียที่แสดงสี Sex-linked จะมียีนผ่าเหล่ามาจากพ่อ 100%");
+        outcomes.push("• ♂ ลูกตัวผู้ 50% เป็นตัวผู้ปกติแฝง (Split)");
+      }
+      else if (fColor.includes('Turquoise') && mColor.includes('Turquoise')) {
+        outcomes.push("• 100% สายสี Turquoise / Blue Series");
+      }
+      else if ((fColor.includes('Turquoise') || fSplit.includes('Turquoise')) && (mColor.includes('Turquoise'))) {
+        outcomes.push("• 50% แสดงสี Turquoise Series (ทั้ง ♂ และ ♀)");
+        outcomes.push("• 50% แสดงสีปกติ (Split Turquoise)");
+      }
+      else {
+        outcomes.push("• 50% แสดงสีข่มหลักของคู่ผสม (Visual)");
+        outcomes.push("• 50% แฝงยีนด้อย (Split) จากพ่อและแม่");
+        outcomes.push("• ♀ ตัวเมียแสดงสี Sex-linked เมื่อพ่อมียีนสีนั้น (Visual หรือ Split)");
       }
 
-      resultDiv.innerHTML = `<div class="p-3 bg-teal-50 border border-teal-200 rounded-xl space-y-1 text-xs">
-        <div class="font-bold text-teal-900">🧬 ผลคาดการณ์พันธุกรรมลูกนก:</div>
-        ${outcomes.map(o => `<div class="text-teal-800">• ${o}</div>`).join('')}
-      </div>`;
+      resultDiv.innerHTML = `
+        <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-xl space-y-1.5 text-xs">
+          <div class="font-bold text-indigo-950 flex items-center space-x-1">
+            <span>🧬</span> <span>ผลคาดการณ์พันธุกรรม & สัดส่วนเพศ:</span>
+          </div>
+          ${outcomes.map(o => `<div class="text-indigo-900 leading-relaxed">${o}</div>`).join('')}
+          <div class="text-[10px] text-indigo-500 pt-1 border-t border-indigo-100">
+            * หมายเหตุ: ยีน Cinnamon และ Opaline/Yellow-sided เป็น Sex-linked (ลูกตัวเมียจะดึงยีนจากพ่อ)
+          </div>
+        </div>`;
     };
 
     // 6. พิมพ์ใบรับรอง Pedigree
@@ -164,6 +234,7 @@
 
       const fatherObj = globalBirds.find(b => b.id === bird.fatherId);
       const motherObj = globalBirds.find(b => b.id === bird.motherId);
+      const ageText = calculateDuration(bird.hatchDate);
 
       const certHtml = `
         <div id="pdf-cert" class="p-6 bg-white border-8 border-emerald-800 rounded-2xl space-y-4 font-serif text-slate-800 max-w-md mx-auto shadow-2xl">
@@ -194,8 +265,8 @@
               <span class="font-bold ${bird.gender === 'ผู้' ? 'text-blue-600' : 'text-pink-600'}">${bird.gender} (DNA Cert: ${bird.dnaCert || 'Verified'})</span>
             </div>
             <div class="flex justify-between border-b pb-1">
-              <span class="text-slate-500">วันฟัก:</span>
-              <span>${bird.hatchDate || '-'}</span>
+              <span class="text-slate-500">วันฟัก (อายุ):</span>
+              <span>${bird.hatchDate || '-'} ${ageText ? `(${ageText})` : ''}</span>
             </div>
           </div>
 
@@ -261,6 +332,9 @@
         const genderBadge = item.gender === 'ผู้' ? '♂ ผู้' : (item.gender === 'เมีย' ? '♀ เมีย' : '❓ ไม่ระบุ');
         const badgeColor = item.gender === 'ผู้' ? 'bg-blue-50 text-blue-600 border border-blue-100' : (item.gender === 'เมีย' ? 'bg-pink-50 text-pink-600 border border-pink-100' : 'bg-slate-50 text-slate-500 border border-slate-100');
 
+        const ageText = calculateDuration(item.hatchDate);
+        const stayText = calculateDuration(item.arrivalDate);
+
         list.innerHTML += `
           <div class="p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-2">
             <div class="flex justify-between items-center">
@@ -278,6 +352,8 @@
             <div class="grid grid-cols-2 gap-1 text-[11px] text-slate-500 bg-slate-50/70 p-2.5 rounded-xl">
               <div><span class="text-slate-400">สีหลัก:</span> <strong>${item.visualColor || item.species}</strong></div>
               <div><span class="text-slate-400">ยีนแฝง:</span> <strong>${item.splitColor || '-'}</strong></div>
+              <div><span class="text-slate-400">🎂 อายุ:</span> <strong class="text-emerald-700">${ageText ? ageText : (item.hatchDate || '-')}</strong></div>
+              <div><span class="text-slate-400">🏡 อยู่ฟาร์มมา:</span> <strong class="text-teal-700">${stayText ? stayText : (item.arrivalDate || '-')}</strong></div>
             </div>
           </div>`;
 
@@ -335,13 +411,13 @@
         if (data.status === 'รอส่องเชื้อ') {
           reminderCount++;
           reminderList.innerHTML += `<div class="p-2 bg-amber-50 text-amber-800 rounded-xl border border-amber-200 text-xs flex justify-between items-center">
-            <span>🔦 ถึงกำหนดส่องเชื้อไข่: <strong>${data.pairName}</strong> (ใบที่ ${data.eggNo})</span>
+            <span>🔦 ส่องเชื้อไข่ (${data.species || 'นก'}): <strong>${data.pairName}</strong> (ใบที่ ${data.eggNo})</span>
             <span class="text-[10px] bg-amber-200 font-bold px-2 py-0.5 rounded">${data.candlingDate || 'ครบ 6 วัน'}</span>
           </div>`;
         } else if (data.status === 'มีเชื้อ') {
           reminderCount++;
           reminderList.innerHTML += `<div class="p-2 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 text-xs flex justify-between items-center">
-            <span>🐣 ใกล้กำหนดฟัก: <strong>${data.pairName}</strong> (ใบที่ ${data.eggNo})</span>
+            <span>🐣 ใกล้กำหนดฟัก (${data.species || 'นก'}): <strong>${data.pairName}</strong> (ใบที่ ${data.eggNo})</span>
             <span class="text-[10px] bg-emerald-200 font-bold px-2 py-0.5 rounded">ประมาณ ${data.estHatchDate}</span>
           </div>`;
         }
@@ -367,6 +443,7 @@
             <div class="p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
               <div>
                 <span class="font-bold text-amber-900">🥚 ใบที่ ${egg.eggNo}</span>
+                <span class="text-[10px] text-slate-400 ml-1">(${egg.species || 'Conure'})</span>
                 <span class="text-[10px] text-slate-400 ml-1">ไข่: ${egg.layDate}</span>
                 <div class="text-[10px] text-emerald-600">🐣 คาดการณ์ฟัก: ${egg.estHatchDate} | 💍 ใส่ห่วงขา: ${egg.estRingDate || '-'}</div>
               </div>
@@ -419,7 +496,7 @@
         <span class="text-2xl">🌿</span>
         <div>
           <h1 class="text-lg font-extrabold tracking-wide">Farm Sook</h1>
-          <p class="text-[10px] text-emerald-200">Pro Max System V9</p>
+          <p class="text-[10px] text-emerald-200">Pro System V12 (Species-Based Hatching)</p>
         </div>
       </div>
       <button onclick="openModal('modal-bird')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm">
@@ -481,7 +558,7 @@
       </button>
 
       <button onclick="openModal('modal-calc')" class="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl shadow-sm text-left flex items-center justify-between">
-        <div><div class="text-[10px] text-indigo-100">พันธุกรรม</div><div class="font-bold text-xs">🧬 คำนวณสีลูกนก</div></div>
+        <div><div class="text-[10px] text-indigo-100">พันธุกรรม</div><div class="font-bold text-xs">🧬 คำนวณสี & เพศ</div></div>
         <span class="text-xl">🧪</span>
       </button>
 
@@ -545,11 +622,49 @@
           <div><label class="block text-xs text-slate-500 mb-1">รหัส/ชื่อนก *</label><input id="bird-name" required placeholder="เช่น GC-001" class="w-full border rounded-xl p-2.5 text-sm"></div>
           <div><label class="block text-xs text-slate-500 mb-1">เลขห่วงขา</label><input id="bird-ring" placeholder="เช่น TH-FS-26" class="w-full border rounded-xl p-2.5 text-sm"></div>
         </div>
-        <div><label class="block text-xs text-slate-500 mb-1">ตระกูล/สายพันธุ์</label><input id="bird-species" required placeholder="เช่น Green-cheeked Conure" class="w-full border rounded-xl p-2.5 text-sm"></div>
-        <div class="grid grid-cols-2 gap-2">
-          <div><label class="block text-xs text-slate-500 mb-1">สีหลัก (Visual)</label><input id="bird-visual" placeholder="เช่น Suncheek" class="w-full border rounded-xl p-2.5 text-sm"></div>
-          <div><label class="block text-xs text-slate-500 mb-1">ยีนแฝง (Split)</label><input id="bird-split" placeholder="เช่น Split Dilute" class="w-full border rounded-xl p-2.5 text-sm"></div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">ตระกูล / สายพันธุ์หลัก</label>
+          <select id="bird-species" class="w-full border rounded-xl p-2.5 text-sm">
+            <option value="Green-cheeked Conure">Green-cheeked Conure</option>
+            <option value="Sun Conure">Sun Conure</option>
+            <option value="Conure Other">Conure สายพันธุ์อื่นๆ</option>
+          </select>
         </div>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs text-slate-500 mb-1">สีหลัก (Visual Mutation)</label>
+            <select id="bird-visual" class="w-full border rounded-xl p-2.5 text-sm">
+              <option value="Normal">Normal (เขียวดั้งเดิม)</option>
+              <option value="Sun Conure Normal">Sun Conure (สีส้ม/เหลือง)</option>
+              <option value="Cinnamon">Cinnamon</option>
+              <option value="Yellow-sided">Yellow-sided (Opaline)</option>
+              <option value="Pineapple">Pineapple (Cinnamon + Yellow-sided)</option>
+              <option value="Turquoise Normal">Turquoise Normal (Blue)</option>
+              <option value="Turquoise Cinnamon">Turquoise Cinnamon</option>
+              <option value="Turquoise Yellow-sided">Turquoise Yellow-sided</option>
+              <option value="Turquoise Pineapple">Turquoise Pineapple</option>
+              <option value="Dilute">Dilute (Yellow-Lime)</option>
+              <option value="Suncheek">Suncheek (Dilute + YS + Cinnamon)</option>
+              <option value="Mooncheek">Mooncheek (Turquoise + Suncheek)</option>
+              <option value="Mint">Mint (Turquoise + Dilute)</option>
+              <option value="Violet Factor">Violet Series</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-slate-500 mb-1">ยีนแฝง (Split Genetics)</label>
+            <select id="bird-split" class="w-full border rounded-xl p-2.5 text-sm">
+              <option value="ไม่มีสปลิต">ไม่มีสปลิต / ไม่ระบุ</option>
+              <option value="Split Turquoise">Split Turquoise</option>
+              <option value="Split Dilute">Split Dilute</option>
+              <option value="Split Cinnamon (Sex-linked)">Split Cinnamon (♂ เท่านั้น)</option>
+              <option value="Split Yellow-sided (Sex-linked)">Split Yellow-sided (♂ เท่านั้น)</option>
+              <option value="Split Turquoise & Dilute">Split Turquoise & Dilute</option>
+              <option value="Split Suncheek">Split Suncheek</option>
+            </select>
+          </div>
+        </div>
+
         <div class="grid grid-cols-2 gap-2">
           <div><label class="block text-xs text-slate-500 mb-1">เพศ</label><select id="bird-gender" class="w-full border rounded-xl p-2.5 text-sm"><option value="ผู้">♂ ผู้</option><option value="เมีย">♀ เมีย</option><option value="ไม่ระบุ">❓ ไม่ระบุ</option></select></div>
           <div><label class="block text-xs text-slate-500 mb-1">เลขใบเซอร์ DNA</label><input id="bird-dna" placeholder="เช่น DNA-12345" class="w-full border rounded-xl p-2.5 text-sm"></div>
@@ -558,10 +673,20 @@
           <div><label class="block text-xs text-slate-500 mb-1">พ่อพันธุ์</label><select id="bird-father" class="w-full border rounded-xl p-2.5 text-sm"></select></div>
           <div><label class="block text-xs text-slate-500 mb-1">แม่พันธุ์</label><select id="bird-mother" class="w-full border rounded-xl p-2.5 text-sm"></select></div>
         </div>
+        
         <div class="grid grid-cols-2 gap-2">
-          <div><label class="block text-xs text-slate-500 mb-1">วันที่ฟัก</label><input type="date" id="bird-hatch" class="w-full border rounded-xl p-2.5 text-sm"></div>
-          <div><label class="block text-xs text-slate-500 mb-1">การเลี้ยง</label><select id="bird-rearing" class="w-full border rounded-xl p-2.5 text-sm"><option value="ป้อนมือ (Hand-fed)">🍼 ป้อนมือ</option><option value="พ่อแม่เลี้ยง (Parent-reared)">🪺 พ่อแม่เลี้ยง</option></select></div>
+          <div><label class="block text-xs text-slate-500 mb-1">🎂 วันที่ฟัก (Hatch Date)</label><input type="date" id="bird-hatch" class="w-full border rounded-xl p-2.5 text-sm"></div>
+          <div><label class="block text-xs text-slate-500 mb-1">🏡 วันที่รับเข้าฟาร์ม (Arrival)</label><input type="date" id="bird-arrival" class="w-full border rounded-xl p-2.5 text-sm"></div>
         </div>
+
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">รูปแบบการเลี้ยง</label>
+          <select id="bird-rearing" class="w-full border rounded-xl p-2.5 text-sm">
+            <option value="ป้อนมือ (Hand-fed)">🍼 ป้อนมือ</option>
+            <option value="พ่อแม่เลี้ยง (Parent-reared)">🪺 พ่อแม่เลี้ยง</option>
+          </select>
+        </div>
+
         <div class="flex space-x-2 pt-3"><button type="button" onclick="closeModal('modal-bird')" class="w-1/2 border py-2.5 rounded-xl text-sm">ยกเลิก</button><button type="submit" class="w-1/2 bg-emerald-700 text-white py-2.5 rounded-xl text-sm font-bold">บันทึก</button></div>
       </form>
     </div>
@@ -571,41 +696,63 @@
   <div id="modal-calc" onclick="closeOnBackdrop(event, 'modal-calc')" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 relative">
       <button onclick="closeModal('modal-calc')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold">✕</button>
-      <h3 class="font-bold text-lg text-slate-800 pr-6">🧬 เครื่องมือคำนวณสีลูกนก</h3>
+      <h3 class="font-bold text-lg text-slate-800 pr-6">🧬 คำนวณสี & คาดการณ์เพศลูกนก</h3>
       <div class="space-y-3">
         <div>
-          <label class="block text-xs text-slate-500 mb-1">เลือกสีพ่อพันธุ์ (♂)</label>
+          <label class="block text-xs text-slate-500 mb-1">สีพ่อพันธุ์ (♂)</label>
           <select id="calc-father-color" class="w-full border rounded-xl p-2.5 text-sm">
+            <option value="Normal">Normal (เขียว)</option>
+            <option value="Cinnamon">Cinnamon (Sex-linked)</option>
+            <option value="Yellow-sided">Yellow-sided (Sex-linked)</option>
+            <option value="Pineapple">Pineapple</option>
             <option value="Suncheek">Suncheek</option>
             <option value="Mooncheek">Mooncheek</option>
-            <option value="Pineapple">Pineapple</option>
-            <option value="Cinnamon">Cinnamon</option>
-            <option value="Normal">Normal Green-cheeked</option>
+            <option value="Turquoise Pineapple">Turquoise Pineapple</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs text-slate-500 mb-1">เลือกสีแม่พันธุ์ (♀)</label>
-          <select id="calc-mother-color" class="w-full border rounded-xl p-2.5 text-sm">
-            <option value="Suncheek">Suncheek</option>
-            <option value="Mooncheek">Mooncheek</option>
-            <option value="Pineapple">Pineapple</option>
-            <option value="Cinnamon">Cinnamon</option>
-            <option value="Normal">Normal Green-cheeked</option>
+          <label class="block text-xs text-slate-500 mb-1">ยีนแฝงพ่อพันธุ์ (Split ♂)</label>
+          <select id="calc-father-split" class="w-full border rounded-xl p-2.5 text-sm">
+            <option value="ไม่มีสปลิต">ไม่มีสปลิต</option>
+            <option value="Split Turquoise">Split Turquoise</option>
+            <option value="Split Dilute">Split Dilute</option>
+            <option value="Split Sex-linked (Cinnamon/Opaline)">Split Sex-linked (Cinnamon/Yellow-sided)</option>
           </select>
         </div>
-        <button onclick="calculateGenetics()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-xs font-bold shadow">⚡ คำนวณพันธุกรรม</button>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">สีแม่พันธุ์ (♀)</label>
+          <select id="calc-mother-color" class="w-full border rounded-xl p-2.5 text-sm">
+            <option value="Normal">Normal (เขียว)</option>
+            <option value="Cinnamon">Cinnamon</option>
+            <option value="Yellow-sided">Yellow-sided</option>
+            <option value="Pineapple">Pineapple</option>
+            <option value="Suncheek">Suncheek</option>
+            <option value="Mooncheek">Mooncheek</option>
+            <option value="Turquoise Pineapple">Turquoise Pineapple</option>
+          </select>
+        </div>
+        <button onclick="calculateGenetics()" class="w-full bg-indigo-600 text-white py-2.5 rounded-xl text-xs font-bold shadow">⚡ ประมวลผลพันธุกรรม & เพศ</button>
         <div id="calc-result"></div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 3: บันทึกไข่รายใบ -->
+  <!-- MODAL 3: บันทึกไข่รายใบ (อัปเดตคำนวณวันฟักแยกตามสายพันธุ์ V12) -->
   <div id="modal-egg" onclick="closeOnBackdrop(event, 'modal-egg')" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 relative">
       <button onclick="closeModal('modal-egg')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold">✕</button>
       <h3 class="font-bold text-lg text-slate-800 pr-6">🥚 บันทึกข้อมูลไข่รายใบ</h3>
       <form id="form-egg" onsubmit="submitAddEgg(event)" class="space-y-3">
         <div><label class="block text-xs text-slate-500 mb-1">เลือกคู่พ่อแม่พันธุ์</label><select id="select-pair" required class="w-full border rounded-xl p-2.5 text-sm"></select></div>
+        
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">สายพันธุ์นก (สำหรับคำนวณวันฟัก)</label>
+          <select id="egg-species" class="w-full border rounded-xl p-2.5 text-sm font-bold text-slate-700">
+            <option value="Green-cheeked Conure">🟢 Green-cheeked Conure (ฟัก 19 วัน)</option>
+            <option value="Sun Conure">🟡 Sun Conure (ฟัก 24 วัน)</option>
+          </select>
+        </div>
+
         <div class="grid grid-cols-2 gap-2">
           <div><label class="block text-xs text-slate-500 mb-1">ไข่ใบที่</label><input type="number" id="egg-number" value="1" min="1" required class="w-full border rounded-xl p-2.5 text-sm"></div>
           <div><label class="block text-xs text-slate-500 mb-1">วันที่ไข่</label><input type="date" id="egg-date" required class="w-full border rounded-xl p-2.5 text-sm"></div>
