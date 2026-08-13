@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Birds My Boss - Farm System</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // ค่า Firebase Config ของคุณ
+    const firebaseConfig = {
+      apiKey: "AIzaSyDWi5aJTt4fhY6eHgup0IFzq8maOc30cZI",
+      authDomain: "farm-cce21.firebaseapp.com",
+      projectId: "farm-cce21",
+      storageBucket: "farm-cce21.firebasestorage.app",
+      messagingSenderId: "526312096943",
+      appId: "1:526312096943:web:7cf1951ff11a0c5743c05a",
+      measurementId: "G-7ZXW7LELNF"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ฟังก์ชันกดเพิ่มนก
+    window.addBirdPrompt = async () => {
+      const name = prompt("ใส่รหัส/ชื่อนก (เช่น GC-001 หรือ กรีนชีค):");
+      if (!name) return;
+
+      try {
+        await addDoc(collection(db, "birds"), {
+          name: name,
+          createdAt: new Date()
+        });
+        alert("บันทึกข้อมูลนกสำเร็จ!");
+      } catch (e) {
+        alert("เกิดข้อผิดพลาด: " + e.message);
+      }
+    };
+
+    // นับจำนวนนกแบบ Realtime
+    onSnapshot(collection(db, "birds"), (snapshot) => {
+      document.getElementById('total-birds').innerText = snapshot.size + " ตัว";
+    });
+  </script>
+
+  <style>
+    body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-12">
+
+  <!-- Header มือถือ -->
+  <header class="bg-[#0f172a] text-white p-4 flex justify-between items-center sticky top-0 z-10 shadow">
+    <div>
+      <h1 class="text-lg font-bold">Birds My Boss</h1>
+      <p class="text-xs text-slate-400">Farm System V2</p>
+    </div>
+    <button onclick="addBirdPrompt()" class="bg-[#0d9488] text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-teal-700">
+      + เพิ่มนก
+    </button>
+  </header>
+
+  <!-- เนื้อหาหลัก (จัด Layout ให้พอดีจอมือถือ) -->
+  <main class="p-4 space-y-4">
+    <!-- Stat Cards -->
+    <div class="grid grid-cols-2 gap-3">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-500">นกทั้งหมด</p>
+        <h3 class="text-xl font-bold text-slate-800 mt-1" id="total-birds">0 ตัว</h3>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-500">คู่พ่อแม่พันธุ์</p>
+        <h3 class="text-xl font-bold text-slate-800 mt-1">0 คู่</h3>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-500">ไข่</p>
+        <h3 class="text-xl font-bold text-slate-800 mt-1">0 ใบ</h3>
+      </div>
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <p class="text-xs text-slate-500">ลูกนก</p>
+        <h3 class="text-xl font-bold text-slate-800 mt-1">0 ตัว</h3>
+      </div>
+    </div>
+
+    <!-- ทางลัด Quick Actions -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+      <h3 class="font-bold text-slate-800 text-sm mb-3">⚡ ทางลัดจัดการฟาร์ม</h3>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="addBirdPrompt()" class="bg-[#0d9488] text-white py-2 rounded-lg text-sm font-medium">+ เพิ่มนก</button>
+        <button class="border border-slate-200 text-slate-700 py-2 rounded-lg text-sm">❤️ เพิ่มคู่</button>
+        <button class="border border-slate-200 text-slate-700 py-2 rounded-lg text-sm">+ รายจ่าย</button>
+        <button class="border border-slate-200 text-slate-700 py-2 rounded-lg text-sm">+ รายรับ</button>
+      </div>
+    </div>
+  </main>
+
+</body>
+</html>
