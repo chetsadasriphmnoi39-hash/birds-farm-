@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V33</title>
+  <title>Farm Sook - Pro System V32</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDWi5aJTt4fhY6eHgup0IFzq8maOc30cZI",
@@ -119,246 +119,6 @@
       return result.join(" ");
     };
 
-    // Load Data Functions
-    window.loadAllData = async () => {
-      await loadBirds();
-      await loadPairs();
-      await loadEggs();
-      await loadHealth();
-    };
-
-    async function loadBirds() {
-      try {
-        const querySnapshot = await getDocs(collection(db, "birds"));
-        globalBirds = [];
-        const list = document.getElementById('birds-list');
-        const fatherSelect = document.getElementById('bird-father');
-        const motherSelect = document.getElementById('bird-mother');
-        const pairFatherSelect = document.getElementById('select-father');
-        const pairMotherSelect = document.getElementById('select-mother');
-        const healthBirdSelect = document.getElementById('health-bird-select');
-        
-        if(list) list.innerHTML = "";
-        const defaultFatherOpt = '<option value="">-- ไม่ระบุพ่อพันธุ์ --</option>';
-        const defaultMotherOpt = '<option value="">-- ไม่ระบุแม่พันธุ์ --</option>';
-        const pairFatherOpt = '<option value="">-- เลือกพ่อพันธุ์ (♂) --</option>';
-        const pairMotherOpt = '<option value="">-- เลือกแม่พันธุ์ (♀) --</option>';
-        const healthOpt = '<option value="">-- เลือกรหัสนก --</option>';
-
-        if(fatherSelect) fatherSelect.innerHTML = defaultFatherOpt;
-        if(motherSelect) motherSelect.innerHTML = defaultMotherOpt;
-        if(pairFatherSelect) pairFatherSelect.innerHTML = pairFatherOpt;
-        if(pairMotherSelect) pairMotherSelect.innerHTML = pairMotherOpt;
-        if(healthBirdSelect) healthBirdSelect.innerHTML = healthOpt;
-
-        querySnapshot.forEach(docSnap => {
-          const item = { id: docSnap.id, ...docSnap.data() };
-          globalBirds.push(item);
-
-          const genderBadge = item.gender === 'ผู้' ? '♂ ผู้' : (item.gender === 'เมีย' ? '♀ เมีย' : '❓ ไม่ระบุ');
-          const badgeColor = item.gender === 'ผู้' ? 'bg-blue-50 text-blue-600 border border-blue-100' : (item.gender === 'เมีย' ? 'bg-pink-50 text-pink-600 border border-pink-100' : 'bg-slate-50 text-slate-500 border border-slate-100');
-          const ageText = calculateDuration(item.hatchDate);
-
-          if(list) {
-            list.innerHTML += `
-              <div class="p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-2">
-                <div class="flex justify-between items-center">
-                  <div class="flex items-center space-x-2">
-                    ${item.photoUrl ? `<img src="${item.photoUrl}" class="w-8 h-8 rounded-full object-cover border border-slate-200">` : ''}
-                    <div>
-                      <span class="font-bold text-slate-800 text-sm">${item.name}</span>
-                      ${item.ringNo ? `<span class="bg-amber-50 text-amber-700 border border-amber-100 px-1.5 py-0.5 rounded text-[10px] font-mono ml-1">💍 ${item.ringNo}</span>` : ''}
-                      <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ml-1 ${badgeColor}">${genderBadge}</span>
-                    </div>
-                  </div>
-                  <div class="flex space-x-1">
-                    <button type="button" onclick="generateCert('${item.id}')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg text-[10px] font-bold hover:bg-emerald-100">📜 เซอร์</button>
-                    <button type="button" onclick='generateCageTag(${JSON.stringify(item)}, "bird")' class="bg-slate-50 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-lg text-[10px] font-bold hover:bg-slate-100">🏷️ แท็ก</button>
-                    <button type="button" onclick="deleteBird('${item.id}', '${item.name}')" class="text-rose-400 hover:text-rose-600 text-xs font-medium px-1">🗑️</button>
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-1 text-[11px] text-slate-500 bg-slate-50/70 p-2.5 rounded-xl">
-                  <div><span class="text-slate-400">สายพันธุ์:</span> <strong>${item.species}</strong></div>
-                  <div><span class="text-slate-400">สีหลัก:</span> <strong>${item.visualColor || item.species}</strong></div>
-                  <div><span class="text-slate-400">ยีนแฝง:</span> <strong>${item.splitColor || '-'}</strong></div>
-                  <div><span class="text-slate-400">🎂 อายุ:</span> <strong class="text-emerald-700">${ageText ? ageText : (item.hatchDate || '-')}</strong></div>
-                </div>
-              </div>`;
-          }
-
-          const option = `<option value="${item.id}">${item.name} (${item.visualColor || item.species})</option>`;
-          if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') {
-            if(fatherSelect) fatherSelect.innerHTML += option;
-            if(pairFatherSelect) pairFatherSelect.innerHTML += option;
-          }
-          if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') {
-            if(motherSelect) motherSelect.innerHTML += option;
-            if(pairMotherSelect) pairMotherSelect.innerHTML += option;
-          }
-          if(healthBirdSelect) healthBirdSelect.innerHTML += option;
-        });
-
-        if (querySnapshot.size === 0 && list) {
-          list.innerHTML = `<p class="text-xs text-slate-400">ยังไม่มีข้อมูลนก (กดปุ่ม "+ เพิ่มนก" ด้านบนเพื่อเริ่มบันทึก)</p>`;
-        }
-
-        const totalBirdsEl = document.getElementById('total-birds');
-        if(totalBirdsEl) totalBirdsEl.innerText = querySnapshot.size + " ตัว";
-      } catch (err) {
-        console.error("Error loading birds: ", err);
-      }
-    }
-
-    async function loadPairs() {
-      try {
-        const querySnapshot = await getDocs(collection(db, "pairs"));
-        globalPairs = [];
-        const list = document.getElementById('pairs-list');
-        const pairSelect = document.getElementById('select-pair');
-        
-        if(list) list.innerHTML = "";
-        if(pairSelect) pairSelect.innerHTML = '<option value="">-- เลือกคู่พ่อแม่พันธุ์ --</option>';
-
-        querySnapshot.forEach(docSnap => {
-          const item = { id: docSnap.id, ...docSnap.data() };
-          globalPairs.push(item);
-
-          if(list) {
-            list.innerHTML += `
-              <div class="p-3.5 bg-white rounded-2xl border border-rose-100 shadow-sm text-xs space-y-1">
-                <div class="flex justify-between items-center">
-                  <div class="font-bold text-rose-800 text-sm">❤️ ${item.name}</div>
-                  <button type="button" onclick='generateCageTag(${JSON.stringify(item)}, "pair")' class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-lg text-[10px] font-bold hover:bg-rose-100">🏷️ พิมพ์แท็ก</button>
-                </div>
-                <div class="text-slate-600">♂ พ่อ: <strong>${item.fatherName}</strong></div>
-                <div class="text-slate-600">♀ แม่: <strong>${item.motherName}</strong></div>
-              </div>`;
-          }
-          if(pairSelect) pairSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
-        });
-
-        if (querySnapshot.size === 0 && list) {
-          list.innerHTML = `<p class="text-xs text-slate-400">ยังไม่มีคู่พ่อแม่พันธุ์ในระบบ</p>`;
-        }
-        const totalPairsEl = document.getElementById('total-pairs');
-        if(totalPairsEl) totalPairsEl.innerText = querySnapshot.size + " คู่";
-      } catch (err) {
-        console.error("Error loading pairs: ", err);
-      }
-    }
-
-    async function loadEggs() {
-      try {
-        const querySnapshot = await getDocs(collection(db, "egg_details"));
-        globalEggs = [];
-        const list = document.getElementById('egg-details-list');
-        const reminderList = document.getElementById('reminder-list');
-        if(list) list.innerHTML = "";
-        if(reminderList) reminderList.innerHTML = "";
-
-        let totalEggsCount = 0;
-        let totalHatchedCount = 0;
-        let reminderCount = 0;
-        const groupedEggs = {};
-
-        querySnapshot.forEach(docSnap => {
-          const data = docSnap.data();
-          globalEggs.push(data);
-          totalEggsCount++;
-          if(data.status === 'ฟักแล้ว') totalHatchedCount++;
-
-          if (data.status === 'รอส่องเชื้อ' && reminderList) {
-            reminderCount++;
-            reminderList.innerHTML += `<div class="p-2 bg-amber-50 text-amber-800 rounded-xl border border-amber-200 text-xs flex justify-between items-center">
-              <span>🔦 ส่องเชื้อไข่: <strong>${data.pairName}</strong> (ใบที่ ${data.eggNo})</span>
-              <span class="text-[10px] bg-amber-200 font-bold px-2 py-0.5 rounded">${data.candlingDate || 'ครบ 6 วัน'}</span>
-            </div>`;
-          }
-
-          if (!groupedEggs[data.pairName]) groupedEggs[data.pairName] = [];
-          groupedEggs[data.pairName].push(data);
-        });
-
-        if (reminderCount === 0 && reminderList) {
-          reminderList.innerHTML = `<p class="text-xs text-slate-400">ไม่มีรายการแจ้งเตือนด่วนในขณะนี้</p>`;
-        }
-
-        for (const pairName in groupedEggs) {
-          const eggs = groupedEggs[pairName].sort((a,b) => a.eggNo - b.eggNo);
-          let eggsHtml = '';
-          eggs.forEach(egg => {
-            let statusBg = 'bg-slate-100 text-slate-600';
-            if (egg.status === 'มีเชื้อ') statusBg = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-            if (egg.status === 'ฟักแล้ว') statusBg = 'bg-emerald-600 text-white font-bold';
-            if (egg.status === 'ไม่มีเชื้อ') statusBg = 'bg-rose-50 text-rose-600 border border-rose-200';
-
-            eggsHtml += `
-              <div class="p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
-                <div>
-                  <span class="font-bold text-amber-900">🥚 ใบที่ ${egg.eggNo}</span>
-                  <span class="text-[10px] text-slate-400 ml-1">ไข่: ${egg.layDate}</span>
-                  <div class="text-[10px] text-emerald-600">🐣 คาดการณ์ฟัก: ${egg.estHatchDate}</div>
-                </div>
-                <span class="px-2.5 py-1 rounded-lg text-[10px] ${statusBg}">${egg.status}</span>
-              </div>`;
-          });
-
-          if(list) {
-            list.innerHTML += `
-              <div class="bg-white p-3.5 rounded-2xl border border-amber-100 shadow-sm space-y-2">
-                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-                  <span class="font-bold text-slate-800 text-xs">🪺 ${pairName}</span>
-                  <span class="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-100 px-2.5 py-0.5 rounded-full">รวม ${eggs.length} ใบ</span>
-                </div>
-                <div class="space-y-1.5">${eggsHtml}</div>
-              </div>`;
-          }
-        }
-
-        if (querySnapshot.size === 0 && list) {
-          list.innerHTML = `<p class="text-xs text-slate-400">ยังไม่มีบันทึกข้อมูลไข่</p>`;
-        }
-
-        const totalEggsEl = document.getElementById('total-eggs');
-        const totalChicksEl = document.getElementById('total-chicks');
-        if(totalEggsEl) totalEggsEl.innerText = totalEggsCount + " ใบ";
-        if(totalChicksEl) totalChicksEl.innerText = totalHatchedCount + " ตัว";
-      } catch (err) {
-        console.error("Error loading eggs: ", err);
-      }
-    }
-
-    async function loadHealth() {
-      try {
-        const querySnapshot = await getDocs(collection(db, "health_records"));
-        globalHealth = [];
-        const list = document.getElementById('health-records-list');
-        if(!list) return;
-        list.innerHTML = "";
-
-        querySnapshot.forEach(docSnap => {
-          const item = docSnap.data();
-          globalHealth.push(item);
-
-          list.innerHTML += `
-            <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs flex justify-between items-center">
-              <div>
-                <span class="font-bold text-slate-800">🩺 ${item.birdName}</span>
-                <span class="text-[10px] text-slate-400 ml-1">(${item.date})</span>
-                <div class="text-[11px] text-slate-600">${item.type}: ${item.detail}</div>
-                ${item.medicine ? `<div class="text-[10px] text-emerald-700 font-bold">💊 ยา/วิตามิน: ${item.medicine}</div>` : ''}
-              </div>
-            </div>`;
-        });
-
-        if (querySnapshot.size === 0) list.innerHTML = `<p class="text-xs text-slate-400">ยังไม่มีบันทึกประวัติสุขภาพ</p>`;
-      } catch (err) {
-        console.error("Error loading health: ", err);
-      }
-    }
-
-    // Form Submissions
     window.submitAddBird = async (event) => {
       event.preventDefault();
       const name = document.getElementById('bird-name').value.trim();
@@ -391,7 +151,6 @@
         closeModal('modal-bird');
         document.getElementById('form-bird').reset();
         window.updateMutationDropdowns();
-        loadAllData();
       } catch (err) {
         alert("❌ เกิดข้อผิดพลาดในการบันทึก: " + err.message);
       }
@@ -418,7 +177,6 @@
         alert("จับคู่พ่อแม่พันธุ์สำเร็จ!");
         closeModal('modal-pair');
         document.getElementById('form-pair').reset();
-        loadAllData();
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
     };
 
@@ -455,7 +213,6 @@
         alert(`บันทึกไข่ใบที่ ${eggNo} เรียบร้อย!`);
         closeModal('modal-egg');
         document.getElementById('form-egg').reset();
-        loadAllData();
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
     };
 
@@ -477,18 +234,7 @@
         alert("บันทึกประวัติสุขภาพ/การรักษาเรียบร้อย!");
         closeModal('modal-health');
         document.getElementById('form-health').reset();
-        loadAllData();
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
-    };
-
-    window.deleteBird = async (id, name) => {
-      if (confirm(`คุณต้องการลบรายการนก "${name}" ใช่หรือไม่?`)) {
-        try {
-          await deleteDoc(doc(db, "birds", id));
-          alert("ลบข้อมูลนกเรียบร้อย!");
-          loadAllData();
-        } catch (err) { alert("เกิดข้อผิดพลาดในการลบ: " + err.message); }
-      }
     };
 
     window.calculateGenetics = () => {
@@ -577,7 +323,7 @@
       let femaleVisName = getVisualName(
         fatherVis.cin,
         fatherVis.ys,
-        (fatherVis.dil || fatherSpl.dil) && (motherVis.dil || motherSpl.dil),
+        (fatherVis.dil || fatherSpl.dil) && (motherVis.dil || motherVis.dil),
         (fatherVis.tur || fatherSpl.tur) && (motherVis.tur || motherSpl.tur)
       );
 
@@ -731,6 +477,234 @@
       html2pdf().set(opt).from(element).save();
     };
 
+    window.deleteBird = async (id, name) => {
+      if (confirm(`คุณต้องการลบรายการนก "${name}" ใช่หรือไม่?`)) {
+        try {
+          await deleteDoc(doc(db, "birds", id));
+          alert("ลบข้อมูลนกเรียบร้อย!");
+        } catch (err) { alert("เกิดข้อผิดพลาดในการลบ: " + err.message); }
+      }
+    };
+
+    // Realtime Listeners with Persistent Local Render
+    onSnapshot(collection(db, "birds"), (snapshot) => {
+      globalBirds = [];
+      const list = document.getElementById('birds-list');
+      const fatherSelect = document.getElementById('bird-father');
+      const motherSelect = document.getElementById('bird-mother');
+      const pairFatherSelect = document.getElementById('select-father');
+      const pairMotherSelect = document.getElementById('select-mother');
+      const healthBirdSelect = document.getElementById('health-bird-select');
+      
+      if(list) list.innerHTML = "";
+      const defaultFatherOpt = '<option value="">-- ไม่ระบุพ่อพันธุ์ --</option>';
+      const defaultMotherOpt = '<option value="">-- ไม่ระบุแม่พันธุ์ --</option>';
+      const pairFatherOpt = '<option value="">-- เลือกพ่อพันธุ์ (♂) --</option>';
+      const pairMotherOpt = '<option value="">-- เลือกแม่พันธุ์ (♀) --</option>';
+      const healthOpt = '<option value="">-- เลือกรหัสนก --</option>';
+
+      if(fatherSelect) fatherSelect.innerHTML = defaultFatherOpt;
+      if(motherSelect) motherSelect.innerHTML = defaultMotherOpt;
+      if(pairFatherSelect) pairFatherSelect.innerHTML = pairFatherOpt;
+      if(pairMotherSelect) pairMotherSelect.innerHTML = pairMotherOpt;
+      if(healthBirdSelect) healthBirdSelect.innerHTML = healthOpt;
+
+      snapshot.forEach(docSnap => {
+        const item = { id: docSnap.id, ...docSnap.data() };
+        globalBirds.push(item);
+
+        const genderBadge = item.gender === 'ผู้' ? '♂ ผู้' : (item.gender === 'เมีย' ? '♀ เมีย' : '❓ ไม่ระบุ');
+        const badgeColor = item.gender === 'ผู้' ? 'bg-blue-50 text-blue-600 border border-blue-100' : (item.gender === 'เมีย' ? 'bg-pink-50 text-pink-600 border border-pink-100' : 'bg-slate-50 text-slate-500 border border-slate-100');
+
+        const ageText = calculateDuration(item.hatchDate);
+
+        if(list) {
+          list.innerHTML += `
+            <div class="p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-2">
+              <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                  ${item.photoUrl ? `<img src="${item.photoUrl}" class="w-8 h-8 rounded-full object-cover border border-slate-200">` : ''}
+                  <div>
+                    <span class="font-bold text-slate-800 text-sm">${item.name}</span>
+                    ${item.ringNo ? `<span class="bg-amber-50 text-amber-700 border border-amber-100 px-1.5 py-0.5 rounded text-[10px] font-mono ml-1">💍 ${item.ringNo}</span>` : ''}
+                    <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ml-1 ${badgeColor}">${genderBadge}</span>
+                  </div>
+                </div>
+                <div class="flex space-x-1">
+                  <button type="button" onclick="generateCert('${item.id}')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg text-[10px] font-bold hover:bg-emerald-100">📜 เซอร์</button>
+                  <button type="button" onclick='generateCageTag(${JSON.stringify(item)}, "bird")' class="bg-slate-50 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-lg text-[10px] font-bold hover:bg-slate-100">🏷️ แท็ก</button>
+                  <button type="button" onclick="deleteBird('${item.id}', '${item.name}')" class="text-rose-400 hover:text-rose-600 text-xs font-medium px-1">🗑️</button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-1 text-[11px] text-slate-500 bg-slate-50/70 p-2.5 rounded-xl">
+                <div><span class="text-slate-400">สายพันธุ์:</span> <strong>${item.species}</strong></div>
+                <div><span class="text-slate-400">สีหลัก:</span> <strong>${item.visualColor || item.species}</strong></div>
+                <div><span class="text-slate-400">ยีนแฝง:</span> <strong>${item.splitColor || '-'}</strong></div>
+                <div><span class="text-slate-400">🎂 อายุ:</span> <strong class="text-emerald-700">${ageText ? ageText : (item.hatchDate || '-')}</strong></div>
+              </div>
+            </div>`;
+        }
+
+        const option = `<option value="${item.id}">${item.name} (${item.visualColor || item.species})</option>`;
+        if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') {
+          if(fatherSelect) fatherSelect.innerHTML += option;
+          if(pairFatherSelect) pairFatherSelect.innerHTML += option;
+        }
+        if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') {
+          if(motherSelect) motherSelect.innerHTML += option;
+          if(pairMotherSelect) pairMotherSelect.innerHTML += option;
+        }
+        if(healthBirdSelect) healthBirdSelect.innerHTML += option;
+      });
+
+      if (snapshot.size === 0 && list) {
+        list.innerHTML = `<p class="text-xs text-slate-400">ยังไม่มีข้อมูลนก (กดปุ่ม "+ เพิ่มนก" ด้านบนเพื่อเริ่มบันทึก)</p>`;
+      }
+
+      const totalBirdsEl = document.getElementById('total-birds');
+      if(totalBirdsEl) totalBirdsEl.innerText = snapshot.size + " ตัว";
+    }, (error) => {
+      console.error("Firebase error: ", error);
+    });
+
+    onSnapshot(collection(db, "health_records"), (snapshot) => {
+      globalHealth = [];
+      const list = document.getElementById('health-records-list');
+      if(!list) return;
+      list.innerHTML = "";
+
+      snapshot.forEach(docSnap => {
+        const item = docSnap.data();
+        globalHealth.push(item);
+
+        list.innerHTML += `
+          <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs flex justify-between items-center">
+            <div>
+              <span class="font-bold text-slate-800">🩺 ${item.birdName}</span>
+              <span class="text-[10px] text-slate-400 ml-1">(${item.date})</span>
+              <div class="text-[11px] text-slate-600">${item.type}: ${item.detail}</div>
+              ${item.medicine ? `<div class="text-[10px] text-emerald-700 font-bold">💊 ยา/วิตามิน: ${item.medicine}</div>` : ''}
+            </div>
+          </div>`;
+      });
+
+      if (snapshot.size === 0) list.innerHTML = `<p class="text-xs text-slate-400">ยังไม่มีบันทึกประวัติสุขภาพ</p>`;
+    });
+
+    onSnapshot(collection(db, "pairs"), (snapshot) => {
+      globalPairs = [];
+      const list = document.getElementById('pairs-list');
+      const pairSelect = document.getElementById('select-pair');
+      
+      if(list) list.innerHTML = "";
+      if(pairSelect) pairSelect.innerHTML = '<option value="">-- เลือกคู่พ่อแม่พันธุ์ --</option>';
+
+      snapshot.forEach(docSnap => {
+        const item = { id: docSnap.id, ...docSnap.data() };
+        globalPairs.push(item);
+
+        if(list) {
+          list.innerHTML += `
+            <div class="p-3.5 bg-white rounded-2xl border border-rose-100 shadow-sm text-xs space-y-1">
+              <div class="flex justify-between items-center">
+                <div class="font-bold text-rose-800 text-sm">❤️ ${item.name}</div>
+                <button type="button" onclick='generateCageTag(${JSON.stringify(item)}, "pair")' class="bg-rose-50 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-lg text-[10px] font-bold hover:bg-rose-100">🏷️ พิมพ์แท็กติดกรง</button>
+              </div>
+              <div class="text-slate-600">♂ พ่อ: <strong>${item.fatherName}</strong></div>
+              <div class="text-slate-600">♀ แม่: <strong>${item.motherName}</strong></div>
+              <div id="analytics-${item.id}" class="text-[10px] text-amber-800 bg-amber-50 p-1.5 rounded-lg border border-amber-100 mt-1">📊 พร้อมบันทึกข้อมูลไข่</div>
+            </div>`;
+        }
+
+        if(pairSelect) pairSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+      });
+
+      if (snapshot.size === 0 && list) {
+        list.innerHTML = `<p class="text-xs text-slate-400">ยังไม่มีคู่พ่อแม่พันธุ์ในระบบ</p>`;
+      }
+
+      const totalPairsEl = document.getElementById('total-pairs');
+      if(totalPairsEl) totalPairsEl.innerText = snapshot.size + " คู่";
+    });
+
+    onSnapshot(collection(db, "egg_details"), (snapshot) => {
+      globalEggs = [];
+      const list = document.getElementById('egg-details-list');
+      const reminderList = document.getElementById('reminder-list');
+      if(list) list.innerHTML = "";
+      if(reminderList) reminderList.innerHTML = "";
+
+      let totalEggsCount = 0;
+      let totalHatchedCount = 0;
+      let reminderCount = 0;
+
+      const groupedEggs = {};
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        globalEggs.push(data);
+        totalEggsCount++;
+        if(data.status === 'ฟักแล้ว') totalHatchedCount++;
+
+        if (data.status === 'รอส่องเชื้อ' && reminderList) {
+          reminderCount++;
+          reminderList.innerHTML += `<div class="p-2 bg-amber-50 text-amber-800 rounded-xl border border-amber-200 text-xs flex justify-between items-center">
+            <span>🔦 ส่องเชื้อไข่: <strong>${data.pairName}</strong> (ใบที่ ${data.eggNo})</span>
+            <span class="text-[10px] bg-amber-200 font-bold px-2 py-0.5 rounded">${data.candlingDate || 'ครบ 6 วัน'}</span>
+          </div>`;
+        }
+
+        if (!groupedEggs[data.pairName]) groupedEggs[data.pairName] = [];
+        groupedEggs[data.pairName].push(data);
+      });
+
+      if (reminderCount === 0 && reminderList) {
+        reminderList.innerHTML = `<p class="text-xs text-slate-400">ไม่มีรายการแจ้งเตือนด่วนในขณะนี้</p>`;
+      }
+
+      for (const pairName in groupedEggs) {
+        const eggs = groupedEggs[pairName].sort((a,b) => a.eggNo - b.eggNo);
+        let eggsHtml = '';
+        eggs.forEach(egg => {
+          let statusBg = 'bg-slate-100 text-slate-600';
+          if (egg.status === 'มีเชื้อ') statusBg = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+          if (egg.status === 'ฟักแล้ว') statusBg = 'bg-emerald-600 text-white font-bold';
+          if (egg.status === 'ไม่มีเชื้อ') statusBg = 'bg-rose-50 text-rose-600 border border-rose-200';
+
+          eggsHtml += `
+            <div class="p-2.5 bg-slate-50/80 rounded-xl border border-slate-100 flex justify-between items-center text-xs">
+              <div>
+                <span class="font-bold text-amber-900">🥚 ใบที่ ${egg.eggNo}</span>
+                <span class="text-[10px] text-slate-400 ml-1">ไข่: ${egg.layDate}</span>
+                <div class="text-[10px] text-emerald-600">🐣 คาดการณ์ฟัก: ${egg.estHatchDate}</div>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg text-[10px] ${statusBg}">${egg.status}</span>
+            </div>`;
+        });
+
+        if(list) {
+          list.innerHTML += `
+            <div class="bg-white p-3.5 rounded-2xl border border-amber-100 shadow-sm space-y-2">
+              <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                <span class="font-bold text-slate-800 text-xs">🪺 ${pairName}</span>
+                <span class="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-100 px-2.5 py-0.5 rounded-full">รวม ${eggs.length} ใบ</span>
+              </div>
+              <div class="space-y-1.5">${eggsHtml}</div>
+            </div>`;
+        }
+      }
+
+      if (snapshot.size === 0 && list) {
+        list.innerHTML = `<p class="text-xs text-slate-400">ยังไม่มีบันทึกข้อมูลไข่</p>`;
+      }
+
+      const totalEggsEl = document.getElementById('total-eggs');
+      const totalChicksEl = document.getElementById('total-chicks');
+      if(totalEggsEl) totalEggsEl.innerText = totalEggsCount + " ใบ";
+      if(totalChicksEl) totalChicksEl.innerText = totalHatchedCount + " ตัว";
+    });
+
     window.openModal = (id) => {
       const modal = document.getElementById(id);
       if(modal) modal.classList.remove('hidden');
@@ -746,7 +720,6 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       window.updateMutationDropdowns();
-      loadAllData();
     });
   </script>
 
@@ -763,7 +736,7 @@
         <span class="text-2xl">🌿</span>
         <div>
           <h1 class="text-lg font-extrabold tracking-wide">Farm Sook</h1>
-          <p class="text-[10px] text-emerald-200">Pro System V33 (Stable)</p>
+          <p class="text-[10px] text-emerald-200">Pro System V32 (Persistent)</p>
         </div>
       </div>
       <button type="button" onclick="openModal('modal-bird')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm">
@@ -1034,7 +1007,7 @@
             <option value="แตก/เสีย">❌ แตก/เสีย</option>
           </select>
         </div>
-        <div class="flex space-x-2 pt-2"><button type="button" onclick="closeModal('modal-egg')" class="w-1/2 border py-2 rounded-xl text-sm">ยกเลิก</button><button type="submit" class="w-1/2 bg-amber-500 text-white py-2 rounded-xl text-sm font-bold">บันทึกไข่</button></div>
+        <div class="flex space-x-2 pt-2"><button type="button" onclick="closeModal('modal-egg')" class="w-1/2 border py-2 rounded-xl text-sm">ยกเลิก</button><button type="submit" class="w-1/2 bg-amber-505 text-white py-2 rounded-xl text-sm font-bold">บันทึกไข่</button></div>
       </form>
     </div>
   </div>
