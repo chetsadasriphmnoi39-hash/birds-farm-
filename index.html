@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Farm Sook - Pro Max System V9</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Library สำหรับแปลงหน้าใบเซอร์เป็นรูปภาพ/PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   
   <script type="module">
@@ -28,31 +27,38 @@
     let globalBirds = [];
     let globalPairs = [];
 
-    // 1. เพิ่มนก
+    // 1. เพิ่มนก (แก้ไขระบบป้องกัน บันทึกไม่ได้)
     window.submitAddBird = async (e) => {
       e.preventDefault();
-      const name = document.getElementById('bird-name').value;
-      const ringNo = document.getElementById('bird-ring').value;
-      const species = document.getElementById('bird-species').value;
-      const visualColor = document.getElementById('bird-visual').value;
-      const splitColor = document.getElementById('bird-split').value;
-      const gender = document.getElementById('bird-gender').value;
-      const dnaCert = document.getElementById('bird-dna').value;
-      const fatherId = document.getElementById('bird-father').value;
-      const motherId = document.getElementById('bird-mother').value;
-      const hatchDate = document.getElementById('bird-hatch').value;
-      const rearing = document.getElementById('bird-rearing').value;
+      
+      const getVal = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value : "";
+      };
+
+      const birdData = {
+        name: getVal('bird-name'),
+        ringNo: getVal('bird-ring'),
+        species: getVal('bird-species'),
+        visualColor: getVal('bird-visual'),
+        splitColor: getVal('bird-split'),
+        gender: getVal('bird-gender') || "ผู้",
+        dnaCert: getVal('bird-dna'),
+        fatherId: getVal('bird-father'),
+        motherId: getVal('bird-mother'),
+        hatchDate: getVal('bird-hatch'),
+        rearing: getVal('bird-rearing') || "ป้อนมือ (Hand-fed)",
+        createdAt: new Date()
+      };
 
       try {
-        await addDoc(collection(db, "birds"), {
-          name, ringNo, species, visualColor, splitColor,
-          gender, dnaCert, fatherId, motherId, hatchDate, rearing,
-          createdAt: new Date()
-        });
+        await addDoc(collection(db, "birds"), birdData);
         alert("บันทึกข้อมูลนกเข้าทะเบียนเรียบร้อย!");
         closeModal('modal-bird');
         document.getElementById('form-bird').reset();
-      } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
+      } catch (err) { 
+        alert("เกิดข้อผิดพลาดในการบันทึก: " + err.message + "\n\nหากยังบันทึกไม่ได้ กรุณาเช็ค Rules ใน Firebase ของคุณอีกครั้งครับ"); 
+      }
     };
 
     // 2. จับคู่
@@ -92,18 +98,9 @@
       if (!pair) return alert("กรุณาเลือกคู่พ่อแม่พันธุ์");
 
       const layDateObj = new Date(eggDate);
-      
-      // วันส่องเชื้อ (+6 วัน)
-      const candlingObj = new Date(layDateObj);
-      candlingObj.setDate(candlingObj.getDate() + 6);
-      
-      // วันฟัก (+19 วัน)
-      const hatchDateObj = new Date(layDateObj);
-      hatchDateObj.setDate(hatchDateObj.getDate() + 19);
-
-      // วันใส่ห่วงขา (+30 วัน จากวันไข่ หรือ +11 วันหลังฟัก)
-      const ringDateObj = new Date(layDateObj);
-      ringDateObj.setDate(ringDateObj.getDate() + 30);
+      const candlingObj = new Date(layDateObj); candlingObj.setDate(candlingObj.getDate() + 6);
+      const hatchDateObj = new Date(layDateObj); hatchDateObj.setDate(hatchDateObj.getDate() + 19);
+      const ringDateObj = new Date(layDateObj); ringDateObj.setDate(ringDateObj.getDate() + 30);
 
       try {
         await addDoc(collection(db, "egg_details"), {
@@ -139,22 +136,19 @@
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
     };
 
-    // 5. คำนวณพันธุกรรมสี (Genetics Calculator Logic)
+    // 5. คำนวณพันธุกรรมสี
     window.calculateGenetics = () => {
       const fColor = document.getElementById('calc-father-color').value;
       const mColor = document.getElementById('calc-mother-color').value;
       const resultDiv = document.getElementById('calc-result');
 
       let outcomes = [];
-
       if (fColor === 'Suncheek' && mColor === 'Suncheek') {
         outcomes = ["100% Suncheek (ทั้งผู้และเมีย)"];
       } else if (fColor === 'Mooncheek' || mColor === 'Mooncheek') {
-        outcomes = ["50% Mooncheek / Suncheek (ขึ้นกับยีนแฝง Dilute/Turquoise)", "50% Visual Suncheek / Pineapple Split Mint/Turquoise"];
-      } else if (fColor.includes('Suncheek') || mColor.includes('Suncheek')) {
-        outcomes = ["50% Suncheek", "25% Pineapple Split Turquoise/Dilute", "25% Cinnamon Split Yellow-sided/Turquoise"];
+        outcomes = ["50% Mooncheek / Suncheek", "50% Visual Suncheek"];
       } else {
-        outcomes = ["50% Visual Mutation ตามสีข่มหลักของพ่อแม่", "25% Split Dilute / Turquoise", "25% Normal Green-cheeked (Split)"];
+        outcomes = ["50% Visual Mutation ตามสีข่มหลัก", "25% Split Dilute / Turquoise", "25% Normal Green-cheeked"];
       }
 
       resultDiv.innerHTML = `<div class="p-3 bg-teal-50 border border-teal-200 rounded-xl space-y-1 text-xs">
@@ -163,7 +157,7 @@
       </div>`;
     };
 
-    // 6. พิมพ์ใบรับรอง Pedigree (Certificate)
+    // 6. พิมพ์ใบรับรอง Pedigree
     window.generateCert = (birdId) => {
       const bird = globalBirds.find(b => b.id === birdId);
       if (!bird) return;
@@ -184,11 +178,11 @@
               <span class="font-bold text-slate-900 text-sm">${bird.name}</span>
             </div>
             <div class="flex justify-between border-b pb-1">
-              <span class="text-slate-500">หมายเลขห่วงขา (Ring No.):</span>
+              <span class="text-slate-500">หมายเลขห่วงขา:</span>
               <span class="font-mono font-bold text-emerald-700">${bird.ringNo || 'TH-FS-EX'}</span>
             </div>
             <div class="flex justify-between border-b pb-1">
-              <span class="text-slate-500">สายพันธุ์ & สี (Mutation):</span>
+              <span class="text-slate-500">สายพันธุ์ & สี:</span>
               <span class="font-bold text-slate-800">${bird.visualColor || bird.species}</span>
             </div>
             <div class="flex justify-between border-b pb-1">
@@ -196,20 +190,19 @@
               <span>${bird.splitColor || '-'}</span>
             </div>
             <div class="flex justify-between border-b pb-1">
-              <span class="text-slate-500">เพศ (Gender / DNA):</span>
+              <span class="text-slate-500">เพศ:</span>
               <span class="font-bold ${bird.gender === 'ผู้' ? 'text-blue-600' : 'text-pink-600'}">${bird.gender} (DNA Cert: ${bird.dnaCert || 'Verified'})</span>
             </div>
             <div class="flex justify-between border-b pb-1">
-              <span class="text-slate-500">วันฟัก (Hatch Date):</span>
+              <span class="text-slate-500">วันฟัก:</span>
               <span>${bird.hatchDate || '-'}</span>
             </div>
           </div>
 
-          <!-- Family Tree -->
           <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px] font-sans space-y-1">
             <div class="font-bold text-slate-700 mb-1 border-b pb-1">🧬 ประวัติสายเลือด (Pedigree Tree)</div>
-            <div>♂ พ่อ (Father): <strong>${fatherObj ? fatherObj.name : 'Unknown'}</strong> (${fatherObj ? fatherObj.visualColor : 'Pure Blood'})</div>
-            <div>♀ แม่ (Mother): <strong>${motherObj ? motherObj.name : 'Unknown'}</strong> (${motherObj ? motherObj.visualColor : 'Pure Blood'})</div>
+            <div>♂ พ่อ: <strong>${fatherObj ? fatherObj.name : 'Unknown'}</strong> (${fatherObj ? fatherObj.visualColor : 'Pure Blood'})</div>
+            <div>♀ แม่: <strong>${motherObj ? motherObj.name : 'Unknown'}</strong> (${motherObj ? motherObj.visualColor : 'Pure Blood'})</div>
           </div>
 
           <div class="text-center text-[9px] text-slate-400 font-sans pt-2">
@@ -339,7 +332,6 @@
         totalEggsCount++;
         if(data.status === 'ฟักแล้ว') totalHatchedCount++;
 
-        // เช็คการแจ้งเตือน Smart Reminders
         if (data.status === 'รอส่องเชื้อ') {
           reminderCount++;
           reminderList.innerHTML += `<div class="p-2 bg-amber-50 text-amber-800 rounded-xl border border-amber-200 text-xs flex justify-between items-center">
@@ -471,7 +463,7 @@
       </div>
     </div>
 
-    <!-- ⏰ SMART REMINDERS BOX (ระบบแจ้งเตือนกำหนดการด่วน) -->
+    <!-- ⏰ SMART REMINDERS BOX -->
     <div class="bg-white p-4 rounded-2xl shadow-sm border border-amber-200 space-y-2">
       <h3 class="font-bold text-slate-800 text-xs flex items-center space-x-1.5">
         <span>⏰</span> <span class="text-amber-800">การแจ้งเตือนกำหนดการฟาร์ม (Smart Reminders)</span>
@@ -575,7 +567,7 @@
     </div>
   </div>
 
-  <!-- MODAL 2: คำนวณสีพันธุกรรม (Genetics Calculator) -->
+  <!-- MODAL 2: คำนวณสีพันธุกรรม -->
   <div id="modal-calc" onclick="closeOnBackdrop(event, 'modal-calc')" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 relative">
       <button onclick="closeModal('modal-calc')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold">✕</button>
@@ -651,7 +643,7 @@
     </div>
   </div>
 
-  <!-- MODAL 5: แสดงใบรับรอง Pedigree & Certificate -->
+  <!-- MODAL 5: ใบเซอร์ -->
   <div id="modal-cert" onclick="closeOnBackdrop(event, 'modal-cert')" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50 overflow-y-auto">
     <div class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl relative my-6">
       <button onclick="closeModal('modal-cert')" class="absolute top-4 right-4 text-slate-400 text-lg font-bold z-10">✕</button>
