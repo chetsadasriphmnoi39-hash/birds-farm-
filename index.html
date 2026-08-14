@@ -136,6 +136,7 @@
     };
 
     window.renderPairGeneticsBox = (pair) => {
+      // ค้นหาไข่ที่ตรงกับคู่พันธุ์นี้แบบครอบคลุมทั้ง pairId, pairName หรือเลขกรง
       const pairEggs = globalEggs.filter(e => {
         if (e.pairId && e.pairId === pair.id) return true;
         const eName = (e.pairName || e.cage || "").replace(/\s+/g, "").toLowerCase();
@@ -754,6 +755,28 @@
       
       if(document.getElementById('total-eggs')) document.getElementById('total-eggs').innerText = totalEggsCount + " ใบ";
       if(document.getElementById('total-chicks')) document.getElementById('total-chicks').innerText = totalHatchedCount + " ตัว";
+
+      // อัปเดตการแสดงผลกล่องคู่พันธุ์ใหม่เมื่อข้อมูลไข่โหลดเสร็จ
+      if(globalPairs.length > 0) {
+        const pairsListContainer = document.getElementById('pairs-list');
+        if(pairsListContainer) {
+          // รีเรนเดอร์คู่พันธุ์เพื่อให้ยอดไข่ใต้ชื่อคู่พันธุ์อัปเดตตามทันที
+          let htmlPairs = "";
+          globalPairs.forEach(item => {
+            const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { visualColor: item.fatherSpecies, splitColor: "" };
+            const motherObj = globalBirds.find(b => b.id === item.motherId) || { visualColor: item.motherSpecies, splitColor: "" };
+            const autoGeneticsHtml = renderPairGeneticsBox(item);
+            htmlPairs += `
+              <div class="p-4 bg-white rounded-3xl border border-rose-100 shadow-xs space-y-2.5 hover:shadow-md transition">
+                <div class="flex justify-between items-center"><div class="font-black text-rose-900 text-sm">❤️ ${item.name}</div>
+                <div class="flex space-x-1"><button onclick='generateCageTag(${JSON.stringify(item)}, "pair")' class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">🏷️ แท็ก</button><button onclick="openEditPair('${item.id}')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">✏️</button><button onclick="deletePair('${item.id}', '${item.name}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">🗑️</button></div></div>
+                <div class="text-slate-600 text-xs space-y-0.5 bg-rose-50/30 p-2.5 rounded-2xl border border-rose-50"><div>♂ พ่อ: <strong class="text-slate-800">${item.fatherName}</strong> (${fatherObj.visualColor || 'Normal'}) | แฝง: ${fatherObj.splitColor || '-'}</div><div>♀ แม่: <strong class="text-slate-800">${item.motherName}</strong> (${motherObj.visualColor || 'Normal'}) | แฝง: ${motherObj.splitColor || '-'}</div></div>
+                ${autoGeneticsHtml}
+              </div>`;
+          });
+          pairsListContainer.innerHTML = htmlPairs;
+        }
+      }
     });
 
     window.calculateGenetics = () => {
