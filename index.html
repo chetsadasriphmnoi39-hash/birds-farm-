@@ -255,7 +255,13 @@
       window.toggleCustomSpecies();
     };
 
-    window.resetPairForm = () => { editPairId = null; document.getElementById('form-pair').reset(); document.getElementById('title-modal-pair').innerHTML = "❤️ จับคู่พ่อแม่พันธุ์"; };
+    window.resetPairForm = () => { 
+      editPairId = null; 
+      document.getElementById('form-pair').reset(); 
+      document.getElementById('title-modal-pair').innerHTML = "❤️ จับคู่พ่อแม่พันธุ์"; 
+      window.renderPairDropdownOptions();
+    };
+
     window.resetEggForm = () => { editEggId = null; document.getElementById('form-egg').reset(); document.getElementById('title-modal-egg').innerHTML = "🥚 บันทึกข้อมูลไข่รายใบ"; document.getElementById('egg-date').valueAsDate = new Date(); };
     window.resetHealthForm = () => { editHealthId = null; document.getElementById('form-health').reset(); document.getElementById('title-modal-health').innerHTML = "🩺 บันทึกประวัติสุขภาพ"; document.getElementById('health-date').valueAsDate = new Date(); };
     window.resetFinanceForm = () => { document.getElementById('form-finance').reset(); document.getElementById('finance-date').valueAsDate = new Date(); };
@@ -471,8 +477,7 @@
       editPairId = id;
       document.getElementById('title-modal-pair').innerHTML = "✏️ แก้ไขคู่ผสมพันธุ์";
       document.getElementById('pair-custom-name').value = pair.name || '';
-      document.getElementById('select-father').value = pair.fatherId || '';
-      document.getElementById('select-mother').value = pair.motherId || '';
+      window.renderPairDropdownOptions(pair.fatherId, pair.motherId);
       openModal('modal-pair');
     };
 
@@ -618,6 +623,7 @@
         globalBirds = [];
         snapshot.forEach(docSnap => { globalBirds.push({ id: docSnap.id, ...docSnap.data() }); });
         window.renderBirdsList();
+        window.renderPairDropdownOptions();
       }));
 
       unsubscribers.push(onSnapshot(qHealth, (snapshot) => {
@@ -664,10 +670,33 @@
       }));
 
       unsubscribers.push(onSnapshot(qPairs, (snapshot) => {
-        globalPairs = []; const list = document.getElementById('pairs-list'); const pairSelect = document.getElementById('select-pair');
-        if(list) list.innerHTML = ""; if(pairSelect) pairSelect.innerHTML = '<option value="">-- เลือกคู่พ่อแม่พันธุ์ --</option>';
+        globalPairs = []; 
+        const list = document.getElementById('pairs-list'); 
+        if(list) list.innerHTML = ""; 
+
         snapshot.forEach(docSnap => {
-          const item = { id: docSnap.id, ...docSnap.data() }; globalPairs.push(item);
+          globalPairs.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        // จัดเรียงคู่พ่อแม่พันธุ์ตามชื่อกรงแบบธรรมชาติ (เช่น กรง 1, กรง 6, กรง 7, กรง 10)
+        globalPairs.sort((a, b) => {
+          const nameA = a.name || "";
+          const nameB = b.name || "";
+          const reg = /(\d+)/g;
+          const tokensA = nameA.split(reg).map(tok => isNaN(tok) ? tok : Number(tok));
+          const tokensB = nameB.split(reg).map(tok => isNaN(tok) ? tok : Number(tok));
+          for (let i = 0; i < Math.max(tokensA.length, tokensB.length); i++) {
+            if (tokensA[i] === undefined) return -1;
+            if (tokensB[i] === undefined) return 1;
+            if (tokensA[i] < tokensB[i]) return -1;
+            if (tokensA[i] > tokensB[i]) return 1;
+          }
+          return 0;
+        });
+
+        window.renderPairDropdownOptions();
+
+        globalPairs.forEach(item => {
           const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { visualColor: item.fatherSpecies, splitColor: "" };
           const motherObj = globalBirds.find(b => b.id === item.motherId) || { visualColor: item.motherSpecies, splitColor: "" };
           const autoGeneticsHtml = renderPairGeneticsBox(item);
@@ -681,8 +710,8 @@
                 ${autoGeneticsHtml}
               </div>`;
           }
-          if(pairSelect) pairSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
         });
+
         if (snapshot.size === 0 && list) list.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">ยังไม่มีข้อมูลคู่พันธุ์</p>`;
         if(document.getElementById('total-pairs')) document.getElementById('total-pairs').innerText = snapshot.size + " คู่";
       }));
@@ -753,6 +782,47 @@
       }));
     }
 
+    window.renderPairDropdownOptions = (selectedFatherId = "", selectedMotherId = "") => {
+      const pairFatherSelect = document.getElementById('select-father');
+      const pairMotherSelect = document.getElementById('select-mother');
+      if (!pairFatherSelect || !pairMotherSelect) return;
+
+      // รวบรวม ID นกที่มีคู่อยู่แล้วในระบบ (ยกเว้นตัวที่กำลังแก้ไขในคู่นั้นๆ)
+      const pairedFatherIds = new Set();
+      const pairedMotherIds = new Set();
+      globalPairs.forEach(p => {
+        if (p.id !== editPairId) {
+          if (p.fatherId) pairedFatherIds.add(p.fatherId);
+          if (p.motherId) pairedMotherIds.add(p.motherId);
+        }
+      });
+
+      pairFatherSelect.innerHTML = '<option value="">-- เลือกพ่อพันธุ์ (♂) --</option>';
+      pairMotherSelect.innerHTML = '<option value="">-- เลือกแม่พันธุ์ (♀) --</option>';
+
+      globalBirds.forEach(item => {
+        if (item.status === 'เสียชีวิต') return; // ข้ามตัวที่ตายแล้ว
+
+        const optionHtml = `<option value="${item.id}">${item.name} (${item.visualColor || item.species})</option>`;
+
+        // ตัวผู้: ถ้ายังไม่มีคู่ หรือเป็นตัวเดิมของคู่ที่กำลังแก้ไข
+        if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') {
+          if (!pairedFatherIds.has(item.id) || item.id === selectedFatherId) {
+            pairFatherSelect.innerHTML += optionHtml;
+          }
+        }
+        // ตัวเมีย: ถ้ายังไม่มีคู่ หรือเป็นตัวเดิมของคู่ที่กำลังแก้ไข
+        if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') {
+          if (!pairedMotherIds.has(item.id) || item.id === selectedMotherId) {
+            pairMotherSelect.innerHTML += optionHtml;
+          }
+        }
+      });
+
+      if (selectedFatherId) pairFatherSelect.value = selectedFatherId;
+      if (selectedMotherId) pairMotherSelect.value = selectedMotherId;
+    };
+
     window.renderBirdsList = () => {
       const list = document.getElementById('birds-list');
       const searchInput = document.getElementById('search-bird-input');
@@ -775,11 +845,9 @@
       });
 
       list.innerHTML = "";
-      const fatherSelect = document.getElementById('bird-father'), motherSelect = document.getElementById('bird-mother'), pairFatherSelect = document.getElementById('select-father'), pairMotherSelect = document.getElementById('select-mother'), healthBirdSelect = document.getElementById('health-bird-select');
+      const fatherSelect = document.getElementById('bird-father'), motherSelect = document.getElementById('bird-mother'), healthBirdSelect = document.getElementById('health-bird-select');
       if(fatherSelect) fatherSelect.innerHTML = '<option value="">-- ไม่ระบุพ่อพันธุ์ --</option>'; 
       if(motherSelect) motherSelect.innerHTML = '<option value="">-- ไม่ระบุแม่พันธุ์ --</option>'; 
-      if(pairFatherSelect) pairFatherSelect.innerHTML = '<option value="">-- เลือกพ่อพันธุ์ (♂) --</option>'; 
-      if(pairMotherSelect) pairMotherSelect.innerHTML = '<option value="">-- เลือกแม่พันธุ์ (♀) --</option>'; 
       if(healthBirdSelect) healthBirdSelect.innerHTML = '<option value="all">🌐 นกทุกตัวในฟาร์ม (ภาพรวม)</option>';
 
       let totalBirdPrice = 0;
@@ -788,8 +856,8 @@
           totalBirdPrice += (item.price || 0);
         }
         const option = `<option value="${item.id}">${item.name} (${item.visualColor || item.species})${item.status === 'เสียชีวิต' ? ' [เสียชีวิต]' : ''}</option>`;
-        if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') { if(fatherSelect) fatherSelect.innerHTML += option; if(pairFatherSelect) pairFatherSelect.innerHTML += option; }
-        if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') { if(motherSelect) motherSelect.innerHTML += option; if(pairMotherSelect) pairMotherSelect.innerHTML += option; }
+        if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') { if(fatherSelect) fatherSelect.innerHTML += option; }
+        if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') { if(motherSelect) motherSelect.innerHTML += option; }
         if(healthBirdSelect) healthBirdSelect.innerHTML += option;
       });
 
