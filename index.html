@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V36 (Academic Fixed)</title>
+  <title>Farm Sook - Pro System V37 (Strict Genetics Corrected)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -588,7 +588,7 @@
       if(document.getElementById('total-chicks')) document.getElementById('total-chicks').innerText = totalHatchedCount + " ตัว";
     });
 
-    // อัลกอริทึมการคำนวณพันธุศาสตร์เชิงลึก (Sex-linked & Autosomal Corrected)
+    // อัลกอริทึมคำนวณพันธุศาสตร์ Sex-linked ตรวจสอบสถานะยีนแท้และยีนแฝงเชิงลึก
     window.calculateGenetics = () => {
       const fColor = document.getElementById('calc-father-color').value;
       const fSplit = document.getElementById('calc-father-split').value;
@@ -596,64 +596,66 @@
       const mSplit = document.getElementById('calc-mother-split').value;
       const resultDiv = document.getElementById('calc-result');
 
-      const parseGenes = (colorStr, splitStr = "") => {
-        let genes = { cin: false, ys: false, dil: false, tur: false };
-        let s = colorStr + " " + splitStr;
-        if (s.includes("Cinnamon")) genes.cin = true;
-        if (s.includes("Yellow-sided") || s.includes("Opamint")) genes.ys = true;
-        if (s.includes("Pineapple") || s.includes("Suncheek") || s.includes("Mooncheek")) { genes.cin = true; genes.ys = true; }
-        if (s.includes("Dilute") || s.includes("Yellow-sided Dilute") || s.includes("Suncheek") || s.includes("Mooncheek") || s.includes("Mint") || s.includes("Opamint") || s.includes("Cinnamint")) genes.dil = true;
-        if (s.includes("Turquoise") || s.includes("Mooncheek") || s.includes("Mint") || s.includes("Opamint") || s.includes("Cinnamint")) genes.tur = true;
-        return genes;
+      const checkGene = (col, spl, geneName) => {
+        let hasVisual = col.includes(geneName);
+        let hasSplit = spl.includes(geneName);
+        return { visual: hasVisual, split: hasSplit, active: hasVisual || hasSplit };
       };
 
-      let fatherVis = parseGenes(fColor), fatherSpl = parseGenes("", fSplit);
-      let motherVis = parseGenes(mColor), motherSpl = parseGenes("", mSplit);
+      // ตรวจสอบยีน Cinnamon และ Yellow-sided
+      let fCin = checkGene(fColor, fSplit, "Cinnamon");
+      let fYs = checkGene(fColor, fSplit, "Yellow-sided");
+      let mCin = checkGene(mColor, mSplit, "Cinnamon");
+      let mYs = checkGene(mColor, mSplit, "Yellow-sided");
 
-      const getVisualName = (cin, ys, dil, tur) => {
-        if (tur && dil && cin && ys) return "Mooncheek";
-        if (tur && dil && ys) return "Opamint";
-        if (tur && dil && cin) return "Cinnamint";
-        if (tur && dil) return "Mint";
-        if (tur && cin && ys) return "Turquoise Pineapple";
-        if (tur && ys) return "Turquoise Yellow-sided";
-        if (tur && cin) return "Turquoise Cinnamon";
-        if (tur) return "Turquoise Normal";
-        if (dil && cin && ys) return "Suncheek";
-        if (dil && ys) return "Yellow-sided Dilute";
-        if (cin && ys) return "Pineapple";
-        if (ys) return "Yellow-sided";
-        if (cin) return "Cinnamon";
-        if (dil) return "Dilute";
-        return "Normal (เขียวดั้งเดิมตามธรรมชาติ)";
-      };
+      // พ่อส่ง Z ให้ลูกตัวผู้และตัวเมียอย่างละเส้น (แยกเป็นอัลลีล Cinnamon และ Yellow-sided)
+      // แม่ส่ง Z ให้ลูกตัวผู้เท่านั้น (ลูกตัวเมียได้ W จากแม่ ไม่มีโครโมโซม Z จากแม่)
+      
+      // คำนวณลูกตัวผู้ (Male: ZZ)
+      // ได้ Z จากพ่อ (มีโอกาสได้อัลลีลของพ่อ) และ Z จากแม่ (ได้อัลลีลของแม่แบบแสดงผลจริงเพราะแม่มี Z เดี่ยว)
+      let maleCinnamon = fCin.visual && mCin.visual; 
+      let maleYellowSided = fYs.visual && mYs.visual;
 
-      // คำนวณเพศผู้ (Male: ZZ) ได้รับ Z จากพ่อและแม่
-      let maleCin = (fatherVis.cin || fatherSpl.cin) && motherVis.cin;
-      let maleYs = (fatherVis.ys || fatherSpl.ys) && motherVis.ys;
-      let maleDil = (fatherVis.dil || fatherSpl.dil) && (motherVis.dil || motherSpl.dil);
-      let maleTur = (fatherVis.tur || fatherSpl.tur) && (motherVis.tur || motherSpl.tur);
-      let maleVisName = getVisualName(maleCin, maleYs, maleDil, maleTur);
+      // ตรวจสอบกรณีผสมเป็น Pineapple (Cinnamon + Yellow-sided)
+      let maleVisual = "Normal (เขียวดั้งเดิม)";
+      if (fColor.includes("Pineapple") || mColor.includes("Pineapple") || (fCin.active && fYs.active && mCin.active && mYs.active)) {
+        if (fColor.includes("Turquoise") || mColor.includes("Turquoise")) {
+          maleVisual = "Turquoise Pineapple";
+        } else {
+          maleVisual = "Pineapple (Cinnamon + Yellow-sided)";
+        }
+      } else if (fColor.includes("Suncheek") || mColor.includes("Suncheek")) {
+        maleVisual = "Suncheek";
+      } else if (fColor.includes("Mooncheek") || mColor.includes("Mooncheek")) {
+        maleVisual = "Mooncheek";
+      } else if (fYs.visual || mYs.visual) {
+        maleVisual = "Yellow-sided / Opaline";
+      } else if (fCin.visual || mCin.visual) {
+        maleVisual = "Cinnamon";
+      }
 
-      // คำนวณเพศเมีย (Female: ZW) ได้รับ Z จากพ่อฝ่ายเดียว
-      let femaleCin = fatherVis.cin;
-      let femaleYs = fatherVis.ys;
-      let femaleDil = (fatherVis.dil || fatherSpl.dil) && (motherVis.dil || motherSpl.dil);
-      let femaleTur = (fatherVis.tur || fatherSpl.tur) && (motherVis.tur || motherSpl.tur);
-      let femaleVisName = getVisualName(femaleCin, femaleYs, femaleDil, femaleTur);
-
-      // ข้อความ Splits สำหรับตัวผู้
-      let maleSplits = [];
-      if (maleTur && !parseGenes(maleVisName).tur) maleSplits.push("Turquoise");
-      if (maleDil && !parseGenes(maleVisName).dil) maleSplits.push("Dilute");
-      let maleSplitText = maleSplits.length > 0 ? ` (Split ${maleSplits.join(", ")})` : "";
+      // คำนวณลูกตัวเมีย (Female: ZW) - ได้ Z จากพ่อฝ่ายเดียว
+      let femaleVisual = "Normal (เขียวดั้งเดิม)";
+      if (fColor.includes("Pineapple") || (fCin.visual && fYs.visual)) {
+        femaleVisual = "Pineapple (Cinnamon + Yellow-sided)";
+      } else if (fColor.includes("Suncheek")) {
+        femaleVisual = "Suncheek";
+      } else if (fColor.includes("Mooncheek")) {
+        femaleVisual = "Mooncheek";
+      } else if (fYs.visual) {
+        femaleVisual = "Yellow-sided / Opaline";
+      } else if (fCin.visual) {
+        femaleVisual = "Cinnamon";
+      } else if (fSplit.includes("Cinnamon") || fSplit.includes("Yellow-sided")) {
+        femaleVisual = "Normal (แฝงสปลิตจากพ่อ)";
+      }
 
       resultDiv.innerHTML = `
         <div class="p-4 bg-indigo-50/90 border border-indigo-100 rounded-3xl space-y-3 text-xs mt-3 shadow-xs">
-          <div class="font-black text-indigo-950 text-sm flex items-center space-x-1.5 border-b border-indigo-200/80 pb-2"><span>🧬</span> <span>ผลการวิเคราะห์พันธุศาสตร์ (Sex-linked Corrected):</span></div>
+          <div class="font-black text-indigo-950 text-sm flex items-center space-x-1.5 border-b border-indigo-200/80 pb-2"><span>🧬</span> <span>ผลการวิเคราะห์พันธุศาสตร์ (Academic Fixed):</span></div>
           <div class="space-y-2">
-            <div class="p-3 bg-blue-100/80 rounded-2xl text-blue-950 space-y-1 border border-blue-200/50"><span class="font-black block text-[11px] text-blue-900 tracking-wide uppercase">♂ ลูกตัวผู้ (Male Phenotype):</span><div class="text-sm font-black text-blue-950">${maleVisName}<span class="text-xs font-semibold text-blue-800">${maleSplitText}</span></div></div>
-            <div class="p-3 bg-pink-100/80 rounded-2xl text-pink-950 space-y-1 border border-pink-200/50"><span class="font-black block text-[11px] text-pink-900 tracking-wide uppercase">♀ ลูกตัวเมีย (Female Phenotype):</span><div class="text-sm font-black text-pink-950">${femaleVisName}</div></div>
+            <div class="p-3 bg-blue-100/80 rounded-2xl text-blue-950 space-y-1 border border-blue-200/50"><span class="font-black block text-[11px] text-blue-900 tracking-wide uppercase">♂ ลูกตัวผู้ (Male Phenotype):</span><div class="text-sm font-black text-blue-950">${maleVisual}</div></div>
+            <div class="p-3 bg-pink-100/80 rounded-2xl text-pink-950 space-y-1 border border-pink-200/50"><span class="font-black block text-[11px] text-pink-900 tracking-wide uppercase">♀ ลูกตัวเมีย (Female Phenotype):</span><div class="text-sm font-black text-pink-950">${femaleVisual}</div></div>
           </div>
         </div>`;
     };
@@ -687,7 +689,7 @@
     <div class="w-full max-w-md mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-2.5">
         <span class="text-2xl bg-emerald-800/80 p-1.5 rounded-2xl">🌿</span>
-        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V36 (Fixed Genetics)</p></div>
+        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V37 (Strict Genetics)</p></div>
       </div>
       <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-2xl text-xs font-black shadow-sm transition active:scale-95">+ เพิ่มนก</button>
     </div>
