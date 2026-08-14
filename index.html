@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V72 (Multi-Farm Edition)</title>
+  <title>Farm Sook - Pro System V73 (Multi-Farm Edition)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -78,7 +78,7 @@
       <option value="Split Lutino (Sun Conure)">แฝงลูติโน่ (สำหรับซันคอนัวร์)</option>
     `;
 
-    // ---------------- สำหรับหน้าคำนวณพันธุศาสตร์ (ย้อนกลับตามแบบที่คุณต้องการ) ----------------
+    // ---------------- สำหรับหน้าคำนวณพันธุศาสตร์ ----------------
 
     const greenCheekMutationsHtml = `
       <option value="Normal">นอร์มอล (เขียวดั้งเดิม)</option>
@@ -951,18 +951,39 @@
       const mSplit = document.getElementById('calc-mother-split').value;
       const resultDiv = document.getElementById('calc-result');
 
-      let maleResults = [
-        "• บลูเยลโล่/ซิน/ไดลูท",
-        "• บลูพาย/ไดลูท",
-        "• บลูเยลโล่ ไดลูท/ซิน",
-        "• บลูพายไดลูท"
-      ];
-      let femaleResults = [
-        "• บลูเยลโล่/ไดลูท",
-        "• บลูพาย/ไดลูท",
-        "• บลูเยลโล่ ไดลูท",
-        "• บลูพายไดลูท"
-      ];
+      let maleResults = [];
+      let femaleResults = [];
+
+      // ระบบคำนวณตามค่าที่เลือกจริง
+      if (fColor === 'Normal' && fSplit.includes('ไม่มีสปลิต') && mColor === 'Normal' && mSplit.includes('ไม่มีสปลิต')) {
+        maleResults.push("• นอร์มอล (สายพันธุ์แท้ 100%)");
+        femaleResults.push("• นอร์มอล (สายพันธุ์แท้ 100%)");
+      } else {
+        let baseMale = fColor !== 'Normal' ? fColor : mColor;
+        let baseFemale = mColor !== 'Normal' ? mColor : fColor;
+
+        if (fColor === mColor) {
+          maleResults.push(`• ${fColor}`);
+          femaleResults.push(`• ${fColor}`);
+        } else {
+          maleResults.push(`• ${fColor}`);
+          maleResults.push(`• ${mColor}`);
+          femaleResults.push(`• ${fColor}`);
+          femaleResults.push(`• ${mColor}`);
+        }
+
+        if (!fSplit.includes('ไม่มีสปลิต')) {
+          maleResults.push(`• ${baseMale} (${fSplit})`);
+          femaleResults.push(`• ${baseFemale} (${fSplit})`);
+        }
+        if (!mSplit.includes('ไม่มีสปลิต')) {
+          maleResults.push(`• ${baseMale} (${mSplit})`);
+        }
+      }
+
+      // ป้องกันกรณีอาเรย์ว่าง
+      if (maleResults.length === 0) maleResults.push("• นอร์มอล");
+      if (femaleResults.length === 0) femaleResults.push("• นอร์มอล");
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl space-y-3 text-xs">
@@ -1046,7 +1067,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v72</span>
+              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v73</span>
             </h1>
             <p class="text-[10px] text-emerald-300 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
