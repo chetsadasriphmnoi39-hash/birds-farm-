@@ -136,8 +136,15 @@
     };
 
     window.renderPairGeneticsBox = (pair) => {
-      // รองรับการเช็คทั้ง pairId, pairName และ cage เพื่อดึงสถิติไข่ให้ถูกต้องแม่นยำ
-      const pairEggs = globalEggs.filter(e => e.pairId === pair.id || e.pairName === pair.name || e.cage === pair.name);
+      // ตรวจสอบและตัดช่องว่างเพื่อเทียบชื่อคู่/กรงให้แม่นยำ 100%
+      const cleanPairName = (pair.name || "").replace(/\s+/g, "").toLowerCase();
+      
+      const pairEggs = globalEggs.filter(e => {
+        if (e.pairId && e.pairId === pair.id) return true;
+        const eName = (e.pairName || e.cage || "").replace(/\s+/g, "").toLowerCase();
+        return eName && eName === cleanPairName;
+      });
+
       const totalEggs = pairEggs.length;
       const totalHatched = pairEggs.filter(e => e.status === 'ฟักแล้ว').length;
 
@@ -720,11 +727,6 @@
 
       window.eggRemindersHtml = eggReminderHtml;
       window.updateRemindersDisplay();
-
-      // สั่งเรนเดอร์คู่พ่อแม่พันธุ์ใหม่ทันทีเพื่อให้ตัวเลขสถิติอัปเดตแบบ Real-time ตามข้อมูลไข่
-      if(window.globalPairs && window.globalPairs.length > 0) {
-        // ข้อมูลจะซิงค์ผ่าน onSnapshot ของ pairs อัตโนมัติอยู่แล้ว
-      }
 
       for (const pairName in groupedEggs) {
         const eggs = groupedEggs[pairName].sort((a,b) => a.eggNo - b.eggNo);
