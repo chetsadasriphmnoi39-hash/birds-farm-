@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V36 (Academic & Complete)</title>
+  <title>Farm Sook - Pro System V36 (Academic Fixed)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -588,7 +588,7 @@
       if(document.getElementById('total-chicks')) document.getElementById('total-chicks').innerText = totalHatchedCount + " ตัว";
     });
 
-    // อัลกอริทึมการคำนวณพันธุศาสตร์ตามหลักเมนเดล (Mendelian Inheritance & Sex-linked Traits)
+    // อัลกอริทึมการคำนวณพันธุศาสตร์เชิงลึก (Sex-linked & Autosomal Corrected)
     window.calculateGenetics = () => {
       const fColor = document.getElementById('calc-father-color').value;
       const fSplit = document.getElementById('calc-father-split').value;
@@ -628,30 +628,32 @@
         return "Normal (เขียวดั้งเดิมตามธรรมชาติ)";
       };
 
-      const getSplitText = (visualName, cin, ys, dil, tur, isMale) => {
-        let splits = []; let vis = parseGenes(visualName);
-        if (tur && !vis.tur) splits.push("Turquoise");
-        if (dil && !vis.dil) splits.push("Dilute");
-        if (isMale) {
-          if (cin && ys && (!vis.cin || !vis.ys)) splits.push("Pineapple");
-          else { if (cin && !vis.cin) splits.push("Cinnamon"); if (ys && !vis.ys) splits.push("Yellow-sided"); }
-        }
-        return splits.length > 0 ? ` (Split ${splits.join(", ")})` : "";
-      };
+      // คำนวณเพศผู้ (Male: ZZ) ได้รับ Z จากพ่อและแม่
+      let maleCin = (fatherVis.cin || fatherSpl.cin) && motherVis.cin;
+      let maleYs = (fatherVis.ys || fatherSpl.ys) && motherVis.ys;
+      let maleDil = (fatherVis.dil || fatherSpl.dil) && (motherVis.dil || motherSpl.dil);
+      let maleTur = (fatherVis.tur || fatherSpl.tur) && (motherVis.tur || motherSpl.tur);
+      let maleVisName = getVisualName(maleCin, maleYs, maleDil, maleTur);
 
-      let m_dil = (fatherVis.dil || fatherSpl.dil) && (motherVis.dil || motherSpl.dil);
-      let m_tur = (fatherVis.tur || fatherSpl.tur) && (motherVis.tur || motherSpl.tur);
-      let maleVisName = getVisualName(fatherVis.cin && motherVis.cin, fatherVis.ys && motherVis.ys, m_dil, m_tur);
-      let maleSplitText = getSplitText(maleVisName, fatherVis.cin || fatherSpl.cin, fatherVis.ys || fatherSpl.ys, fatherVis.dil || fatherSpl.dil || motherVis.dil || motherSpl.dil, fatherVis.tur || fatherSpl.tur || motherVis.tur || motherSpl.tur, true);
-      let femaleVisName = getVisualName(fatherVis.cin, fatherVis.ys, (fatherVis.dil || fatherSpl.dil) && (motherVis.dil || motherSpl.dil), (fatherVis.tur || fatherSpl.tur) && (motherVis.tur || motherSpl.tur));
-      let femaleSplitText = getSplitText(femaleVisName, false, false, fatherVis.dil || fatherSpl.dil || motherVis.dil || motherSpl.dil, fatherVis.tur || fatherSpl.tur || motherVis.tur || motherSpl.tur, false);
+      // คำนวณเพศเมีย (Female: ZW) ได้รับ Z จากพ่อฝ่ายเดียว
+      let femaleCin = fatherVis.cin;
+      let femaleYs = fatherVis.ys;
+      let femaleDil = (fatherVis.dil || fatherSpl.dil) && (motherVis.dil || motherSpl.dil);
+      let femaleTur = (fatherVis.tur || fatherSpl.tur) && (motherVis.tur || motherSpl.tur);
+      let femaleVisName = getVisualName(femaleCin, femaleYs, femaleDil, femaleTur);
+
+      // ข้อความ Splits สำหรับตัวผู้
+      let maleSplits = [];
+      if (maleTur && !parseGenes(maleVisName).tur) maleSplits.push("Turquoise");
+      if (maleDil && !parseGenes(maleVisName).dil) maleSplits.push("Dilute");
+      let maleSplitText = maleSplits.length > 0 ? ` (Split ${maleSplits.join(", ")})` : "";
 
       resultDiv.innerHTML = `
         <div class="p-4 bg-indigo-50/90 border border-indigo-100 rounded-3xl space-y-3 text-xs mt-3 shadow-xs">
-          <div class="font-black text-indigo-950 text-sm flex items-center space-x-1.5 border-b border-indigo-200/80 pb-2"><span>🧬</span> <span>ผลการวิเคราะห์พันธุศาสตร์:</span></div>
+          <div class="font-black text-indigo-950 text-sm flex items-center space-x-1.5 border-b border-indigo-200/80 pb-2"><span>🧬</span> <span>ผลการวิเคราะห์พันธุศาสตร์ (Sex-linked Corrected):</span></div>
           <div class="space-y-2">
             <div class="p-3 bg-blue-100/80 rounded-2xl text-blue-950 space-y-1 border border-blue-200/50"><span class="font-black block text-[11px] text-blue-900 tracking-wide uppercase">♂ ลูกตัวผู้ (Male Phenotype):</span><div class="text-sm font-black text-blue-950">${maleVisName}<span class="text-xs font-semibold text-blue-800">${maleSplitText}</span></div></div>
-            <div class="p-3 bg-pink-100/80 rounded-2xl text-pink-950 space-y-1 border border-pink-200/50"><span class="font-black block text-[11px] text-pink-900 tracking-wide uppercase">♀ ลูกตัวเมีย (Female Phenotype):</span><div class="text-sm font-black text-pink-950">${femaleVisName}<span class="text-xs font-semibold text-pink-800">${femaleSplitText}</span></div></div>
+            <div class="p-3 bg-pink-100/80 rounded-2xl text-pink-950 space-y-1 border border-pink-200/50"><span class="font-black block text-[11px] text-pink-900 tracking-wide uppercase">♀ ลูกตัวเมีย (Female Phenotype):</span><div class="text-sm font-black text-pink-950">${femaleVisName}</div></div>
           </div>
         </div>`;
     };
@@ -685,7 +687,7 @@
     <div class="w-full max-w-md mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-2.5">
         <span class="text-2xl bg-emerald-800/80 p-1.5 rounded-2xl">🌿</span>
-        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V36 (Academic Version)</p></div>
+        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V36 (Fixed Genetics)</p></div>
       </div>
       <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-2xl text-xs font-black shadow-sm transition active:scale-95">+ เพิ่มนก</button>
     </div>
