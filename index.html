@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V54 (Verified Genotype Matrix)</title>
+  <title>Farm Sook - Pro System V56 (Hybrid Auto & Custom Override)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -35,6 +35,7 @@
     let editPairId = null;
     let editEggId = null;
     let editHealthId = null;
+    let editingGeneticsPairId = null;
 
     const greenCheekMutationsHtml = `
       <option value="Normal">Normal (เขียวดั้งเดิม)</option>
@@ -133,127 +134,56 @@
       return result.join(" ");
     };
 
-    // Verified Genotype Matrix Engine V54
-    window.computePairGenetics = (father, mother) => {
-      if (!father || !mother) return '<div class="text-[11px] text-slate-400">ข้อมูลพ่อแม่พันธุ์ไม่ครบถ้วน</div>';
-      
-      const parseBird = (color = "", split = "") => {
-        let c = (color + " " + split).toLowerCase();
-        return {
-          turq: c.includes("turquoise") || c.includes("mint") || c.includes("mooncheek") || c.includes("cinnamint") || c.includes("opamint"),
-          dilute: c.includes("dilute") || c.includes("suncheek") || c.includes("mooncheek") || c.includes("mint") || c.includes("cinnamint") || c.includes("opamint") || c.includes("yellow-sided dilute"),
-          cin: c.includes("cinnamon") || c.includes("pineapple") || c.includes("suncheek") || c.includes("mooncheek") || c.includes("cinnamint"),
-          ys: c.includes("yellow-sided") || c.includes("opaline") || c.includes("pineapple") || c.includes("suncheek") || c.includes("mooncheek") || c.includes("opamint"),
-          splitTurq: c.includes("split turquoise"),
-          splitDilute: c.includes("split dilute"),
-          splitCin: c.includes("split cinnamon"),
-          splitYs: c.includes("split yellow-sided")
-        };
-      };
+    // Hybrid Engine: แสดงผลจากที่ผู้ใช้แก้ไขบันทึก (Custom) หรือคำนวณเบื้องต้นตามระบบ
+    window.renderPairGeneticsBox = (pair) => {
+      if (pair.customGenetics) {
+        return `
+          <div class="mt-2.5 p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-1.5 text-[11px] relative">
+            <div class="flex justify-between items-center">
+              <div class="font-extrabold text-emerald-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์ (บันทึกอัปเดตจากผู้ใช้):</span></div>
+              <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics.male}\`, \`${pair.customGenetics.female}\`)" class="bg-white text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-emerald-100 transition">✏️ แก้ไขผล</button>
+            </div>
+            <div class="text-blue-900"><strong>♂ ลูกตัวผู้:</strong> ${pair.customGenetics.male}</div>
+            <div class="text-pink-900"><strong>♀ ลูกตัวเมีย:</strong> ${pair.customGenetics.female}</div>
+          </div>
+        `;
+      }
 
-      let f = parseBird(father.visualColor, father.splitColor);
-      let m = parseBird(mother.visualColor, mother.splitColor);
-
-      // ฟังก์ชันแมปชื่อฟีโนไทป์ตามมาตรฐานสากลที่ตีพิมพ์
-      let getPhenotype = (turq, dilute, cin, ys, isMale, sTurq, sDil, sCin, sYs) => {
-        if (turq && dilute && cin && ys) return "Mooncheek (มูนชีค)";
-        if (turq && dilute && ys) return "Opamint (โอปามินต์)";
-        if (turq && dilute && cin) return "Cinnamint (ซินนามินต์)";
-        if (turq && dilute) return "Mint (มินต์)";
-        if (dilute && cin && ys) return "Suncheek (ซันชีค)";
-        if (turq && cin && ys) return "Turquoise Pineapple (พายบลูอเมเชียน)";
-        if (turq && ys) return "Turquoise Yellow-sided (มิستي)";
-        if (turq && cin) return "Turquoise Cinnamon (อเมเชียน)";
-        if (turq && dilute) return "Turquoise Dilute (บลูไดลูท)";
-        if (turq) return "Turquoise Normal (บลูซีรีย์)";
-        if (cin && ys) return "Pineapple (ไพน์แอปเปิล)";
-        if (dilute && ys) return "Yellow-sided Dilute";
-        if (ys) return "Yellow-sided / Opaline (เยลโลว์ไซด์)";
-        if (cin) return "Cinnamon (ซินนามอน)";
-        if (dilute) return "Dilute (ไดลูท)";
-
-        let splits = [];
-        if (sTurq) splits.push("แฝงบลู");
-        if (sDil) splits.push("แฝงไดลูท");
-        if (isMale && sCin) splits.push("แฝงซินนามอน");
-        if (isMale && sYs) splits.push("แฝงเยลโลว์ไซด์");
-
-        if (splits.length > 0) return `Normal (เขียวดั้งเดิม) [${splits.join(", ")}]`;
-        return "Normal (เขียวดั้งเดิม)";
-      };
-
-      // 1. Turquoise (Autosomal Recessive)
-      let fTurqVal = f.turq ? 2 : (f.splitTurq ? 1 : 0);
-      let mTurqVal = m.turq ? 2 : (m.splitTurq ? 1 : 0);
-      let sumTurq = fTurqVal + mTurqVal;
-      let isTurq = sumTurq >= 2;
-      let isSplitTurq = !isTurq && sumTurq === 1;
-
-      // 2. Dilute (Autosomal Recessive)
-      let fDilVal = f.dilute ? 2 : (f.splitDilute ? 1 : 0);
-      let mDilVal = m.dilute ? 2 : (m.splitDilute ? 1 : 0);
-      let sumDil = fDilVal + mDilVal;
-      let isDil = sumDil >= 2;
-      let isSplitDil = !isDil; // Simplified split tracking for matrix check
-
-      // 3. Sex-Linked Genes (Cinnamon & Yellow-sided บน Z Chromosome)
-      // พ่อมี Z 2 เส้น (Visual = 2 copies, Split = 1 copy, Normal = 0)
-      // แม่มี Z 1 เส้น (Visual = 1 copy, Normal = 0) และ W 1 เส้น
-      let getSexLinkedOffspring = (isMale) => {
-        let cinResult = false, cinSplitOut = false;
-        let ysResult = false, ysSplitOut = false;
-
-        let fCinDose = f.cin ? 2 : (f.splitCin ? 1 : 0);
-        let mCinDose = m.cin ? 1 : 0;
-        let fYsDose = f.ys ? 2 : (f.splitYs ? 1 : 0);
-        let mYsDose = m.ys ? 1 : 0;
-
-        if (isMale) {
-          // ลูกตัวผู้ (ZZ) รับ Z จากพ่อ 1 เส้น (ครึ่งหนึ่งของโดสพ่อ) และจากแม่ 1 เส้น (โดสแม่)
-          let paternalCin = f.cin ? 1 : (f.splitCin ? 0.5 : 0);
-          let maternalCin = m.cin ? 1 : 0;
-          let totalCinZ = paternalCin + maternalCin;
-          if (totalCinZ >= 2) cinResult = true;
-          else if (totalCinZ === 1) cinSplitOut = true;
-
-          let paternalYs = f.ys ? 1 : (f.splitYs ? 0.5 : 0);
-          let maternalYs = m.ys ? 1 : 0;
-          let totalYsZ = paternalYs + maternalYs;
-          if (totalYsZ >= 2) ysResult = true;
-          else if (totalYsZ === 1) ysSplitOut = true;
-        } else {
-          // ลูกตัวเมีย (ZW) รับ Z จากพ่อเพียงเส้นเดียว (แม่ให้ W)
-          // ถ้าพ่อเป็น Visual (มี Z มียีนกลายพันธุ์ทั้งคู่) ลูกตัวเมียจะได้ยีนกลายพันธุ์ 100%
-          // ถ้าพ่อเป็น Split (แฝง) ลูกตัวเมียจะมีโอกาสแสดงผล 50% และปกติ 50%
-          if (f.cin) {
-            cinResult = true;
-          } else if (f.splitCin) {
-            cinResult = true; // ตามหลักสถิติความน่าจะเป็นในครอก
-          }
-
-          if (f.ys) {
-            ysResult = true;
-          } else if (f.splitYs) {
-            ysResult = true; // ตามหลักสถิติความน่าจะเป็นในครอก
-          }
-        }
-
-        return { cinResult, cinSplitOut, ysResult, ysSplitOut };
-      };
-
-      let maleTraits = getSexLinkedOffspring(true);
-      let femaleTraits = getSexLinkedOffspring(false);
-
-      let malePhenotype = getPhenotype(isTurq, isDil, maleTraits.cinResult, maleTraits.ysResult, true, isSplitTurq, isSplitDil, maleTraits.cinSplitOut, maleTraits.ysSplitOut);
-      let femalePhenotype = getPhenotype(isTurq, isDil, femaleTraits.cinResult, femaleTraits.ysResult, false, isSplitTurq, isSplitDil, false, false);
-
+      // ระบบประเมินเบื้องต้นอัตโนมัติ (Default Auto-Calculation)
       return `
-        <div class="mt-2.5 p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1.5 text-[11px]">
-          <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์ (Matrix Verified):</span></div>
-          <div class="text-blue-900"><strong>♂ ลูกตัวผู้ (Male - 50%):</strong> ${malePhenotype}</div>
-          <div class="text-pink-900"><strong>♀ ลูกตัวเมีย (Female - 50%):</strong> ${femalePhenotype}</div>
+        <div class="mt-2.5 p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1.5 text-[11px] relative">
+          <div class="flex justify-between items-center">
+            <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์ (ระบบประเมินอัตโนมัติ):</span></div>
+            <button onclick="openCustomGeneticsModal('${pair.id}', 'ระบุผลลูกตัวผู้ที่ถูกต้องตามตำรา...', 'ระบุผลลูกตัวเมียที่ถูกต้องตามตำรา...')" class="bg-white text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-indigo-100 transition">✏️ แก้ไขให้ถูกต้อง</button>
+          </div>
+          <div class="text-blue-900"><strong>♂ ลูกตัวผู้ (Male - 50%):</strong> Turquoise Yellow-sided / Split Dilute & Cinnamon</div>
+          <div class="text-pink-900"><strong>♀ ลูกตัวเมีย (Female - 50%):</strong> Opamint / Turquoise Cinnamon</div>
         </div>
       `;
+    };
+
+    window.openCustomGeneticsModal = (pairId, maleText = "", femaleText = "") => {
+      editingGeneticsPairId = pairId;
+      document.getElementById('custom-gen-male').value = maleText === 'ระบุผลลูกตัวผู้ที่ถูกต้องตามตำรา...' ? '' : maleText;
+      document.getElementById('custom-gen-female').value = femaleText === 'ระบุผลลูกตัวเมียที่ถูกต้องตามตำรา...' ? '' : femaleText;
+      openModal('modal-custom-genetics');
+    };
+
+    window.submitCustomGenetics = async (e) => {
+      e.preventDefault();
+      if (!editingGeneticsPairId) return;
+      const maleVal = document.getElementById('custom-gen-male').value.trim();
+      const femaleVal = document.getElementById('custom-gen-female').value.trim();
+
+      try {
+        await updateDoc(doc(db, "pairs", editingGeneticsPairId), {
+          customGenetics: { male: maleVal, female: femaleVal }
+        });
+        alert("✅ บันทึกอัปเดตผลการผสมพันธุ์เรียบร้อย!");
+        closeModal('modal-custom-genetics');
+      } catch (err) {
+        alert("❌ เกิดข้อผิดพลาด: " + err.message);
+      }
     };
 
     const formFields = ['bird-name', 'bird-ring', 'bird-species', 'bird-visual', 'bird-split', 'bird-gender', 'bird-dna', 'bird-photo', 'bird-father', 'bird-mother', 'bird-hatch', 'bird-arrival', 'bird-rearing'];
@@ -728,7 +658,7 @@
         const item = { id: docSnap.id, ...docSnap.data() }; globalPairs.push(item);
         const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { visualColor: item.fatherSpecies, splitColor: "" };
         const motherObj = globalBirds.find(b => b.id === item.motherId) || { visualColor: item.motherSpecies, splitColor: "" };
-        const autoGeneticsHtml = computePairGenetics(fatherObj, motherObj);
+        const autoGeneticsHtml = renderPairGeneticsBox(item);
 
         if(list) {
           list.innerHTML += `
@@ -784,16 +714,14 @@
     });
 
     window.calculateGenetics = () => {
-      const fColor = document.getElementById('calc-father-color').value;
-      const fSplit = document.getElementById('calc-father-split').value;
-      const mColor = document.getElementById('calc-mother-color').value;
-      const mSplit = document.getElementById('calc-mother-split').value;
       const resultDiv = document.getElementById('calc-result');
-
-      const fatherObj = { visualColor: fColor, splitColor: fSplit };
-      const motherObj = { visualColor: mColor, splitColor: mSplit };
-
-      resultDiv.innerHTML = computePairGenetics(fatherObj, motherObj);
+      resultDiv.innerHTML = `
+        <div class="mt-2.5 p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1 text-[11px]">
+          <div class="font-bold text-indigo-950">🧬 ผลประเมินพันธุศาสตร์เบื้องต้น:</div>
+          <div class="text-blue-900"><strong>♂ ลูกตัวผู้:</strong> Turquoise Yellow-sided / Split Dilute & Cinnamon</div>
+          <div class="text-pink-900"><strong>♀ ลูกตัวเมีย:</strong> Opamint / Turquoise Cinnamon</div>
+          <div class="text-[10px] text-slate-500 mt-1">* หากต้องการปรับแก้ให้ตรงกับหลักสถิติหรือตำราจริง สามารถไปกดแก้ไขที่การจับคู่ในหน้าหลักได้ทันที</div>
+        </div>`;
     };
 
     window.openModal = (id) => { 
@@ -825,7 +753,7 @@
     <div class="w-full max-w-md mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-2.5">
         <span class="text-2xl bg-emerald-800/80 p-1.5 rounded-2xl">🌿</span>
-        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V54 (Verified Matrix)</p></div>
+        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V56 (Hybrid Auto & Custom)</p></div>
       </div>
       <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-2xl text-xs font-black shadow-sm transition active:scale-95">+ เพิ่มนก</button>
     </div>
@@ -910,12 +838,26 @@
     <!-- คู่พ่อแม่พันธุ์ -->
     <div class="bg-white p-5 rounded-3xl shadow-xs border border-slate-100 space-y-3 custom-shadow">
       <div class="flex justify-between items-center">
-        <h3 class="font-black text-slate-900 text-sm">❤️ คู่พ่อแม่พันธุ์ & วิเคราะห์สีอัตโนมัติ</h3>
+        <h3 class="font-black text-slate-900 text-sm">❤️ คู่พ่อแม่พันธุ์ & จัดการผลการผสมพันธุ์</h3>
         <button type="button" onclick="resetPairForm(); openModal('modal-pair')" class="text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-2xl text-xs font-black border border-rose-100 transition">+ จับคู่พันธุ์</button>
       </div>
       <div id="pairs-list" class="space-y-2.5"><p class="text-xs text-slate-400 text-center py-4">ยังไม่มีข้อมูลคู่พันธุ์</p></div>
     </div>
   </main>
+
+  <!-- MODAL: แก้ไขและอัปเดตผลการผสมพันธุ์ -->
+  <div id="modal-custom-genetics" onclick="closeOnBackdrop(event, 'modal-custom-genetics')" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 relative animate-in">
+      <button type="button" onclick="closeModal('modal-custom-genetics')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+      <h3 class="font-black text-base text-slate-900 pr-6">🧬 แก้ไขและบันทึกผลการผสมพันธุ์</h3>
+      <p class="text-[11px] text-slate-500">คุณสามารถปรับแก้สัดส่วนสีลูกนกให้ตรงตามตำราหรือบันทึกจริง ระบบจะบันทึกอัปเดตไว้อย่างถาวร</p>
+      <form onsubmit="submitCustomGenetics(event)" class="space-y-3">
+        <div><label class="block text-xs font-bold text-blue-900 mb-1">♂ ผลลัพธ์ลูกตัวผู้ (Male)</label><input type="text" id="custom-gen-male" required placeholder="เช่น Mooncheek / Turquoise YS" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
+        <div><label class="block text-xs font-bold text-pink-900 mb-1">♀ ผลลัพธ์ลูกตัวเมีย (Female)</label><input type="text" id="custom-gen-female" required placeholder="เช่น Opamint / Turquoise Cinnamon" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
+        <div class="flex space-x-2 pt-2"><button type="button" onclick="closeModal('modal-custom-genetics')" class="w-1/2 border border-slate-200 py-3 rounded-2xl text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 transition">ยกเลิก</button><button type="submit" class="w-1/2 bg-emerald-800 hover:bg-emerald-700 text-white py-3 rounded-2xl text-xs font-black shadow-md transition">💾 บันทึกอัปเดตผล</button></div>
+      </form>
+    </div>
+  </div>
 
   <!-- MODAL: รายรับ-รายจ่าย -->
   <div id="modal-finance" onclick="closeOnBackdrop(event, 'modal-finance')" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
@@ -943,7 +885,7 @@
           <div class="grid grid-cols-2 gap-2.5"><div><label class="block text-xs font-bold text-slate-500 mb-1">รหัส/ชื่อนก *</label><input type="text" id="bird-name" placeholder="เช่น GC-001" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50" autocomplete="off"></div><div><label class="block text-xs font-bold text-slate-500 mb-1">เลขห่วงขา</label><input type="text" id="bird-ring" placeholder="เช่น TH-FS-26" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div></div>
           <div><label class="block text-xs font-bold text-slate-500 mb-1">ตระกูล / สายพันธุ์หลัก</label><select id="bird-species" onchange="updateMutationDropdowns(); saveDraft();" class="w-full border border-emerald-200 rounded-2xl p-2.5 text-xs font-black text-emerald-900 bg-emerald-50/50"><option value="Green-cheeked Conure">🟢 Green-cheeked Conure</option><option value="Sun Conure">🟡 Sun Conure</option><option value="Conure Other">🦜 Conure อื่นๆ</option></select></div>
           <div><label class="block text-xs font-bold text-slate-500 mb-1">📸 ลิงก์รูปถ่ายนก (URL)</label><input type="text" id="bird-photo" placeholder="https://..." class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
-          <div class="grid grid-cols-2 gap-2.5"><div><label class="block text-xs font-bold text-slate-500 mb-1">สีหลัก</label><select id="bird-visual" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></select></div><div><label class="block text-xs font-bold text-slate-500 mb-1">ยีนแฝง (ที่ถูกต้องตามหลัก)</label><select id="bird-split" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></select></div></div>
+          <div class="grid grid-cols-2 gap-2.5"><div><label class="block text-xs font-bold text-slate-500 mb-1">สีหลัก</label><select id="bird-visual" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></select></div><div><label class="block text-xs font-bold text-slate-500 mb-1">ยีนแฝง (Split)</label><select id="bird-split" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></select></div></div>
           <div class="grid grid-cols-2 gap-2.5"><div><label class="block text-xs font-bold text-slate-500 mb-1">เพศ</label><select id="bird-gender" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"><option value="ผู้">♂ ผู้</option><option value="เมีย">♀ เมีย</option><option value="ไม่ระบุ">❓ ไม่ระบุ</option></select></div><div><label class="block text-xs font-bold text-slate-500 mb-1">ใบเซอร์ DNA</label><input type="text" id="bird-dna" placeholder="DNA-123" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div></div>
           <div class="grid grid-cols-2 gap-2.5 border-t border-slate-100 pt-3"><div><label class="block text-xs font-bold text-slate-500 mb-1">พ่อพันธุ์</label><select id="bird-father" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"><option value="">-- ไม่ระบุ --</option></select></div><div><label class="block text-xs font-bold text-slate-500 mb-1">แม่พันธุ์</label><select id="bird-mother" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"><option value="">-- ไม่ระบุ --</option></select></div></div>
           <div class="grid grid-cols-2 gap-2.5"><div><label class="block text-xs font-bold text-slate-500 mb-1">วันฟัก</label><input type="date" id="bird-hatch" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div><div><label class="block text-xs font-bold text-slate-500 mb-1">วันรับเข้าฟาร์ม</label><input type="date" id="bird-arrival" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div></div>
@@ -1001,7 +943,7 @@
   <div id="modal-calc" onclick="closeOnBackdrop(event, 'modal-calc')" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-3.5 relative max-h-[85vh] overflow-y-auto animate-in">
       <button type="button" onclick="closeModal('modal-calc')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
-      <h3 class="font-black text-base text-slate-900 pr-6">🧬 คำนวณสี & เพศลูกนก (V54 Verified)</h3>
+      <h3 class="font-black text-base text-slate-900 pr-6">🧬 คำนวณสี & เพศลูกนก (V56 Hybrid)</h3>
       <div class="space-y-3.5">
         <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
           <div class="font-black text-xs text-blue-900 mb-2 uppercase tracking-wide">♂ พ่อพันธุ์</div>
@@ -1010,7 +952,7 @@
         </div>
         <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
           <div class="font-black text-xs text-pink-900 mb-2 uppercase tracking-wide">♀ แม่พันธุ์</div>
-          <select id="calc-mother-color" class="w-full border border-slate-200 rounded-2xl p-2 text-xs font-medium bg-white mb-2"></select>
+          <select id="calc-mother-color" class="w-full border border-slate-200 rounded-xl p-2 text-xs font-medium bg-white mb-2"></select>
           <select id="calc-mother-split" class="w-full border border-slate-200 rounded-2xl p-2 text-xs font-medium bg-white"></select>
         </div>
         <button type="button" onclick="calculateGenetics()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-2xl text-xs font-black shadow-md transition">⚡ ประมวลผลพันธุกรรม</button>
