@@ -78,19 +78,52 @@
       <option value="Split Lutino (Sun Conure)">แฝงลูติโน่ (สำหรับซันคอนัวร์)</option>
     `;
 
-    // เมนูยีนแฝงเฉพาะกรีนชีคแบบครบถ้วนสำหรับหน้าคำนวณพันธุศาสตร์
-    const greenCheekSplitsHtml = `
+    // ---------------- สำหรับหน้าคำนวณพันธุศาสตร์ ----------------
+
+    // สีหลัก (ไม่มีซันคอนัวร์)
+    const greenCheekMutationsHtml = `
+      <option value="Normal">นอร์มอล (เขียวดั้งเดิม)</option>
+      <option value="Cinnamon">ซินนามอน</option>
+      <option value="Yellow-sided">เยลโลว์ไซด์ (โอปาลีน)</option>
+      <option value="Pineapple">ไพน์แอปเปิล</option>
+      <option value="Dilute">ไดลูท</option>
+      <option value="Yellow-sided Dilute">เยลโลว์ไซด์ ไดลูท</option>
+      <option value="Suncheek">ซันชีค</option>
+      <option value="Turquoise">ทอร์คอยส์ (บลูซีรีย์)</option>
+      <option value="Turquoise Cinnamon">ทอร์คอยส์ ซินนามอน</option>
+      <option value="Turquoise Yellow-sided">ทอร์คอยส์ เยลโลว์ไซด์</option>
+      <option value="Turquoise Pineapple">ทอร์คอยส์ ไพน์แอปเปิล</option>
+      <option value="Mint">มินต์ (Turquoise Dilute)</option>
+      <option value="Opamint">โอปามินต์</option>
+      <option value="Mooncheek">มูนชีค</option>
+      <option value="Violet Factor">ไวโอเล็ตแฟคเตอร์</option>
+      <option value="High Red Factor">ไฮเรด</option>
+    `;
+
+    // ยีนแฝงสำหรับ ตัวผู้ (มีทั้ง Autosomal และ Sex-linked)
+    const greenCheekMaleSplitsHtml = `
       <option value="ไม่มีสปลิต">ไม่มีสปลิต / สายพันธุ์แท้</option>
       <option value="Split Turquoise">แฝงบลู (Split Turquoise)</option>
       <option value="Split Dilute">แฝงไดลูท (Split Dilute)</option>
       <option value="Split Cinnamon">แฝงซินนามอน (Split Cinnamon)</option>
       <option value="Split Yellow-sided">แฝงเยลโลว์ไซด์ (Split Yellow-sided / Opaline)</option>
+      <option value="Split Pineapple">แฝงไพน์แอปเปิล (Split Cinnamon & Yellow-sided)</option>
       <option value="Split Turquoise & Dilute">แฝงบลู และ ไดลูท (Mint Carrier)</option>
       <option value="Split Turquoise & Cinnamon">แฝงบลู และ ซินนามอน</option>
       <option value="Split Turquoise & Yellow-sided">แฝงบลู และ เยลโลว์ไซด์</option>
-      <option value="Split Suncheek">แฝงซันชีค (Split Opaline & Dilute)</option>
-      <option value="Split Mooncheek">แฝงมูนชีค (Split Turquoise & Suncheek)</option>
+      <option value="Split Suncheek">แฝงซันชีค (Split Suncheek)</option>
+      <option value="Split Mooncheek">แฝงมูนชีค (Split Mooncheek)</option>
     `;
+
+    // ยีนแฝงสำหรับ ตัวเมีย (แฝงได้เฉพาะ Autosomal ยีนด้อย ห้ามมียีนเพศ)
+    const greenCheekFemaleSplitsHtml = `
+      <option value="ไม่มีสปลิต">ไม่มีสปลิต / สายพันธุ์แท้</option>
+      <option value="Split Turquoise">แฝงบลู (Split Turquoise)</option>
+      <option value="Split Dilute">แฝงไดลูท (Split Dilute)</option>
+      <option value="Split Turquoise & Dilute">แฝงบลู และ ไดลูท (Mint Carrier)</option>
+    `;
+
+    // --------------------------------------------------------
 
     window.enterFarmSystem = () => {
       const inputVal = document.getElementById('farm-name-input').value.trim();
@@ -125,8 +158,11 @@
       if (!visualSelect || !splitSelect) return;
       const currentVisual = visualSelect.value;
       const currentSplit = splitSelect.value;
+      
+      // สำหรับเมนูลงทะเบียนนกทั่วไป ใช้ชุดข้อมูลรวม
       visualSelect.innerHTML = mutationsHtml;
       splitSelect.innerHTML = splitsHtml;
+      
       if (currentVisual) visualSelect.value = currentVisual;
       if (currentSplit) splitSelect.value = currentSplit;
     };
@@ -147,8 +183,15 @@
       const colorSelect = document.getElementById(`calc-${type}-color`);
       const splitSelect = document.getElementById(`calc-${type}-split`);
       if(!colorSelect || !splitSelect) return;
-      colorSelect.innerHTML = mutationsHtml;
-      splitSelect.innerHTML = greenCheekSplitsHtml;
+      
+      colorSelect.innerHTML = greenCheekMutationsHtml;
+      
+      // แยกเงื่อนไข ตัวผู้ / ตัวเมีย อย่างชัดเจน
+      if (type === 'father') {
+        splitSelect.innerHTML = greenCheekMaleSplitsHtml;
+      } else {
+        splitSelect.innerHTML = greenCheekFemaleSplitsHtml;
+      }
     };
 
     window.calculateDuration = (fromDateStr) => {
