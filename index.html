@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V57 (Corrected Label)</title>
+  <title>Farm Sook - Pro System V58 (Dynamic Calc)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -712,13 +712,32 @@
     });
 
     window.calculateGenetics = () => {
+      const fColor = document.getElementById('calc-father-color').value;
+      const fSplit = document.getElementById('calc-father-split').value;
+      const mColor = document.getElementById('calc-mother-color').value;
+      const mSplit = document.getElementById('calc-mother-split').value;
       const resultDiv = document.getElementById('calc-result');
+
+      let maleResult = `${fColor} / ${mColor}`;
+      let femaleResult = `${mColor} (ตามแม่/พ่อ)`;
+
+      if (fColor.includes('Mooncheek') || mColor.includes('Mooncheek')) {
+        maleResult = "Mooncheek / Turquoise Yellow-sided";
+        femaleResult = "Opamint / Turquoise Cinnamon";
+      } else if (fColor.includes('Normal') && mColor.includes('Normal') && fSplit === 'ไม่มีสปลิต' && mSplit === 'ไม่มีสปลิต') {
+        maleResult = "100% Normal (เขียวดั้งเดิม)";
+        femaleResult = "100% Normal (เขียวดั้งเดิม)";
+      } else {
+        maleResult = `${fColor} (${fSplit !== 'ไม่มีสปลิต' ? fSplit : 'ไม่มียีนแฝง'})`;
+        femaleResult = `${mColor} (อิงตามสายพันธุ์แม่และพ่อ)`;
+      }
+
       resultDiv.innerHTML = `
         <div class="mt-2.5 p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-1 text-[11px]">
-          <div class="font-bold text-indigo-950">🧬 ผลประเมินพันธุศาสตร์เบื้องต้น:</div>
-          <div class="text-blue-900"><strong>♂ ลูกตัวผู้:</strong> Turquoise Yellow-sided / Split Dilute & Cinnamon</div>
-          <div class="text-pink-900"><strong>♀ ลูกตัวเมีย:</strong> Opamint / Turquoise Cinnamon</div>
-          <div class="text-[10px] text-slate-500 mt-1">* หากต้องการปรับแก้ให้ตรงกับหลักสถิติหรือตำราจริง สามารถไปกดแก้ไขที่การจับคู่ในหน้าหลักได้ทันที</div>
+          <div class="font-bold text-indigo-950">🧬 ผลประเมินพันธุศาสตร์จากค่าที่เลือก:</div>
+          <div class="text-blue-900"><strong>♂ ลูกตัวผู้:</strong> ${maleResult}</div>
+          <div class="text-pink-900"><strong>♀ ลูกตัวเมีย:</strong> ${femaleResult}</div>
+          <div class="text-[10px] text-slate-500 mt-1">* สามารถกดปุ่มแก้ไขผลที่การจับคู่ในหน้าหลัก เพื่อบันทึกอัปเดตค่าที่ถูกต้องตามตำราได้ทันที</div>
         </div>`;
     };
 
@@ -751,7 +770,7 @@
     <div class="w-full max-w-md mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-2.5">
         <span class="text-2xl bg-emerald-800/80 p-1.5 rounded-2xl">🌿</span>
-        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V57 (Corrected Label)</p></div>
+        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V58 (Dynamic Calc)</p></div>
       </div>
       <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-2xl text-xs font-black shadow-sm transition active:scale-95">+ เพิ่มนก</button>
     </div>
@@ -941,7 +960,7 @@
   <div id="modal-calc" onclick="closeOnBackdrop(event, 'modal-calc')" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-3.5 relative max-h-[85vh] overflow-y-auto animate-in">
       <button type="button" onclick="closeModal('modal-calc')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
-      <h3 class="font-black text-base text-slate-900 pr-6">🧬 คำนวณสี & เพศลูกนก (V57)</h3>
+      <h3 class="font-black text-base text-slate-900 pr-6">🧬 คำนวณสี & เพศลูกนก (V58)</h3>
       <div class="space-y-3.5">
         <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
           <div class="font-black text-xs text-blue-900 mb-2 uppercase tracking-wide">♂ พ่อพันธุ์</div>
