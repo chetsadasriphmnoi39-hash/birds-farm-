@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V40 (Optimized for Large Farms)</title>
+  <title>Farm Sook - Pro System V41 (Academic Genetics & Search)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -133,8 +133,10 @@
       return result.join(" ");
     };
 
+    // ฟังก์ชันถอดรหัสพันธุศาสตร์สากล (Sex-linked & Autosomal Academic Standard)
     window.computePairGenetics = (father, mother) => {
       if (!father || !mother) return '<div class="text-[11px] text-slate-400">ข้อมูลพ่อแม่พันธุ์ไม่ครบถ้วน</div>';
+      
       const getGenes = (color = "", split = "") => {
         let text = (color + " " + split).toLowerCase();
         return {
@@ -144,8 +146,10 @@
           turquoise: text.includes("turquoise") || text.includes("mooncheek") || text.includes("mint") || text.includes("opamint") || text.includes("cinnamint")
         };
       };
+
       let f = getGenes(father.visualColor, father.splitColor);
       let m = getGenes(mother.visualColor, mother.splitColor);
+
       let resolvePhenotype = (cin, ys, dil, tur) => {
         if (tur && dil && cin && ys) return "Mooncheek";
         if (tur && dil && ys) return "Opamint";
@@ -164,8 +168,20 @@
         if (dil) return "Dilute";
         return "Normal (เขียวดั้งเดิม)";
       };
-      let femaleRes = resolvePhenotype(f.cinnamon, f.ys, f.dilute && m.dilute, f.turquoise && m.turquoise);
-      let maleRes = resolvePhenotype(f.cinnamon && m.cinnamon, f.ys && m.ys, f.dilute && m.dilute, f.turquoise && m.turquoise);
+
+      let mMaleCin = f.cinnamon || m.cinnamon; 
+      let mMaleYs = f.ys || m.ys;
+      let mMaleDil = f.dilute && m.dilute;
+      let mMaleTur = f.turquoise && m.turquoise;
+
+      let fFemaleCin = m.cinnamon; 
+      let fFemaleYs = m.ys;
+      let fFemaleDil = f.dilute && m.dilute;
+      let fFemaleTur = f.turquoise && m.turquoise;
+
+      let maleRes = resolvePhenotype(mMaleCin, mMaleYs, mMaleDil, mMaleTur);
+      let femaleRes = resolvePhenotype(fFemaleCin, fFemaleYs, fFemaleDil, fFemaleTur);
+
       return `
         <div class="mt-2.5 p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1.5 text-[11px]">
           <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์สีลูกนก (คาดการณ์ 100%):</span></div>
@@ -519,7 +535,6 @@
       if(document.getElementById('total-balance')) document.getElementById('total-balance').innerText = "฿" + totalBalance.toLocaleString();
     });
 
-    // เรนเดอร์รายชื่อนกแบบตารางย่อย (Compact Table) พร้อมระบบค้นหาและกรอง (ข้อ 1 และ 3)
     window.renderBirdsList = () => {
       const list = document.getElementById('birds-list');
       const searchInput = document.getElementById('search-bird-input');
@@ -558,7 +573,6 @@
       }
 
       filtered.forEach(item => {
-        const ageText = calculateDuration(item.hatchDate);
         list.innerHTML += `
           <div class="p-3 bg-white rounded-2xl border border-slate-100 shadow-xs flex items-center justify-between hover:bg-slate-50 transition mb-2">
             <div class="flex items-center space-x-2.5 overflow-hidden">
@@ -743,16 +757,17 @@
         return "Normal (เขียวดั้งเดิม)";
       };
 
-      let fFemaleCin = f.cinnamon;
-      let fFemaleYs = f.ys;
-      let fFemaleDil = f.dilute && m.dilute;
-      let fFemaleTur = f.turquoise && m.turquoise;
-      let femaleResultName = resolvePhenotype(fFemaleCin, fFemaleYs, fFemaleDil, fFemaleTur);
-
-      let mMaleCin = f.cinnamon && m.cinnamon;
-      let mMaleYs = f.ys && m.ys;
+      let mMaleCin = f.cinnamon || m.cinnamon; 
+      let mMaleYs = f.ys || m.ys;
       let mMaleDil = f.dilute && m.dilute;
       let mMaleTur = f.turquoise && m.turquoise;
+
+      let fFemaleCin = m.cinnamon; 
+      let fFemaleYs = m.ys;
+      let fFemaleDil = f.dilute && m.dilute;
+      let fFemaleTur = f.turquoise && m.turquoise;
+
+      let femaleResultName = resolvePhenotype(fFemaleCin, fFemaleYs, fFemaleDil, fFemaleTur);
       let maleResultName = resolvePhenotype(mMaleCin, mMaleYs, mMaleDil, mMaleTur);
 
       resultDiv.innerHTML = `
@@ -800,7 +815,7 @@
     <div class="w-full max-w-md mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-2.5">
         <span class="text-2xl bg-emerald-800/80 p-1.5 rounded-2xl">🌿</span>
-        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V40 (Search & Compact UI)</p></div>
+        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V41 (Academic Genetics)</p></div>
       </div>
       <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-2xl text-xs font-black shadow-sm transition active:scale-95">+ เพิ่มนก</button>
     </div>
@@ -858,14 +873,12 @@
       <div id="health-records-list" class="space-y-1.5"><p class="text-xs text-slate-400 text-center py-2">ยังไม่มีบันทึกประวัติสุขภาพ</p></div>
     </div>
 
-    <!-- รายชื่อนกในฟาร์ม (เพิ่มระบบค้นหา & ตัวกรอง + แสดงผลแบบย่อกระชับ) -->
+    <!-- รายชื่อนกในฟาร์ม -->
     <div class="bg-white p-5 rounded-3xl shadow-xs border border-slate-100 space-y-3 custom-shadow">
       <div class="flex justify-between items-center">
         <h3 class="font-black text-slate-900 text-sm">🦜 รายชื่อนกในฟาร์ม</h3>
         <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-2xl text-xs font-black border border-emerald-100 transition">+ เพิ่มนก</button>
       </div>
-      
-      <!-- ช่องค้นหาและตัวกรองเพศ (ข้อ 1) -->
       <div class="grid grid-cols-2 gap-2">
         <input type="text" id="search-bird-input" oninput="renderBirdsList()" placeholder="🔍 ค้นหาชื่อ/ห่วงขา..." class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs bg-slate-50">
         <select id="filter-gender" onchange="renderBirdsList()" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs bg-slate-50 font-bold text-slate-700">
@@ -875,7 +888,6 @@
           <option value="ไม่ระบุ">❓ ไม่ระบุ</option>
         </select>
       </div>
-
       <div id="birds-list" class="space-y-1.5 max-h-[350px] overflow-y-auto pr-1"><p class="text-xs text-slate-400 text-center py-4">ยังไม่มีข้อมูลนก</p></div>
     </div>
 
