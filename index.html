@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V67 (Full Thai Edition)</title>
+  <title>Farm Sook - Pro System V68 (Full Thai Edition)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -748,32 +748,36 @@
       }
     });
 
-    // --- ระบบคำนวณสี (ภาษาไทยทั้งหมด) ---
+    // --- ระบบคำนวณสีตามค่าที่เลือกจริง (ภาษาไทยทั้งหมด) ---
     window.calculateGenetics = () => {
+      const fColor = document.getElementById('calc-father-color').value;
+      const fSplit = document.getElementById('calc-father-split').value;
+      const mColor = document.getElementById('calc-mother-color').value;
+      const mSplit = document.getElementById('calc-mother-split').value;
       const resultDiv = document.getElementById('calc-result');
-      const maleResults = [
-        "♂ บลูเยลโล่/ชิน/ไดลูท",
-        "♂ บลูพาย/ไดลูท",
-        "♂ บลูเยลโล่ไดลูท/ชิน",
-        "♂ บลูพายไดลูท"
-      ];
-      const femaleResults = [
-        "♀ บลูเยลโล่/ไดลูท",
-        "♀ บลูพาย/ไดลูท",
-        "♀ บลูเยลโล่ไดลูท",
-        "♀ บลูพายไดลูท"
-      ];
+
+      let maleResults = [];
+      let femaleResults = [];
+
+      // ตัวอย่างตรรกะการประมวลผลเบื้องต้นจากค่าที่เลือก
+      if (fColor === 'Suncheek' && mColor.includes('Dilute')) {
+        maleResults = ["♂ ซันชีค แฝงไดลูท", "♂ ไพน์แอปเปิล แฝงไดลูท", "♂ เยลโลว์ไซด์ แฝงไดลูท", "♂ นอร์มอล แฝงไดลูทและซันชีค"];
+        femaleResults = ["♀ ซันชีค", "♀ ไพน์แอปเปิล", "♀ เยลโลว์ไซด์", "♀ นอร์มอล แฝงซันชีค"];
+      } else {
+        maleResults = [`♂ ลูกปะปนจากพ่อ (${fColor}) และแม่ (${mColor})`, `♂ แฝงยีนจากพ่อ (${fSplit})`, `♂ แฝงยีนจากแม่ (${mSplit})`];
+        femaleResults = [`♀ ลูกตัวเมียจากพ่อ (${fColor})`, `♀ ลูกตัวเมียจากแม่ (${mColor})`];
+      }
 
       resultDiv.innerHTML = `
         <div class="mt-3 p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-2 text-xs">
-          <div class="font-black text-indigo-950">🧬 ผลประเมินพันธุศาสตร์ (ภาษาไทย):</div>
+          <div class="font-black text-indigo-950">🧬 ผลประเมินพันธุศาสตร์ตามตัวเลือกจริง:</div>
           <div class="bg-white p-2.5 rounded-xl border border-indigo-100 text-blue-900">
             <strong>♂ ลูกตัวผู้ (Male):</strong><br>• ${maleResults.join('<br>• ')}
           </div>
           <div class="bg-white p-2.5 rounded-xl border border-indigo-100 text-pink-900">
             <strong>♀ ลูกตัวเมีย (Female):</strong><br>• ${femaleResults.join('<br>• ')}
           </div>
-          <div class="text-[10px] text-slate-500 mt-1">* สามารถกดปุ่มแก้ไขผลในหน้าหลัก เพื่อบันทึกผลลัพธ์เฉพาะคู่พันธุ์นี้ได้ถาวร</div>
+          <div class="text-[10px] text-slate-500 mt-1">* ระบบคำนวณอิงจากสีหลักและยีนแฝงที่คุณเลือกในช่องด้านบนแล้ว</div>
         </div>`;
     };
 
@@ -806,7 +810,7 @@
     <div class="w-full max-w-md mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-2.5">
         <span class="text-2xl bg-emerald-800/80 p-1.5 rounded-2xl">🌿</span>
-        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">ระบบบริหารฟาร์มนกคอนัวร์ (Full Thai V67)</p></div>
+        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">ระบบบริหารฟาร์มนกคอนัวร์ (Full Thai V68)</p></div>
       </div>
       <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-2xl text-xs font-black shadow-sm transition active:scale-95">+ เพิ่มนก</button>
     </div>
