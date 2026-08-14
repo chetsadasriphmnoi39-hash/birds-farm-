@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V36 (Full Complete)</title>
+  <title>Farm Sook - Pro System V36 (Academic & Complete)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -37,51 +37,51 @@
     let editHealthId = null;
 
     const greenCheekMutationsHtml = `
-      <option value="Normal">Normal (เขียว)</option>
-      <option value="Cinnamon">Cinnamon</option>
-      <option value="Yellow-sided">Yellow-sided (Opaline)</option>
-      <option value="Pineapple">Pineapple (Cinnamon + YS)</option>
-      <option value="Dilute">Dilute</option>
+      <option value="Normal">Normal (เขียวดั้งเดิม)</option>
+      <option value="Cinnamon">Cinnamon (ซินนามอน)</option>
+      <option value="Yellow-sided">Yellow-sided / Opaline (เยลโลว์ไซด์)</option>
+      <option value="Pineapple">Pineapple (ไพน์แอปเปิล: Cinnamon + YS)</option>
+      <option value="Dilute">Dilute (ไดลูท)</option>
       <option value="Yellow-sided Dilute">Yellow-sided Dilute</option>
-      <option value="Suncheek">Suncheek</option>
-      <option value="Turquoise Normal">Turquoise Normal (Blue)</option>
-      <option value="Turquoise Cinnamon">Turquoise Cinnamon</option>
-      <option value="Turquoise Yellow-sided">Turquoise Yellow-sided</option>
-      <option value="Turquoise Pineapple">Turquoise Pineapple</option>
-      <option value="Mint">Mint</option>
-      <option value="Opamint">Opamint</option>
-      <option value="Cinnamint">Cinnamint</option>
-      <option value="Mooncheek">Mooncheek</option>
-      <option value="Violet Factor">Violet Series</option>
-      <option value="High Red Factor">High Red / Extreme Red</option>
+      <option value="Suncheek">Suncheek (ซันชีค)</option>
+      <option value="Turquoise Normal">Turquoise Normal (บลูซีรีย์)</option>
+      <option value="Turquoise Cinnamon">Turquoise Cinnamon (อเมเชียน)</option>
+      <option value="Turquoise Yellow-sided">Turquoise Yellow-sided (มิستي)</option>
+      <option value="Turquoise Pineapple">Turquoise Pineapple (พายบลู)</option>
+      <option value="Mint">Mint (มินต์)</option>
+      <option value="Opamint">Opamint (โอปามินต์)</option>
+      <option value="Cinnamint">Cinnamint (ซินนามินต์)</option>
+      <option value="Mooncheek">Mooncheek (มูนชีค)</option>
+      <option value="Violet Factor">Violet Factor (ไวโอเล็ต)</option>
+      <option value="High Red Factor">High Red / Extreme Red (ไฮเรด)</option>
     `;
 
     const sunConureMutationsHtml = `
-      <option value="Sun Conure Normal">Sun Conure Normal (ส้ม/เหลือง)</option>
-      <option value="Red Factor">Red Factor / High Red</option>
-      <option value="Single Factor Pied">Single Factor Pied</option>
-      <option value="Double Factor Pied">Double Factor Pied</option>
-      <option value="Dominant Pied">Dominant Pied</option>
-      <option value="Lutino / Yellow">Lutino (เหลืองตาแดง)</option>
+      <option value="Sun Conure Normal">Sun Conure Normal (ส้ม/เหลืองตามธรรมชาติ)</option>
+      <option value="Red Factor">Red Factor / High Red (เรดฟาร์คเตอร์)</option>
+      <option value="Single Factor Pied">Single Factor Pied (พายด์เดี่ยว)</option>
+      <option value="Double Factor Pied">Double Factor Pied (พายด์คู่)</option>
+      <option value="Dominant Pied">Dominant Pied (โดมิแนนท์พายด์)</option>
+      <option value="Lutino / Yellow">Lutino (ลูติโน่ ตาแดง)</option>
     `;
 
     const greenCheekSplitsHtml = `
-      <option value="ไม่มีสปลิต">ไม่มีสปลิต / ไม่ระบุ</option>
-      <option value="Split Turquoise">Split Turquoise</option>
-      <option value="Split Dilute">Split Dilute</option>
-      <option value="Split Cinnamon (Sex-linked)">Split Cinnamon (♂ เท่านั้น)</option>
-      <option value="Split Yellow-sided (Sex-linked)">Split Yellow-sided (♂ เท่านั้น)</option>
-      <option value="Split Turquoise & Dilute">Split Turquoise & Dilute</option>
-      <option value="Split Suncheek">Split Suncheek</option>
-      <option value="Split Mooncheek">Split Mooncheek</option>
-      <option value="Split Mint">Split Mint</option>
+      <option value="ไม่มีสปลิต">ไม่มีสปลิต / ไม่ปรากฏหลักฐานทางพันธุศาสตร์</option>
+      <option value="Split Turquoise">Split Turquoise (แฝงบลู)</option>
+      <option value="Split Dilute">Split Dilute (แฝงไดลูท)</option>
+      <option value="Split Cinnamon (Sex-linked)">Split Cinnamon (แฝงซินนามอน - เฉพาะเพศผู้ ♂)</option>
+      <option value="Split Yellow-sided (Sex-linked)">Split Yellow-sided (แฝงเยลโลว์ไซด์ - เฉพาะเพศผู้ ♂)</option>
+      <option value="Split Turquoise & Dilute">Split Turquoise & Dilute (แฝงบลูและไดลูท)</option>
+      <option value="Split Suncheek">Split Suncheek (แฝงซันชีค)</option>
+      <option value="Split Mooncheek">Split Mooncheek (แฝงมูนชีค)</option>
+      <option value="Split Mint">Split Mint (แฝงมินต์)</option>
     `;
 
     const sunConureSplitsHtml = `
-      <option value="ไม่มีสปลิต">ไม่มีสปลิต / ไม่ระบุ</option>
-      <option value="Split Blue (Turquoise)">Split Blue (Turquoise)</option>
-      <option value="Split Pied">Split Pied</option>
-      <option value="Split Lutino">Split Lutino</option>
+      <option value="ไม่มีสปลิต">ไม่มีสปลิต / ไม่ปรากฏหลักฐานทางพันธุศาสตร์</option>
+      <option value="Split Blue (Turquoise)">Split Blue (แฝงบลู)</option>
+      <option value="Split Pied">Split Pied (แฝงพายด์)</option>
+      <option value="Split Lutino">Split Lutino (แฝงลูติโน่)</option>
     `;
 
     window.updateMutationDropdowns = () => {
@@ -588,6 +588,7 @@
       if(document.getElementById('total-chicks')) document.getElementById('total-chicks').innerText = totalHatchedCount + " ตัว";
     });
 
+    // อัลกอริทึมการคำนวณพันธุศาสตร์ตามหลักเมนเดล (Mendelian Inheritance & Sex-linked Traits)
     window.calculateGenetics = () => {
       const fColor = document.getElementById('calc-father-color').value;
       const fSplit = document.getElementById('calc-father-split').value;
@@ -624,7 +625,7 @@
         if (ys) return "Yellow-sided";
         if (cin) return "Cinnamon";
         if (dil) return "Dilute";
-        return "Normal (เขียว/ส้มปกติ)";
+        return "Normal (เขียวดั้งเดิมตามธรรมชาติ)";
       };
 
       const getSplitText = (visualName, cin, ys, dil, tur, isMale) => {
@@ -647,10 +648,10 @@
 
       resultDiv.innerHTML = `
         <div class="p-4 bg-indigo-50/90 border border-indigo-100 rounded-3xl space-y-3 text-xs mt-3 shadow-xs">
-          <div class="font-black text-indigo-950 text-sm flex items-center space-x-1.5 border-b border-indigo-200/80 pb-2"><span>🧬</span> <span>ผลคาดการณ์สีลูกนก:</span></div>
+          <div class="font-black text-indigo-950 text-sm flex items-center space-x-1.5 border-b border-indigo-200/80 pb-2"><span>🧬</span> <span>ผลการวิเคราะห์พันธุศาสตร์:</span></div>
           <div class="space-y-2">
-            <div class="p-3 bg-blue-100/80 rounded-2xl text-blue-950 space-y-1 border border-blue-200/50"><span class="font-black block text-[11px] text-blue-900 tracking-wide uppercase">♂ ลูกตัวผู้ (Male):</span><div class="text-sm font-black text-blue-950">${maleVisName}<span class="text-xs font-semibold text-blue-800">${maleSplitText}</span></div></div>
-            <div class="p-3 bg-pink-100/80 rounded-2xl text-pink-950 space-y-1 border border-pink-200/50"><span class="font-black block text-[11px] text-pink-900 tracking-wide uppercase">♀ ลูกตัวเมีย (Female):</span><div class="text-sm font-black text-pink-950">${femaleVisName}<span class="text-xs font-semibold text-pink-800">${femaleSplitText}</span></div></div>
+            <div class="p-3 bg-blue-100/80 rounded-2xl text-blue-950 space-y-1 border border-blue-200/50"><span class="font-black block text-[11px] text-blue-900 tracking-wide uppercase">♂ ลูกตัวผู้ (Male Phenotype):</span><div class="text-sm font-black text-blue-950">${maleVisName}<span class="text-xs font-semibold text-blue-800">${maleSplitText}</span></div></div>
+            <div class="p-3 bg-pink-100/80 rounded-2xl text-pink-950 space-y-1 border border-pink-200/50"><span class="font-black block text-[11px] text-pink-900 tracking-wide uppercase">♀ ลูกตัวเมีย (Female Phenotype):</span><div class="text-sm font-black text-pink-950">${femaleVisName}<span class="text-xs font-semibold text-pink-800">${femaleSplitText}</span></div></div>
           </div>
         </div>`;
     };
@@ -684,7 +685,7 @@
     <div class="w-full max-w-md mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-2.5">
         <span class="text-2xl bg-emerald-800/80 p-1.5 rounded-2xl">🌿</span>
-        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V36 (Complete)</p></div>
+        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V36 (Academic Version)</p></div>
       </div>
       <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-2xl text-xs font-black shadow-sm transition active:scale-95">+ เพิ่มนก</button>
     </div>
