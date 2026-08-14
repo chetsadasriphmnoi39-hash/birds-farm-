@@ -136,8 +136,8 @@
     };
 
     window.renderPairGeneticsBox = (pair) => {
-      // ดึงข้อมูลไข่โดยเช็คทั้ง pairId และ pairName (ป้องกันข้อมูลเก่าไม่สอดคล้องกัน)
-      const pairEggs = globalEggs.filter(e => e.pairId === pair.id || e.pairName === pair.name);
+      // รองรับการเช็คทั้ง pairId, pairName และ cage เพื่อดึงสถิติไข่ให้ถูกต้องแม่นยำ
+      const pairEggs = globalEggs.filter(e => e.pairId === pair.id || e.pairName === pair.name || e.cage === pair.name);
       const totalEggs = pairEggs.length;
       const totalHatched = pairEggs.filter(e => e.status === 'ฟักแล้ว').length;
 
@@ -712,17 +712,18 @@
         const data = { id: docSnap.id, ...docSnap.data() }; globalEggs.push(data); totalEggsCount++;
         if(data.status === 'ฟักแล้ว') totalHatchedCount++;
         if (data.status === 'รอส่องเชื้อ') {
-          eggReminderHtml += `<div class="p-3 bg-amber-50/80 text-amber-900 rounded-2xl border border-amber-200 text-xs flex justify-between items-center shadow-xs"><span>🔦 ส่องเชื้อไข่: <strong>${data.pairName}</strong> (ใบที่ ${data.eggNo})</span><span class="text-[10px] bg-amber-200/80 font-bold px-2.5 py-1 rounded-xl">${data.candlingDate || 'ครบ 6 วัน'}</span></div>`;
+          eggReminderHtml += `<div class="p-3 bg-amber-50/80 text-amber-900 rounded-2xl border border-amber-200 text-xs flex justify-between items-center shadow-xs"><span>🔦 ส่องเชื้อไข่: <strong>${data.pairName || data.cage}</strong> (ใบที่ ${data.eggNo})</span><span class="text-[10px] bg-amber-200/80 font-bold px-2.5 py-1 rounded-xl">${data.candlingDate || 'ครบ 6 วัน'}</span></div>`;
         }
-        if (!groupedEggs[data.pairName]) groupedEggs[data.pairName] = []; groupedEggs[data.pairName].push(data);
+        let groupKey = data.pairName || data.cage || 'กรงทั่วไป';
+        if (!groupedEggs[groupKey]) groupedEggs[groupKey] = []; groupedEggs[groupKey].push(data);
       });
 
       window.eggRemindersHtml = eggReminderHtml;
       window.updateRemindersDisplay();
 
-      // รีเฟรชคู่พ่อแม่พันธุ์เพื่อให้สถิติตัวเลขไข่ปรับตามแบบ Real-time
-      if (window.globalPairs && window.globalPairs.length > 0) {
-        // อัปเดตการแสดงผลคู่พันธุ์ใหม่เพื่อให้สถิติตรงกัน
+      // สั่งเรนเดอร์คู่พ่อแม่พันธุ์ใหม่ทันทีเพื่อให้ตัวเลขสถิติอัปเดตแบบ Real-time ตามข้อมูลไข่
+      if(window.globalPairs && window.globalPairs.length > 0) {
+        // ข้อมูลจะซิงค์ผ่าน onSnapshot ของ pairs อัตโนมัติอยู่แล้ว
       }
 
       for (const pairName in groupedEggs) {
@@ -1037,19 +1038,6 @@
   <!-- MODAL 6: ใบเซอร์ & QR Tag -->
   <div id="modal-cert" onclick="closeOnBackdrop(event, 'modal-cert')" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50 overflow-y-auto">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl relative my-auto max-h-[85vh] overflow-y-auto animate-in"><button type="button" onclick="closeModal('modal-cert')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg font-bold z-10">✕</button><div id="cert-modal-body"></div></div>
-  </div>
-
-  <!-- MODAL: แก้ไขและอัปเดตผลการผสมพันธุ์ -->
-  <div id="modal-custom-genetics" onclick="closeOnBackdrop(event, 'modal-custom-genetics')" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 relative animate-in">
-      <button type="button" onclick="closeModal('modal-custom-genetics')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
-      <h3 class="font-black text-base text-slate-900 pr-6">🧬 แก้ไขและบันทึกผลการผสมพันธุ์</h3>
-      <form onsubmit="submitCustomGenetics(event)" class="space-y-3">
-        <div><label class="block text-xs font-bold text-blue-900 mb-1">♂ ผลลัพธ์ลูกตัวผู้ (Male)</label><input type="text" id="custom-gen-male" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
-        <div><label class="block text-xs font-bold text-pink-900 mb-1">♀ ผลลัพธ์ลูกตัวเมีย (Female)</label><input type="text" id="custom-gen-female" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
-        <div class="flex space-x-2 pt-2"><button type="button" onclick="closeModal('modal-custom-genetics')" class="w-1/2 border border-slate-200 py-3 rounded-2xl text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 transition">ยกเลิก</button><button type="submit" class="w-1/2 bg-emerald-800 hover:bg-emerald-700 text-white py-3 rounded-2xl text-xs font-black shadow-md transition">💾 บันทึกอัปเดตผล</button></div>
-      </form>
-    </div>
   </div>
 
 </body>
