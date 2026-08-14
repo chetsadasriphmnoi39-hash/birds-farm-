@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V51 (Expert Avian Genetics Fixed)</title>
+  <title>Farm Sook - Pro System V52 (Z-Linked Corrected)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -133,7 +133,7 @@
       return result.join(" ");
     };
 
-    // Expert Avian Genetics Engine V51 - ปรับปรุงตรรกะ Z-chromosome และ Autosomal Recessive อย่างเคร่งครัด
+    // Expert Z-Linked Fixed Engine V52
     window.computePairGenetics = (father, mother) => {
       if (!father || !mother) return '<div class="text-[11px] text-slate-400">ข้อมูลพ่อแม่พันธุ์ไม่ครบถ้วน</div>';
       
@@ -154,82 +154,78 @@
       let f = parseGenotype(father.visualColor, father.splitColor);
       let m = parseGenotype(mother.visualColor, mother.splitColor);
 
+      // กำหนดฟังก์ชันแปลงสถานะยีนรวมเป็นชื่อสีมาตรฐานสากล
+      let getPhenotypeName = (turq, dilute, cin, ys, isMale, splitTurq, splitDilute, splitCin, splitYs) => {
+        if (turq && dilute && cin && ys) return "Mooncheek (มูนชีค)";
+        if (turq && dilute && ys) return "Opamint (โอปามินต์)";
+        if (turq && dilute && cin) return "Cinnamint (ซินนามินต์)";
+        if (turq && dilute) return "Mint (มินต์)";
+        if (dilute && cin && ys) return "Suncheek (ซันชีค)";
+        if (turq && cin && ys) return "Turquoise Pineapple (พายบลูอเมเชียน)";
+        if (turq && ys) return "Turquoise Yellow-sided (มิستي)";
+        if (turq && cin) return "Turquoise Cinnamon (อเมเชียน)";
+        if (turq && dilute) return "Turquoise Dilute (บลูไดลูท)";
+        if (turq) return "Turquoise Normal (บลูซีรีย์)";
+        if (cin && ys) return "Pineapple (ไพน์แอปเปิล)";
+        if (dilute && ys) return "Yellow-sided Dilute";
+        if (ys) return "Yellow-sided / Opaline (เยลโลว์ไซด์)";
+        if (cin) return "Cinnamon (ซินนามอน)";
+        if (dilute) return "Dilute (ไดลูท)";
+
+        let splits = [];
+        if (splitTurq) splits.push("แฝงบลู");
+        if (splitDilute) splits.push("แฝงไดลูท");
+        if (isMale && splitCin) splits.push("แฝงซินนามอน");
+        if (isMale && splitYs) splits.push("แฝงเยลโลว์ไซด์");
+
+        if (splits.length > 0) return `Normal (เขียวดั้งเดิม) [${splits.join(", ")}]`;
+        return "Normal (เขียวดั้งเดิม)";
+      };
+
       let resolveOffspring = (isMale) => {
         // 1. Turquoise (Autosomal Recessive)
-        let fTurqCount = f.turqVisual ? 2 : (f.splitTurq ? 1 : 0);
-        let mTurqCount = m.turqVisual ? 2 : (m.splitTurq ? 1 : 0);
-        let totalTurq = fTurqCount + mTurqCount;
-        let isTurq = totalTurq >= 2;
-        let isSplitTurq = !isTurq && totalTurq === 1;
+        let fTurq = f.turqVisual ? 2 : (f.splitTurq ? 1 : 0);
+        let mTurq = m.turqVisual ? 2 : (m.splitTurq ? 1 : 0);
+        let turqSum = fTurq + mTurq;
+        let isTurq = turqSum >= 2;
+        let isSplitTurq = !isTurq && turqSum === 1;
 
         // 2. Dilute (Autosomal Recessive)
-        let fDilCount = f.diluteVisual ? 2 : (f.splitDilute ? 1 : 0);
-        let mDilCount = m.diluteVisual ? 2 : (m.splitDilute ? 1 : 0);
-        let totalDil = fDilCount + mDilCount;
-        let isDilute = totalDil >= 2;
-        let isSplitDilute = !isDilute && totalDil === 1;
+        let fDil = f.diluteVisual ? 2 : (f.splitDilute ? 1 : 0);
+        let mDil = m.diluteVisual ? 2 : (m.splitDilute ? 1 : 0);
+        let dilSum = fDil + mDil;
+        let isDilute = dilSum >= 2;
+        let isSplitDilute = !isDilute && dilSum === 1;
 
-        // 3. Cinnamon & Yellow-sided (Sex-linked Recessive บนโครโมโซม Z)
-        // พ่อ (ZZ) มียีน 2 อัลลีล, แม่ (ZW) มียีน 1 อัลลีลบน Z (แม่ไม่ส่ง Z ให้ลูกตัวเมีย)
-        let fCinDose = f.cinVisual ? 2 : (f.splitCin ? 1 : 0);
-        let mCinDose = m.cinVisual ? 1 : 0;
+        // 3. Sex-linked (Cinnamon & Yellow-sided บน Z Chromosome)
+        let fCin = f.cinVisual ? 2 : (f.splitCin ? 1 : 0); // พ่อมี Z 2 เส้น (0, 1 หรือ 2)
+        let mCin = m.cinVisual ? 1 : 0; // แม่มี Z 1 เส้น (แสดงออก = 1, ไม่แสดง = 0)
 
-        let fYsDose = f.ysVisual ? 2 : (f.splitYs ? 1 : 0);
-        let mYsDose = m.ysVisual ? 1 : 0;
+        let fYs = f.ysVisual ? 2 : (f.splitYs ? 1 : 0);
+        let mYs = m.ysVisual ? 1 : 0;
 
-        let cinExpressed = false, cinSplit = false;
-        let ysExpressed = false, ysSplit = false;
+        let cinExpr = false, cinSplit = false;
+        let ysExpr = false, ysSplit = false;
 
         if (isMale) {
-          // ลูกตัวผู้ (ZZ) ได้รับ Z จากพ่อ 1 ตัว และจากแม่ 1 ตัว
-          let sumCin = fCinDose + mCinDose;
-          if (sumCin >= 2 || (f.cinVisual && m.cinVisual)) { cinExpressed = true; }
-          else if (sumCin === 1) { cinSplit = true; }
+          // ลูกตัวผู้ (ZZ) ได้รับ Z จากพ่อ 1 เส้น และจากแม่ 1 เส้น
+          let totalCinZ = (f.cinVisual ? 1 : (f.splitCin ? 0.5 : 0)) + (m.cinVisual ? 1 : 0);
+          if (totalCinZ >= 2 || (f.cinVisual && m.cinVisual)) { cinExpr = true; }
+          else if (totalCinZ === 1) { cinSplit = true; }
 
-          let sumYs = fYsDose + mYsDose;
-          if (sumYs >= 2 || (f.ysVisual && m.ysVisual)) { ysExpressed = true; }
-          else if (sumYs === 1) { ysSplit = true; }
+          let totalYsZ = (f.ysVisual ? 1 : (f.splitYs ? 0.5 : 0)) + (m.ysVisual ? 1 : 0);
+          if (totalYsZ >= 2 || (f.ysVisual && m.ysVisual)) { ysExpr = true; }
+          else if (totalYsZ === 1) { ysSplit = true; }
         } else {
-          // ลูกตัวเมีย (ZW) ได้รับ Z จากพ่อเท่านั้น ส่วนแม่ให้ W
-          if (f.cinVisual || fCinDose >= 2) { cinExpressed = true; }
-          else if (fCinDose === 1) { cinExpressed = true; } // พ่อแฝง ลูกตัวเมียแสดงผล 50%
+          // ลูกตัวเมีย (ZW) ได้รับ Z จากพ่อฝ่ายเดียวเท่านั้น (แม่ให้ W ซึ่งไม่มีอัลลีล)
+          if (f.cinVisual || fCin >= 2) { cinExpr = true; }
+          else if (fCin === 1) { cinExpr = true; } // พ่อแฝง ลูกตัวเมียแสดงผล 50% ตามสถิติ
 
-          if (f.visualColor && f.ysVisual || fYsDose >= 2) { ysExpressed = true; }
-          else if (fYsDose === 1) { ysExpressed = true; }
+          if (f.ysVisual || fYs >= 2) { ysExpr = true; }
+          else if (fYs === 1) { ysExpr = true; }
         }
 
-        let hasTurq = isTurq;
-        let hasDil = isDilute;
-        let hasCin = cinExpressed;
-        let hasYs = ysExpressed;
-
-        // ฟีโนไทป์ขั้นสูงตามหลักวิชาการ
-        if (hasTurq && hasDil && hasCin && hasYs) return "Mooncheek (มูนชีค)";
-        if (hasTurq && hasDil && hasYs) return "Opamint (โอปามินต์)";
-        if (hasTurq && hasDil && hasCin) return "Cinnamint (ซินนามินต์)";
-        if (hasTurq && hasDil) return "Mint (มินต์)";
-        if (hasDil && hasCin && hasYs) return "Suncheek (ซันชีค)";
-        if (hasTurq && hasCin && hasYs) return "Turquoise Pineapple (พายบลูอเมเชียน)";
-        if (hasTurq && hasYs) return "Turquoise Yellow-sided (มิستي)";
-        if (hasTurq && hasCin) return "Turquoise Cinnamon (อเมเชียน)";
-        if (hasTurq && hasDil) return "Turquoise Dilute (บลูไดลูท)";
-        if (hasTurq) return "Turquoise Normal (บลูซีรีย์)";
-        if (hasCin && hasYs) return "Pineapple (ไพน์แอปเปิล)";
-        if (hasDil && hasYs) return "Yellow-sided Dilute";
-        if (hasYs) return "Yellow-sided / Opaline (เยลโลว์ไซด์)";
-        if (hasCin) return "Cinnamon (ซินนามอน)";
-        if (hasDil) return "Dilute (ไดลูท)";
-
-        let splitsList = [];
-        if (isSplitTurq) splitsList.push("แฝงบลู");
-        if (isSplitDilute) splitsList.push("แฝงไดลูท");
-        if (isMale && cinSplit) splitsList.push("แฝงซินนามอน");
-        if (isMale && ysSplit) splitsList.push("แฝงเยลโลว์ไซด์");
-
-        if (splitsList.length > 0) {
-          return `Normal (เขียวดั้งเดิม) [${splitsList.join(", ")}]`;
-        }
-        return "Normal (เขียวดั้งเดิม)";
+        return getPhenotypeName(isTurq, isDilute, cinExpr, ysExpr, isMale, isSplitTurq, isSplitDilute, cinSplit, ysSplit);
       };
 
       let maleResult = resolveOffspring(true);
@@ -237,7 +233,7 @@
 
       return `
         <div class="mt-2.5 p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1.5 text-[11px]">
-          <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์ (Expert Engine):</span></div>
+          <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์ (Z-Linked Fixed):</span></div>
           <div class="text-blue-900"><strong>♂ ลูกตัวผู้ (Male - 50%):</strong> ${maleResult}</div>
           <div class="text-pink-900"><strong>♀ ลูกตัวเมีย (Female - 50%):</strong> ${femaleResult}</div>
         </div>
@@ -813,7 +809,7 @@
     <div class="w-full max-w-md mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-2.5">
         <span class="text-2xl bg-emerald-800/80 p-1.5 rounded-2xl">🌿</span>
-        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V51 (Expert Verified)</p></div>
+        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V52 (Z-Linked Corrected)</p></div>
       </div>
       <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-2xl text-xs font-black shadow-sm transition active:scale-95">+ เพิ่มนก</button>
     </div>
@@ -989,7 +985,7 @@
   <div id="modal-calc" onclick="closeOnBackdrop(event, 'modal-calc')" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-3.5 relative max-h-[85vh] overflow-y-auto animate-in">
       <button type="button" onclick="closeModal('modal-calc')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
-      <h3 class="font-black text-base text-slate-900 pr-6">🧬 คำนวณสี & เพศลูกนก (Expert V51)</h3>
+      <h3 class="font-black text-base text-slate-900 pr-6">🧬 คำนวณสี & เพศลูกนก (Z-Linked Fixed)</h3>
       <div class="space-y-3.5">
         <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
           <div class="font-black text-xs text-blue-900 mb-2 uppercase tracking-wide">♂ พ่อพันธุ์</div>
