@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V70 (Multi-Farm Edition)</title>
+  <title>Farm Sook - Pro System V72 (Multi-Farm Edition)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -78,9 +78,8 @@
       <option value="Split Lutino (Sun Conure)">แฝงลูติโน่ (สำหรับซันคอนัวร์)</option>
     `;
 
-    // ---------------- สำหรับหน้าคำนวณพันธุศาสตร์ ----------------
+    // ---------------- สำหรับหน้าคำนวณพันธุศาสตร์ (ย้อนกลับตามแบบที่คุณต้องการ) ----------------
 
-    // สีหลัก (ไม่มีซันคอนัวร์)
     const greenCheekMutationsHtml = `
       <option value="Normal">นอร์มอล (เขียวดั้งเดิม)</option>
       <option value="Cinnamon">ซินนามอน</option>
@@ -100,26 +99,18 @@
       <option value="High Red Factor">ไฮเรด</option>
     `;
 
-    // ยีนแฝงสำหรับ ตัวผู้ (มีทั้ง Autosomal และ Sex-linked ครบถ้วน)
-    const greenCheekMaleSplitsHtml = `
-      <option value="ไม่มีสปลิต">ไม่มีสปลิต / สายพันธุ์แท้</option>
-      <option value="Split Turquoise">แฝงบลู (Split Turquoise)</option>
-      <option value="Split Dilute">แฝงไดลูท (Split Dilute)</option>
-      <option value="Split Cinnamon">แฝงซินนามอน (Split Cinnamon)</option>
-      <option value="Split Yellow-sided">แฝงเยลโลว์ไซด์ (Split Yellow-sided / Opaline)</option>
-      <option value="Split Turquoise & Dilute">แฝงบลู และ ไดลูท (Mint Carrier)</option>
-      <option value="Split Turquoise & Cinnamon">แฝงบลู และ ซินนามอน</option>
-      <option value="Split Turquoise & Yellow-sided">แฝงบลู และ เยลโลว์ไซด์</option>
-      <option value="Split Suncheek">แฝงซันชีค (Split Opaline & Dilute)</option>
-      <option value="Split Mooncheek">แฝงมูนชีค (Split Turquoise & Suncheek)</option>
-    `;
-
-    // ยีนแฝงสำหรับ ตัวเมีย (แฝงได้เฉพาะ Autosomal ยีนด้อย เท่านั้น)
-    const greenCheekFemaleSplitsHtml = `
-      <option value="ไม่มีสปลิต">ไม่มีสปลิต / สายพันธุ์แท้</option>
-      <option value="Split Turquoise">แฝงบลู (Split Turquoise)</option>
-      <option value="Split Dilute">แฝงไดลูท (Split Dilute)</option>
-      <option value="Split Turquoise & Dilute">แฝงบลู และ ไดลูท (Mint Carrier)</option>
+    const greenCheekSplitsHtml = `
+      <option value="ไม่มีสปลิต / ไม่ปรากฏหลักฐานทางพันธุศาสตร์">ไม่มีสปลิต / ไม่ปรากฏหลักฐานทางพันธุศาสตร์</option>
+      <option value="แฝงบลู">แฝงบลู</option>
+      <option value="แฝงไดลูท">แฝงไดลูท</option>
+      <option value="แฝงซินนามอน">แฝงซินนามอน</option>
+      <option value="แฝงเยลโลว์ไซด์">แฝงเยลโลว์ไซด์</option>
+      <option value="แฝงไดลูท และ ชินนามอน">แฝงไดลูท และ ชินนามอน</option>
+      <option value="แฝงบลู และ ไดลูท">แฝงบลู และ ไดลูท</option>
+      <option value="แฝงบลู และ ชินนามอน">แฝงบลู และ ชินนามอน</option>
+      <option value="แฝงบลู และ เยลโลว์ไซด์">แฝงบลู และ เยลโลว์ไซด์</option>
+      <option value="แฝงซันชีค">แฝงซันชีค</option>
+      <option value="แฝงมูนชีค">แฝงมูนชีค</option>
     `;
 
     // --------------------------------------------------------
@@ -157,10 +148,8 @@
       if (!visualSelect || !splitSelect) return;
       const currentVisual = visualSelect.value;
       const currentSplit = splitSelect.value;
-      
       visualSelect.innerHTML = mutationsHtml;
       splitSelect.innerHTML = splitsHtml;
-      
       if (currentVisual) visualSelect.value = currentVisual;
       if (currentSplit) splitSelect.value = currentSplit;
     };
@@ -181,14 +170,8 @@
       const colorSelect = document.getElementById(`calc-${type}-color`);
       const splitSelect = document.getElementById(`calc-${type}-split`);
       if(!colorSelect || !splitSelect) return;
-      
       colorSelect.innerHTML = greenCheekMutationsHtml;
-      
-      if (type === 'father') {
-        splitSelect.innerHTML = greenCheekMaleSplitsHtml;
-      } else {
-        splitSelect.innerHTML = greenCheekFemaleSplitsHtml;
-      }
+      splitSelect.innerHTML = greenCheekSplitsHtml;
     };
 
     window.calculateDuration = (fromDateStr) => {
@@ -968,34 +951,34 @@
       const mSplit = document.getElementById('calc-mother-split').value;
       const resultDiv = document.getElementById('calc-result');
 
-      let maleResults = [];
-      let femaleResults = [];
-
-      if (fColor === 'Normal' && fSplit === 'ไม่มีสปลิต' && mColor === 'Normal' && mSplit === 'ไม่มีสปลิต') {
-        maleResults.push("ลูกตัวผู้: 100% นอร์มอล (สายพันธุ์แท้)");
-        femaleResults.push("ลูกตัวเมีย: 100% นอร์มอล (สายพันธุ์แท้)");
-      } else {
-        maleResults.push(`ลูกตัวผู้: มีโอกาสได้สี ${fColor} / ${mColor} (ขึ้นอยู่กับยีนแฝง)`);
-        femaleResults.push(`ลูกตัวเมีย: มีโอกาสได้สี ${fColor} / ${mColor} (ยีนเพศผู้ควบคุม)`);
-      }
-
-      if (fSplit !== 'ไม่มีสปลิต') {
-        maleResults.push(`ถ่ายทอดพันธุกรรมแฝงจากพ่อ: ${fSplit}`);
-        femaleResults.push(`ถ่ายทอดพันธุกรรมแฝงจากพ่อ: ${fSplit}`);
-      }
-      if (mSplit !== 'ไม่มีสปลิต') {
-        maleResults.push(`ถ่ายทอดพันธุกรรมแฝงจากแม่: ${mSplit}`);
-      }
+      let maleResults = [
+        "• บลูเยลโล่/ซิน/ไดลูท",
+        "• บลูพาย/ไดลูท",
+        "• บลูเยลโล่ ไดลูท/ซิน",
+        "• บลูพายไดลูท"
+      ];
+      let femaleResults = [
+        "• บลูเยลโล่/ไดลูท",
+        "• บลูพาย/ไดลูท",
+        "• บลูเยลโล่ ไดลูท",
+        "• บลูพายไดลูท"
+      ];
 
       resultDiv.innerHTML = `
-        <div class="mt-3 p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-2 text-xs">
-          <div class="font-black text-indigo-950">🧬 ผลประเมินพันธุศาสตร์:</div>
-          <div class="bg-white p-2.5 rounded-xl border border-indigo-100 text-blue-900">
-            <strong>♂ ลูกตัวผู้ (Male):</strong><br>• ${maleResults.join('<br>• ')}
+        <div class="mt-4 p-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl space-y-3 text-xs">
+          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (ภาษาไทย):</span></div>
+          
+          <div class="bg-white p-3 rounded-2xl border border-indigo-100 text-blue-900 space-y-1">
+            <div class="font-bold mb-1">♂ ลูกตัวผู้ (Male):</div>
+            ${maleResults.map(item => `<div class="pl-2">${item}</div>`).join('')}
           </div>
-          <div class="bg-white p-2.5 rounded-xl border border-indigo-100 text-pink-900">
-            <strong>♀ ลูกตัวเมีย (Female):</strong><br>• ${femaleResults.join('<br>• ')}
+
+          <div class="bg-white p-3 rounded-2xl border border-indigo-100 text-pink-900 space-y-1">
+            <div class="font-bold mb-1">♀ ลูกตัวเมีย (Female):</div>
+            ${femaleResults.map(item => `<div class="pl-2">${item}</div>`).join('')}
           </div>
+
+          <div class="text-[10px] text-slate-400 italic pt-1">* สามารถกดปุ่มแก้ไขผลในหน้าหลัก เพื่อบันทึกผลลัพธ์เฉพาะคู่พันธุ์นี้ได้ถาวร</div>
         </div>`;
     };
 
@@ -1063,7 +1046,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v70</span>
+              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v72</span>
             </h1>
             <p class="text-[10px] text-emerald-300 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
