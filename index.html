@@ -135,7 +135,7 @@
       return result.join(" ");
     };
 
-    // ฟังก์ชันด่วนอัปเดตสถานะไข่จากหน้าแจ้งเตือน (มีเชื้อ, ไม่มีเชื้อ, ฟักแล้ว)
+    // ฟังก์ชันด่วนอัปเดตสถานะไข่จากหน้าแจ้งเตือน
     window.quickUpdateEggStatus = async (eggId, newStatus) => {
       try {
         await updateDoc(doc(db, "egg_details", eggId), { status: newStatus });
