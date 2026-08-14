@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V60 (Egg & Death Tracker)</title>
+  <title>Farm Sook - Pro System V65 (Egg & Death Tracker)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -136,17 +136,15 @@
     };
 
     window.renderPairGeneticsBox = (pair) => {
-      // ตรวจสอบและตัดช่องว่างเพื่อเทียบชื่อคู่/กรงให้แม่นยำ 100%
-      const cleanPairName = (pair.name || "").replace(/\s+/g, "").toLowerCase();
-      
       const pairEggs = globalEggs.filter(e => {
         if (e.pairId && e.pairId === pair.id) return true;
         const eName = (e.pairName || e.cage || "").replace(/\s+/g, "").toLowerCase();
-        return eName && eName === cleanPairName;
+        const pName = (pair.name || "").replace(/\s+/g, "").toLowerCase();
+        return eName && pName && (eName.includes(pName) || pName.includes(eName));
       });
 
       const totalEggs = pairEggs.length;
-      const totalHatched = pairEggs.filter(e => e.status === 'ฟักแล้ว').length;
+      const totalHatched = pairEggs.filter(e => (e.status || "").includes('ฟักแล้ว')).length;
 
       let eggStatsHtml = `
         <div class="mt-2 pt-2 border-t border-rose-100 flex justify-between items-center text-[11px] font-bold text-slate-700 bg-amber-50/50 p-2 rounded-xl">
