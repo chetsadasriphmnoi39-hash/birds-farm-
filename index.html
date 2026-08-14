@@ -41,7 +41,6 @@
 
     let unsubscribers = [];
 
-    // อัปเดตรายการสีหลักเฉพาะกรีนชีคคอนัวร์ (ตัดซันคอนัวร์ออก)
     const mutationsHtml = `
       <option value="Normal">นอร์มอล (เขียวดั้งเดิม)</option>
       <option value="Cinnamon">ซินนามอน</option>
@@ -54,14 +53,13 @@
       <option value="Turquoise Cinnamon">ทอร์คอยส์ ซินนามอน</option>
       <option value="Turquoise Yellow-sided">ทอร์คอยส์ เยลโลว์ไซด์</option>
       <option value="Turquoise Pineapple">ทอร์คอยส์ ไพน์แอปเปิล</option>
-      <option value="Mint">มินต์ (Turquoise Dilute)</option>
+      <option value="Mint">มินต์ (Turquoise Dilute / บลูไดรูท)</option>
       <option value="Opamint">โอปามินต์ (Turquoise Opaline Dilute)</option>
       <option value="Mooncheek">มูนชีค (Turquoise Suncheek)</option>
       <option value="Violet Factor">ไวโอเล็ตแฟคเตอร์</option>
       <option value="High Red Factor">ไฮเรด (เรดแฟคเตอร์)</option>
     `;
 
-    // อัปเดตรายการยีนแฝง (Split) เพิ่มสปิทบลูและรูปแบบผสมที่ถูกต้อง
     const splitsHtml = `
       <option value="ไม่มีสปลิต">ไม่มีสปลิต / สายพันธุ์แท้</option>
       <option value="Split Turquoise">แฝงบลู (Split Turquoise)</option>
@@ -207,7 +205,7 @@
       }
     };
 
-    const formFields = ['bird-name', 'bird-ring', 'bird-species', 'bird-visual', 'bird-split', 'bird-gender', 'bird-dna', 'bird-photo', 'bird-father', 'bird-mother', 'bird-hatch', 'bird-arrival', 'bird-rearing', 'bird-status'];
+    const formFields = ['bird-name', 'bird-ring', 'bird-species', 'bird-visual', 'bird-split', 'bird-gender', 'bird-price', 'bird-dna', 'bird-photo', 'bird-father', 'bird-mother', 'bird-hatch', 'bird-arrival', 'bird-rearing', 'bird-status'];
 
     window.saveDraft = () => {
       if (editBirdId) return; 
@@ -246,6 +244,7 @@
         visualColor: document.getElementById('bird-visual').value,
         splitColor: document.getElementById('bird-split').value,
         gender: document.getElementById('bird-gender').value || "ผู้",
+        price: Number(document.getElementById('bird-price').value) || 0,
         dnaCert: document.getElementById('bird-dna').value.trim(),
         photoUrl: document.getElementById('bird-photo').value.trim(),
         fatherId: document.getElementById('bird-father').value || "",
@@ -406,6 +405,7 @@
         document.getElementById('bird-split').value = bird.splitColor || '';
       }, 50);
       document.getElementById('bird-gender').value = bird.gender || 'ผู้';
+      document.getElementById('bird-price').value = bird.price || '';
       document.getElementById('bird-dna').value = bird.dnaCert || '';
       document.getElementById('bird-photo').value = bird.photoUrl || '';
       document.getElementById('bird-father').value = bird.fatherId || '';
@@ -504,6 +504,7 @@
             <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">สายพันธุ์ & สี:</span><span class="font-bold text-slate-800">${bird.visualColor || bird.species}</span></div>
             <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">ยีนแฝง (Split):</span><span class="text-emerald-800 font-bold">${bird.splitColor || '-'}</span></div>
             <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">เพศ:</span><span class="font-bold">${bird.gender}</span></div>
+            <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">ค่าตัวนก:</span><span class="font-bold text-emerald-700">฿${(bird.price || 0).toLocaleString()}</span></div>
             <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">สถานะชีวิต:</span><span class="font-bold ${bird.status === 'เสียชีวิต' ? 'text-rose-600' : 'text-emerald-600'}">${bird.status || 'ยังมีชีวิตอยู่'}</span></div>
             <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">วันฟัก (อายุ):</span><span>${bird.hatchDate || '-'} ${ageText ? `(${ageText})` : ''}</span></div>
           </div>
@@ -733,12 +734,20 @@
       if(pairMotherSelect) pairMotherSelect.innerHTML = '<option value="">-- เลือกแม่พันธุ์ (♀) --</option>'; 
       if(healthBirdSelect) healthBirdSelect.innerHTML = '<option value="all">🌐 นกทุกตัวในฟาร์ม (ภาพรวม)</option>';
 
+      let totalBirdPrice = 0;
       globalBirds.forEach(item => {
+        if (item.status !== 'เสียชีวิต') {
+          totalBirdPrice += (item.price || 0);
+        }
         const option = `<option value="${item.id}">${item.name} (${item.visualColor || item.species})${item.status === 'เสียชีวิต' ? ' [เสียชีวิต]' : ''}</option>`;
         if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') { if(fatherSelect) fatherSelect.innerHTML += option; if(pairFatherSelect) pairFatherSelect.innerHTML += option; }
         if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') { if(motherSelect) motherSelect.innerHTML += option; if(pairMotherSelect) pairMotherSelect.innerHTML += option; }
         if(healthBirdSelect) healthBirdSelect.innerHTML += option;
       });
+
+      if(document.getElementById('total-bird-price')) {
+        document.getElementById('total-bird-price').innerText = "฿" + totalBirdPrice.toLocaleString();
+      }
 
       if (filtered.length === 0) {
         list.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">ไม่พบข้อมูลนกที่ค้นหา</p>`;
@@ -748,6 +757,7 @@
       filtered.forEach(item => {
         let isDead = item.status === 'เสียชีวิต';
         let statusBadge = isDead ? `<span class="px-1.5 py-0.2 rounded-md text-[9px] font-extrabold bg-rose-50 text-rose-600 border border-rose-200">เสียชีวิต</span>` : '';
+        let priceTag = item.price ? `<span class="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-lg border border-emerald-100">฿${item.price.toLocaleString()}</span>` : '';
         
         list.innerHTML += `
           <div class="p-3 bg-white rounded-2xl border ${isDead ? 'border-rose-100 bg-rose-50/20' : 'border-slate-100'} shadow-xs flex items-center justify-between hover:bg-slate-50 transition mb-2">
@@ -757,6 +767,7 @@
                 <div class="flex items-center space-x-1.5">
                   <span class="font-extrabold text-slate-900 text-xs">${item.name}</span>
                   <span class="px-1.5 py-0.2 rounded-md text-[9px] font-extrabold ${item.gender === 'ผู้' ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-pink-50 text-pink-700 border border-pink-100'}">${item.gender}</span>
+                  ${priceTag}
                   ${statusBadge}
                 </div>
                 <div class="text-[10px] text-slate-500 truncate">${item.visualColor || item.species} ${item.ringNo ? `| ห่วง: ${item.ringNo}` : ''}</div>
@@ -886,13 +897,16 @@
     </header>
 
     <main class="p-4 space-y-4 max-w-md mx-auto">
-      <div class="bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 p-5 rounded-3xl shadow-xl text-white flex justify-between items-center relative overflow-hidden custom-shadow">
-        <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-white/5 rounded-full blur-xl pointer-events-none"></div>
-        <div class="relative z-10">
-          <p class="text-[10px] text-emerald-200 font-bold uppercase tracking-wider mb-1">💰 ยอดเงินคงเหลือฟาร์ม</p>
-          <h3 class="text-3xl font-black tracking-tight" id="total-balance">฿0</h3>
+      <!-- Finance Stats Card & Bird Total Value Card -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-gradient-to-br from-emerald-900 to-teal-900 p-4 rounded-3xl shadow-xl text-white relative overflow-hidden custom-shadow">
+          <p class="text-[9px] text-emerald-200 font-bold uppercase tracking-wider mb-1">💰 ยอดเงินสดฟาร์ม</p>
+          <h3 class="text-xl font-black tracking-tight" id="total-balance">฿0</h3>
         </div>
-        <button onclick="resetFinanceForm(); openModal('modal-finance')" class="relative z-10 bg-white/20 hover:bg-white/30 border border-white/20 px-4 py-2.5 rounded-2xl text-xs font-black backdrop-blur-md transition active:scale-95 shadow-sm">+ ลงบัญชี</button>
+        <div class="bg-gradient-to-br from-teal-800 to-emerald-700 p-4 rounded-3xl shadow-xl text-white relative overflow-hidden custom-shadow">
+          <p class="text-[9px] text-teal-100 font-bold uppercase tracking-wider mb-1">🦜 มูลค่ารวมค่าตัวนก</p>
+          <h3 class="text-xl font-black tracking-tight" id="total-bird-price">฿0</h3>
+        </div>
       </div>
 
       <div class="grid grid-cols-2 gap-3">
@@ -1009,7 +1023,10 @@
             <div><label class="block text-xs font-bold text-slate-500 mb-1">เพศ</label><select id="bird-gender" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"><option value="ผู้">♂ ผู้</option><option value="เมีย">♀ เมีย</option><option value="ไม่ระบุ">❓ ไม่ระบุ</option></select></div>
             <div><label class="block text-xs font-bold text-slate-500 mb-1">สถานะชีวิต</label><select id="bird-status" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-black text-slate-800 bg-slate-50"><option value="ยังมีชีวิตอยู่">🟢 มีชีวิตอยู่</option><option value="เสียชีวิต">🔴 เสียชีวิต</option></select></div>
           </div>
-          <div class="grid grid-cols-2 gap-2.5"><div><label class="block text-xs font-bold text-slate-500 mb-1">ใบเซอร์ DNA</label><input type="text" id="bird-dna" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div></div>
+          <div class="grid grid-cols-2 gap-2.5">
+            <div><label class="block text-xs font-bold text-emerald-800 mb-1">💵 ค่าตัวนก (บาท)</label><input type="number" id="bird-price" min="0" placeholder="0" class="w-full border border-emerald-200 rounded-2xl p-2.5 text-xs font-bold bg-emerald-50/50"></div>
+            <div><label class="block text-xs font-bold text-slate-500 mb-1">ใบเซอร์ DNA</label><input type="text" id="bird-dna" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
+          </div>
           <div class="grid grid-cols-2 gap-2.5 border-t border-slate-100 pt-3"><div><label class="block text-xs font-bold text-slate-500 mb-1">พ่อพันธุ์</label><select id="bird-father" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"><option value="">-- ไม่ระบุ --</option></select></div><div><label class="block text-xs font-bold text-slate-500 mb-1">แม่พันธุ์</label><select id="bird-mother" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"><option value="">-- ไม่ระบุ --</option></select></div></div>
           <div class="grid grid-cols-2 gap-2.5"><div><label class="block text-xs font-bold text-slate-500 mb-1">วันฟัก</label><input type="date" id="bird-hatch" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div><div><label class="block text-xs font-bold text-slate-500 mb-1">วันรับเข้าฟาร์ม</label><input type="date" id="bird-arrival" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div></div>
           <div><label class="block text-xs font-bold text-slate-500 mb-1">รูปแบบการเลี้ยง</label><select id="bird-rearing" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"><option value="ป้อนมือ (Hand-fed)">🍼 ป้อนมือ</option><option value="พ่อแม่เลี้ยง (Parent-reared)">🪺 พ่อแม่เลี้ยง</option></select></div>
@@ -1071,7 +1088,7 @@
         </div>
         <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
           <div class="font-black text-xs text-pink-900 mb-2 uppercase tracking-wide">♀ แม่พันธุ์</div>
-          <select id="calc-mother-color" class="w-full border border-slate-200 rounded-2xl p-2 text-xs font-medium bg-white mb-2"></select>
+          <select id="calc-mother-color" class="w-full border border-slate-200 rounded-xl p-2 text-xs font-medium bg-white mb-2"></select>
           <select id="calc-mother-split" class="w-full border border-slate-200 rounded-2xl p-2 text-xs font-medium bg-white"></select>
         </div>
         <button type="button" onclick="calculateGenetics()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-2xl text-xs font-black shadow-md transition">⚡ ประมวลผลพันธุกรรม</button>
