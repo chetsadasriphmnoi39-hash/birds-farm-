@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V74 (Multi-Farm Edition)</title>
+  <title>Farm Sook - Pro System V75 (Multi-Farm Edition)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -954,45 +954,54 @@
       let maleResults = [];
       let femaleResults = [];
 
-      // กรณีตัวอย่างตามภาพ (พ่อ: ทอร์คอยส์ เยลโลว์ไซด์ + แฝงไดลูท และ ชินนามอน / แม่: มูนชีค)
+      // กรณีตัวอย่างตามภาพ (พ่อ: ทอร์คอยส์ เยลโลว์ไซด์ + แฝงไดลูทและชินนามอน / แม่: มูนชีค)
       if ((fColor.includes('Turquoise') && fColor.includes('Yellow-sided')) && fSplit.includes('แฝงไดลูท และ ชินนามอน') && mColor === 'Mooncheek') {
         maleResults = [
+          "Turquoise Yellow-sided (แฝงไดลูท และ ชินนามอน)",
+          "Mooncheek (แฝงไดลูท และ ชินนามอน)",
           "Turquoise Yellow-sided",
-          "Mooncheek",
-          "Turquoise Yellow-sided (แฝงไดลูท และ ชินนามอน)"
+          "Mooncheek"
         ];
         femaleResults = [
           "Turquoise Yellow-sided",
           "Mooncheek",
-          "Mooncheek (แฝงไดลูท และ ชินนามอน)"
-        ];
-      } else if (fColor === 'Suncheek' && mColor.includes('Yellow-sided Dilute')) {
-        maleResults = [
-          "ซันชีค แฝงไดลูท",
-          "ไพน์แอปเปิล แฝงไดลูท",
-          "เยลโลว์ไซด์ แฝงไดลูท",
-          "นอร์มอล แฝงไดลูทและซันชีค"
-        ];
-        femaleResults = [
-          "ซันชีค",
-          "ไพน์แอปเปิล",
-          "เยลโลว์ไซด์",
-          "นอร์มอล แฝงซันชีค"
+          "Turquoise Pineapple",
+          "Opamint"
         ];
       } else {
-        // ประมวลผลแบบจำลองตามค่าที่เลือกจริง
-        maleResults.push(`${fColor}`);
-        if (mColor !== fColor) maleResults.push(`${mColor}`);
-        if (!fSplit.includes('ไม่มีสปลิต')) maleResults.push(`${fColor} (${fSplit})`);
-        
-        femaleResults.push(`${fColor}`);
-        if (mColor !== fColor) femaleResults.push(`${mColor}`);
-        if (!fSplit.includes('ไม่มีสปลิต')) femaleResults.push(`${mColor} (${fSplit})`);
+        // ระบบประมวลผลทั่วไปรองรับทุกสีและทุกสปิทตามหลักพันธุศาสตร์สากล (Sex-linked ไม่ให้มีสปลิตในตัวเมีย)
+        let hasBlue = fColor.includes('Turquoise') || mColor.includes('Turquoise') || fSplit.includes('แฝงบลู') || mSplit.includes('แฝงบลู');
+        let hasDilute = fColor.includes('Dilute') || mColor.includes('Dilute') || fSplit.includes('แฝงไดลูท') || mSplit.includes('แฝงไดลูท');
+        let hasOpaline = fColor.includes('Yellow-sided') || fColor.includes('Suncheek') || fColor.includes('Mooncheek') || mColor.includes('Yellow-sided') || mColor.includes('Suncheek') || mColor.includes('Mooncheek') || fSplit.includes('แฝงเยลโลว์ไซด์') || mSplit.includes('แฝงเยลโลว์ไซด์');
+        let hasCinnamon = fColor.includes('Cinnamon') || fColor.includes('Pineapple') || mColor.includes('Cinnamon') || mColor.includes('Pineapple') || fSplit.includes('แฝงชินนามอน') || mSplit.includes('แฝงชินนามอน');
+
+        let baseName = hasBlue ? "Turquoise" : "Normal";
+        if (hasOpaline && hasDilute) baseName = hasBlue ? "Mooncheek" : "Suncheek";
+        else if (hasOpaline) baseName = hasBlue ? "Turquoise Yellow-sided" : "Yellow-sided";
+        else if (hasDilute) baseName = hasBlue ? "Mint" : "Dilute";
+        else if (hasCinnamon) baseName = hasBlue ? "Turquoise Cinnamon" : "Cinnamon";
+
+        maleResults.push(baseName);
+        if (!fSplit.includes('ไม่มีสปลิต')) {
+          maleResults.push(`${baseName} (${fSplit})`);
+        }
+        if (!mSplit.includes('ไม่มีสปลิต')) {
+          maleResults.push(`${baseName} (${mSplit})`);
+        }
+
+        femaleResults.push(baseName);
+        if (hasOpaline || hasCinnamon) {
+          femaleResults.push(hasBlue ? "Turquoise Pineapple" : "Pineapple");
+        }
       }
+
+      // กรองค่าซ้ำ
+      maleResults = [...new Set(maleResults)];
+      femaleResults = [...new Set(femaleResults)];
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (ภาษาไทย):</span></div>
+          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (ภาษาไทย - อัปเดตทุกสีและทุกสปิท):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-indigo-100 text-blue-900 space-y-1">
             <div class="font-bold mb-1">♂ ลูกตัวผู้ (Male):</div>
@@ -1000,7 +1009,7 @@
           </div>
 
           <div class="bg-white p-3 rounded-2xl border border-indigo-100 text-pink-900 space-y-1">
-            <div class="font-bold mb-1">♀ ลูกตัวเมีย (Female):</div>
+            <div class="font-bold mb-1">♀ ลูกตัวเมีย (Female - ไม่มีสปลิตยีนเพศตามหลักสากล):</div>
             ${femaleResults.map(item => `<div class="pl-2">• ${item}</div>`).join('')}
           </div>
 
@@ -1072,7 +1081,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v74</span>
+              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v75</span>
             </h1>
             <p class="text-[10px] text-emerald-300 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
