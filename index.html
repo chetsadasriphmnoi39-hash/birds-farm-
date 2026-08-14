@@ -78,6 +78,20 @@
       <option value="Split Lutino (Sun Conure)">แฝงลูติโน่ (สำหรับซันคอนัวร์)</option>
     `;
 
+    // เมนูยีนแฝงเฉพาะกรีนชีคแบบครบถ้วนสำหรับหน้าคำนวณพันธุศาสตร์
+    const greenCheekSplitsHtml = `
+      <option value="ไม่มีสปลิต">ไม่มีสปลิต / สายพันธุ์แท้</option>
+      <option value="Split Turquoise">แฝงบลู (Split Turquoise)</option>
+      <option value="Split Dilute">แฝงไดลูท (Split Dilute)</option>
+      <option value="Split Cinnamon">แฝงซินนามอน (Split Cinnamon)</option>
+      <option value="Split Yellow-sided">แฝงเยลโลว์ไซด์ (Split Yellow-sided / Opaline)</option>
+      <option value="Split Turquoise & Dilute">แฝงบลู และ ไดลูท (Mint Carrier)</option>
+      <option value="Split Turquoise & Cinnamon">แฝงบลู และ ซินนามอน</option>
+      <option value="Split Turquoise & Yellow-sided">แฝงบลู และ เยลโลว์ไซด์</option>
+      <option value="Split Suncheek">แฝงซันชีค (Split Opaline & Dilute)</option>
+      <option value="Split Mooncheek">แฝงมูนชีค (Split Turquoise & Suncheek)</option>
+    `;
+
     window.enterFarmSystem = () => {
       const inputVal = document.getElementById('farm-name-input').value.trim();
       if (!inputVal) {
@@ -134,7 +148,7 @@
       const splitSelect = document.getElementById(`calc-${type}-split`);
       if(!colorSelect || !splitSelect) return;
       colorSelect.innerHTML = mutationsHtml;
-      splitSelect.innerHTML = splitsHtml;
+      splitSelect.innerHTML = greenCheekSplitsHtml;
     };
 
     window.calculateDuration = (fromDateStr) => {
@@ -678,7 +692,6 @@
           globalPairs.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        // จัดเรียงคู่พ่อแม่พันธุ์ตามชื่อกรงแบบธรรมชาติ (เช่น กรง 1, กรง 6, กรง 7, กรง 10)
         globalPairs.sort((a, b) => {
           const nameA = a.name || "";
           const nameB = b.name || "";
@@ -918,7 +931,6 @@
       let maleResults = [];
       let femaleResults = [];
 
-      // ตรรกะคำนวณพันธุศาสตร์เบื้องต้น (กรีนชีค/ซันคอนัวร์)
       if (fColor === 'Normal' && fSplit === 'ไม่มีสปลิต' && mColor === 'Normal' && mSplit === 'ไม่มีสปลิต') {
         maleResults.push("ลูกตัวผู้: 100% นอร์มอล (สายพันธุ์แท้)");
         femaleResults.push("ลูกตัวเมีย: 100% นอร์มอล (สายพันธุ์แท้)");
