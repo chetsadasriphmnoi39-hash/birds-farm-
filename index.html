@@ -136,7 +136,6 @@
     };
 
     window.renderPairGeneticsBox = (pair) => {
-      // ค้นหาไข่ที่ตรงกับคู่พันธุ์นี้แบบครอบคลุมทั้ง pairId, pairName หรือเลขกรง
       const pairEggs = globalEggs.filter(e => {
         if (e.pairId && e.pairId === pair.id) return true;
         const eName = (e.pairName || e.cage || "").replace(/\s+/g, "").toLowerCase();
@@ -174,8 +173,8 @@
             <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์:</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', '', '')" class="bg-white text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-indigo-100 transition">✏️ แก้ไขให้ถูกต้อง</button>
           </div>
-          <div class="text-blue-900"><strong>♂ ลูกตัวผู้:</strong> Turquoise Yellow-sided / Split Dilute & Cinnamon</div>
-          <div class="text-pink-900"><strong>♀ ลูกตัวเมีย:</strong> Opamint / Turquoise Cinnamon</div>
+          <div class="text-blue-900"><strong>♂ ลูกตัวผู้:</strong> B-YS / Sp D & C</div>
+          <div class="text-pink-900"><strong>♀ ลูกตัวเมีย:</strong> Opamint / B-C</div>
           ${eggStatsHtml}
         </div>
       `;
@@ -756,11 +755,9 @@
       if(document.getElementById('total-eggs')) document.getElementById('total-eggs').innerText = totalEggsCount + " ใบ";
       if(document.getElementById('total-chicks')) document.getElementById('total-chicks').innerText = totalHatchedCount + " ตัว";
 
-      // อัปเดตการแสดงผลกล่องคู่พันธุ์ใหม่เมื่อข้อมูลไข่โหลดเสร็จ
       if(globalPairs.length > 0) {
         const pairsListContainer = document.getElementById('pairs-list');
         if(pairsListContainer) {
-          // รีเรนเดอร์คู่พันธุ์เพื่อให้ยอดไข่ใต้ชื่อคู่พันธุ์อัปเดตตามทันที
           let htmlPairs = "";
           globalPairs.forEach(item => {
             const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { visualColor: item.fatherSpecies, splitColor: "" };
@@ -779,6 +776,7 @@
       }
     });
 
+    // --- ระบบคำนวณสี (อัปเดตใหม่เป็นรหัสย่อฟาร์มไทย: B, YS, C, D, SC) ---
     window.calculateGenetics = () => {
       const fColor = document.getElementById('calc-father-color').value;
       const fSplit = document.getElementById('calc-father-split').value;
@@ -786,38 +784,27 @@
       const mSplit = document.getElementById('calc-mother-split').value;
       const resultDiv = document.getElementById('calc-result');
 
-      let maleResults = [];
-      let femaleResults = [];
+      let maleSummary = "B-SC (ซันชีคแท้) / Sp C / Sp D";
+      let femaleSummary = "B-YS หรือ C / SC";
 
-      let isFatherTurquoise = fColor.includes('Turquoise') || fColor.includes('Mooncheek') || fColor.includes('Mint') || fColor.includes('Opamint');
-      let isMotherTurquoise = mColor.includes('Turquoise') || mColor.includes('Mooncheek') || mColor.includes('Mint') || mColor.includes('Opamint');
-      let isFatherSplitTurquoise = fSplit.includes('Turquoise') || fSplit.includes('Blue');
-      let isMotherSplitTurquoise = mSplit.includes('Turquoise') || mSplit.includes('Blue');
-
-      let turquoiseChance = "ลูกปกติ";
-      if ((isFatherTurquoise || isFatherSplitTurquoise) && (isMotherTurquoise || isMotherSplitTurquoise)) {
-        turquoiseChance = "100% ออกบลูซีรีส์ / แฝงบลู";
-      } else if (isFatherTurquoise || isMotherTurquoise || isFatherSplitTurquoise || isMotherSplitTurquoise) {
-        turquoiseChance = "50% แฝงบลู (Split Turquoise)";
-      }
-
-      if (fColor.includes('Mooncheek') && mColor.includes('Mooncheek')) {
-        maleResults.push("100% Mooncheek");
-        femaleResults.push("100% Mooncheek");
-      } else if (fColor.includes('Mooncheek') || mColor.includes('Mooncheek')) {
-        maleResults.push("50% Mooncheek / Turquoise YS (แฝงยีนครบ)");
-        femaleResults.push("50% Opamint / Turquoise Cinnamon");
+      if (fColor.includes('Suncheek') && mColor.includes('Yellow-sided')) {
+        maleSummary = "B-SC (ซันชีค) + Sp C / Sp D";
+        femaleSummary = "B-YS (บลูเยลโลว์ไซด์) หรือ Cinnamon";
       } else {
-        maleResults.push(`50% ${fColor} x ${mColor} (ตามพันธุศาสตร์พ่อแม่)`);
-        femaleResults.push(`50% อิงตามยีน Sex-linked ฝั่งพ่อและแม่ (${turquoiseChance})`);
+        maleSummary = "B-SC / B-YS / Sp C / Sp D";
+        femaleSummary = "B-YS / Dilute / Cinnamon";
       }
 
       resultDiv.innerHTML = `
-        <div class="mt-2.5 p-3 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-2 text-[11px]">
-          <div class="font-black text-indigo-950">🧬 ผลประเมินอัตราส่วนและเปอร์เซ็นต์ (Genetics Engine):</div>
-          <div class="text-blue-900"><strong>♂ ลูกตัวผู้ (Male):</strong><br>• ${maleResults.join('<br>• ')}</div>
-          <div class="text-pink-900"><strong>♀ ลูกตัวเมีย (Female):</strong><br>• ${femaleResults.join('<br>• ')}</div>
-          <div class="text-[10px] text-slate-500 mt-1">* สามารถกดปุ่มแก้ไขผลในหน้าหลัก เพื่อบันทึกอัปเดตสัดส่วนที่ถูกต้องถาวรได้ทันที</div>
+        <div class="mt-3 p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-2 text-xs">
+          <div class="font-black text-indigo-950">🧬 ผลประเมินพันธุศาสตร์ (รหัสย่อฟาร์ม):</div>
+          <div class="bg-white p-2.5 rounded-xl border border-indigo-100 text-blue-900">
+            <strong>♂ ลูกตัวผู้:</strong><br>• 50%: ${maleSummary}
+          </div>
+          <div class="bg-white p-2.5 rounded-xl border border-indigo-100 text-pink-900">
+            <strong>♀ ลูกตัวเมีย:</strong><br>• 50%: ${femaleSummary}
+          </div>
+          <div class="text-[10px] text-slate-500 mt-1">* สามารถกดปุ่มแก้ไขผลในหน้าหลัก เพื่อบันทึกผลลัพธ์เฉพาะคู่พันธุ์นี้ได้ถาวร</div>
         </div>`;
     };
 
@@ -947,15 +934,15 @@
     </div>
   </main>
 
-  <!-- MODAL: แก้ไขและอัปเดตผลการผสมพันธุ์ -->
+  <!-- MODAL: แก้ไขผลการผสมพันธุ์ -->
   <div id="modal-custom-genetics" onclick="closeOnBackdrop(event, 'modal-custom-genetics')" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 relative animate-in">
       <button type="button" onclick="closeModal('modal-custom-genetics')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
       <h3 class="font-black text-base text-slate-900 pr-6">🧬 แก้ไขและบันทึกผลการผสมพันธุ์</h3>
       <p class="text-[11px] text-slate-500">คุณสามารถปรับแก้สัดส่วนสีลูกนกให้ตรงตามตำราหรือบันทึกจริง ระบบจะบันทึกอัปเดตไว้อย่างถาวร</p>
       <form onsubmit="submitCustomGenetics(event)" class="space-y-3">
-        <div><label class="block text-xs font-bold text-blue-900 mb-1">♂ ผลลัพธ์ลูกตัวผู้ (Male)</label><input type="text" id="custom-gen-male" required placeholder="เช่น Mooncheek / Turquoise YS" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
-        <div><label class="block text-xs font-bold text-pink-900 mb-1">♀ ผลลัพธ์ลูกตัวเมีย (Female)</label><input type="text" id="custom-gen-female" required placeholder="เช่น Opamint / Turquoise Cinnamon" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
+        <div><label class="block text-xs font-bold text-blue-900 mb-1">♂ ลูกตัวผู้ (Male)</label><input type="text" id="custom-gen-male" required placeholder="เช่น B-SC / Sp C & D" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
+        <div><label class="block text-xs font-bold text-pink-900 mb-1">♀ ลูกตัวเมีย (Female)</label><input type="text" id="custom-gen-female" required placeholder="เช่น B-YS / Cinnamon" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
         <div class="flex space-x-2 pt-2"><button type="button" onclick="closeModal('modal-custom-genetics')" class="w-1/2 border border-slate-200 py-3 rounded-2xl text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 transition">ยกเลิก</button><button type="submit" class="w-1/2 bg-emerald-800 hover:bg-emerald-700 text-white py-3 rounded-2xl text-xs font-black shadow-md transition">💾 บันทึกอัปเดตผล</button></div>
       </form>
     </div>
@@ -1045,7 +1032,7 @@
     </div>
   </div>
 
-  <!-- MODAL 5: คำนวณสีพันธุกรรม -->
+  <!-- MODAL 5: คำนวณสีพันธุกรรม (รหัสย่อฟาร์ม) -->
   <div id="modal-calc" onclick="closeOnBackdrop(event, 'modal-calc')" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-3.5 relative max-h-[85vh] overflow-y-auto animate-in">
       <button type="button" onclick="closeModal('modal-calc')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
