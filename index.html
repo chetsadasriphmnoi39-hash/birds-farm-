@@ -787,7 +787,6 @@
       const pairMotherSelect = document.getElementById('select-mother');
       if (!pairFatherSelect || !pairMotherSelect) return;
 
-      // รวบรวม ID นกที่มีคู่อยู่แล้วในระบบ (ยกเว้นตัวที่กำลังแก้ไขในคู่นั้นๆ)
       const pairedFatherIds = new Set();
       const pairedMotherIds = new Set();
       globalPairs.forEach(p => {
@@ -801,17 +800,13 @@
       pairMotherSelect.innerHTML = '<option value="">-- เลือกแม่พันธุ์ (♀) --</option>';
 
       globalBirds.forEach(item => {
-        if (item.status === 'เสียชีวิต') return; // ข้ามตัวที่ตายแล้ว
-
+        if (item.status === 'เสียชีวิต') return;
         const optionHtml = `<option value="${item.id}">${item.name} (${item.visualColor || item.species})</option>`;
-
-        // ตัวผู้: ถ้ายังไม่มีคู่ หรือเป็นตัวเดิมของคู่ที่กำลังแก้ไข
         if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') {
           if (!pairedFatherIds.has(item.id) || item.id === selectedFatherId) {
             pairFatherSelect.innerHTML += optionHtml;
           }
         }
-        // ตัวเมีย: ถ้ายังไม่มีคู่ หรือเป็นตัวเดิมของคู่ที่กำลังแก้ไข
         if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') {
           if (!pairedMotherIds.has(item.id) || item.id === selectedMotherId) {
             pairMotherSelect.innerHTML += optionHtml;
@@ -914,9 +909,31 @@
     };
 
     window.calculateGenetics = () => {
+      const fColor = document.getElementById('calc-father-color').value;
+      const fSplit = document.getElementById('calc-father-split').value;
+      const mColor = document.getElementById('calc-mother-color').value;
+      const mSplit = document.getElementById('calc-mother-split').value;
       const resultDiv = document.getElementById('calc-result');
-      let maleResults = ["♂ ลูกตัวผู้ตามพันธุศาสตร์"];
-      let femaleResults = ["♀ ลูกตัวเมียตามพันธุศาสตร์"];
+
+      let maleResults = [];
+      let femaleResults = [];
+
+      // ตรรกะคำนวณพันธุศาสตร์เบื้องต้น (กรีนชีค/ซันคอนัวร์)
+      if (fColor === 'Normal' && fSplit === 'ไม่มีสปลิต' && mColor === 'Normal' && mSplit === 'ไม่มีสปลิต') {
+        maleResults.push("ลูกตัวผู้: 100% นอร์มอล (สายพันธุ์แท้)");
+        femaleResults.push("ลูกตัวเมีย: 100% นอร์มอล (สายพันธุ์แท้)");
+      } else {
+        maleResults.push(`ลูกตัวผู้: มีโอกาสได้สี ${fColor} / ${mColor} (ขึ้นอยู่กับยีนแฝง)`);
+        femaleResults.push(`ลูกตัวเมีย: มีโอกาสได้สี ${fColor} / ${mColor} (ยีนเพศผู้ควบคุม)`);
+      }
+
+      if (fSplit !== 'ไม่มีสปลิต') {
+        maleResults.push(`ถ่ายทอดพันธุกรรมแฝงจากพ่อ: ${fSplit}`);
+        femaleResults.push(`ถ่ายทอดพันธุกรรมแฝงจากพ่อ: ${fSplit}`);
+      }
+      if (mSplit !== 'ไม่มีสปลิต') {
+        maleResults.push(`ถ่ายทอดพันธุกรรมแฝงจากแม่: ${mSplit}`);
+      }
 
       resultDiv.innerHTML = `
         <div class="mt-3 p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl space-y-2 text-xs">
