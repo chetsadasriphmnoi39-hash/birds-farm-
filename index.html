@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V65 (Egg)</title>
+  <title>Farm Sook - Pro System V61 (Egg & Death Tracker)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -714,13 +714,21 @@
       let totalEggsCount = 0, totalHatchedCount = 0, eggReminderHtml = ""; const groupedEggs = {};
 
       snapshot.forEach(docSnap => {
-        const data = { id: docSnap.id, ...docSnap.data() }; globalEggs.push(data); totalEggsCount++;
-        if(data.status === 'ฟักแล้ว') totalHatchedCount++;
-        if (data.status === 'รอส่องเชื้อ') {
+        const data = { id: docSnap.id, ...docSnap.data() }; 
+        globalEggs.push(data); 
+        totalEggsCount++;
+        
+        let statusStr = (data.status || "").toString();
+        if(statusStr.includes('ฟักแล้ว')) {
+          totalHatchedCount++;
+        }
+
+        if (statusStr === 'รอส่องเชื้อ') {
           eggReminderHtml += `<div class="p-3 bg-amber-50/80 text-amber-900 rounded-2xl border border-amber-200 text-xs flex justify-between items-center shadow-xs"><span>🔦 ส่องเชื้อไข่: <strong>${data.pairName || data.cage}</strong> (ใบที่ ${data.eggNo})</span><span class="text-[10px] bg-amber-200/80 font-bold px-2.5 py-1 rounded-xl">${data.candlingDate || 'ครบ 6 วัน'}</span></div>`;
         }
         let groupKey = data.pairName || data.cage || 'กรงทั่วไป';
-        if (!groupedEggs[groupKey]) groupedEggs[groupKey] = []; groupedEggs[groupKey].push(data);
+        if (!groupedEggs[groupKey]) groupedEggs[groupKey] = []; 
+        groupedEggs[groupKey].push(data);
       });
 
       window.eggRemindersHtml = eggReminderHtml;
@@ -743,6 +751,7 @@
         if(list) list.innerHTML += `<div class="bg-white p-4 rounded-3xl border border-amber-100 shadow-xs space-y-2.5"><div class="flex justify-between items-center border-b border-amber-50 pb-2"><span class="font-black text-slate-900 text-xs flex items-center space-x-1.5"><span>🪺</span><span>${pairName}</span></span></div><div class="space-y-1">${eggsHtml}</div></div>`;
       }
       if (snapshot.size === 0 && list) list.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">ยังไม่มีบันทึกข้อมูลไข่</p>`;
+      
       if(document.getElementById('total-eggs')) document.getElementById('total-eggs').innerText = totalEggsCount + " ใบ";
       if(document.getElementById('total-chicks')) document.getElementById('total-chicks').innerText = totalHatchedCount + " ตัว";
     });
@@ -818,7 +827,7 @@
     <div class="w-full max-w-md mx-auto flex justify-between items-center">
       <div class="flex items-center space-x-2.5">
         <span class="text-2xl bg-emerald-800/80 p-1.5 rounded-2xl">🌿</span>
-        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V60 (Egg & Death Tracker)</p></div>
+        <div><h1 class="text-base font-black tracking-wide">Farm Sook</h1><p class="text-[10px] text-emerald-300 font-medium">Pro System V61 (Egg & Death Tracker)</p></div>
       </div>
       <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded-2xl text-xs font-black shadow-sm transition active:scale-95">+ เพิ่มนก</button>
     </div>
@@ -1017,7 +1026,7 @@
   <div id="modal-calc" onclick="closeOnBackdrop(event, 'modal-calc')" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-3.5 relative max-h-[85vh] overflow-y-auto animate-in">
       <button type="button" onclick="closeModal('modal-calc')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
-      <h3 class="font-black text-base text-slate-900 pr-6">🧬 คำนวณสี & เพศลูกนก (V60)</h3>
+      <h3 class="font-black text-base text-slate-900 pr-6">🧬 คำนวณสี & เพศลูกนก (V61)</h3>
       <div class="space-y-3.5">
         <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
           <div class="font-black text-xs text-blue-900 mb-2 uppercase tracking-wide">♂ พ่อพันธุ์</div>
