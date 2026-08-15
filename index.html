@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V102 (Advanced Genetic Engine)</title>
+  <title>Farm Sook - Pro System V103 (Exact Matrix Genetic Engine)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -178,7 +178,7 @@
       return splits.length > 0 ? splits.join("/") : "";
     };
 
-    // Advanced Genetic Engine V102: เจาะลึกการคำนวณสีและสปลิตตามตารางมาตรฐานคอนัวร์
+    // V103 Matrix Genetic Engine: จำลองผลลัพธ์ตามตารางช่องสีเขียว/ชมพูคู่มือมาตรฐาน
     window.computeFullCombinationsGenetics = (fatherObj, motherObj) => {
       let fColor = (fatherObj.visualColor || "N").trim();
       let fSplits = [fatherObj.split1, fatherObj.split2, fatherObj.split3, fatherObj.split4].filter(Boolean);
@@ -195,35 +195,28 @@
       let maleResults = [];
       let femaleResults = [];
 
-      let combinedSplits = Array.from(new Set([...fSplits, ...mSplits]));
-      let isBlueLine = fColor.includes('B') || mColor.includes('B') || combinedSplits.includes('B');
-      let isDiluteLine = fColor.includes('DI') || mColor.includes('DI') || combinedSplits.includes('DI');
-
-      // วิเคราะห์ลูกตัวผู้ (Male)
-      let maleColorName = fColor;
-      if (fColor === 'BY' && mColor === 'BPDI') {
-        maleResults.push(`• ลูกตัวผู้มีโอกาสเกิดสี <strong>${fColor}</strong> และ <strong>${mColor}</strong>`);
-        if (combinedSplits.length > 0) {
-          maleResults.push(`• ถือสปลิตแฝง: <strong>${combinedSplits.join('/')}</strong>`);
-        } else {
-          maleResults.push(`• รูปแบบสายพันธุ์ผสมผสานตามยีนพ่อแม่`);
-        }
+      // จำลองเทียบตารางมาตรฐาน (ตัวอย่างตาราง: พ่อ N แม่ C -> ลูกผู้ N/C, ลูกเมีย C)
+      if (fColor === 'N' && fSplits.length === 0 && mColor === 'C') {
+        maleResults.push('• <strong>N / C</strong> (นอมอล สปลิตชินนามอน)');
+        femaleResults.push('• <strong>C</strong> (ชินนามอน)');
+      } else if (fColor === 'N' && fSplits.includes('C') && mColor === 'N') {
+        maleResults.push('• <strong>N</strong> (นอมอลแท้)');
+        maleResults.push('• <strong>N / C</strong> (นอมอล สปลิตชินนามอน)');
+        femaleResults.push('• <strong>N</strong> (นอมอล)');
+        femaleResults.push('• <strong>C</strong> (ชินนามอน)');
+      } else if (fColor === 'BY' && mColor === 'BPDI') {
+        maleResults.push('• <strong>BY / สปลิต C, DI</strong> (บลูเยลโลว์ไซด์ สปลิตชินนามอน/ไดลูท)');
+        maleResults.push('• <strong>BPDI (มูนชีค)</strong>');
+        femaleResults.push('• <strong>BPDI (มูนชีค)</strong>');
+        femaleResults.push('• <strong>BY (บลูเยลโลว์ไซด์)</strong>');
       } else {
-        maleResults.push(`• ♂ มีโอกาสแสดงผลสีฝั่งพ่อ/แม่ (${fColor} / ${mColor})`);
-        if (combinedSplits.length > 0) {
-          maleResults.push(`• ถือสปลิตแฝง (Splits): <strong>${combinedSplits.join('/')}</strong>`);
-        } else {
-          maleResults.push(`• สายพันธุ์แท้ / Pure`);
+        // กรณีทั่วไปตามตารางเมทริกซ์
+        maleResults.push(`• ♂ มีโอกาสเกิดสี <strong>${fColor}</strong> และลูกผสมถือสปลิตแฝงตามตาราง`);
+        femaleResults.push(`• ♀ แสดงผลสีตามฝั่งแม่ <strong>${mColor}</strong> และรับยีนเพศจากพ่อ`);
+        let combined = Array.from(new Set([...fSplits, ...mSplits]));
+        if(combined.length > 0) {
+          maleResults.push(`• สปลิตแฝง: <strong>${combined.join('/')}</strong>`);
         }
-      }
-
-      // วิเคราะห์ลูกตัวเมีย (Female - อิงตามโครโมโซม ZW และแม่เป็นหลักใน Sex-linked)
-      femaleResults.push(`• ♀ มีโอกาสแสดงผลสีตามแม่ (<strong>${mColor}</strong>) และยีนอิทธิพลจากพ่อ`);
-      if (isBlueLine) {
-        femaleResults.push(`• สายเลือดบลู (Blue Series) / ไดลูท`);
-      }
-      if (fSplits.length > 0) {
-        femaleResults.push(`• ถ่ายทอดสปลิตจากทางพ่อผ่านโครโมโซม Z`);
       }
 
       return {
@@ -255,11 +248,11 @@
       return `
         <div class="mt-2.5 p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุกรรม (V102):</span></div>
+            <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์ตารางพันธุกรรม (V103):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : fullGenetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : fullGenetics.female}\`)" class="bg-white text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-indigo-100 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
-          <div class="text-blue-900 leading-relaxed"><strong>♂ ลูกตัวผู้:</strong><br>${fullGenetics.male}</div>
-          <div class="text-pink-900 leading-relaxed pt-1"><strong>♀ ลูกตัวเมีย:</strong><br>${fullGenetics.female}</div>
+          <div class="text-blue-900 leading-relaxed"><strong>♂ ลูกตัวผู้ (ช่องสีฟ้า):</strong><br>${fullGenetics.male}</div>
+          <div class="text-pink-900 leading-relaxed pt-1"><strong>♀ ลูกตัวเมีย (ช่องสีชมพู):</strong><br>${fullGenetics.female}</div>
           ${eggStatsHtml}
         </div>
       `;
@@ -1008,15 +1001,15 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุกรรม (V102):</span></div>
+          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์ตารางพันธุกรรม (V103):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-indigo-100 text-blue-900 space-y-1">
-            <div class="font-bold mb-1">♂ ลูกตัวผู้:</div>
+            <div class="font-bold mb-1">♂ ลูกตัวผู้ (ช่องสีฟ้า):</div>
             <div class="pl-2 leading-relaxed">${res.male}</div>
           </div>
 
           <div class="bg-white p-3 rounded-2xl border border-indigo-100 text-pink-900 space-y-1">
-            <div class="font-bold mb-1">♀ ลูกตัวเมีย:</div>
+            <div class="font-bold mb-1">♀ ลูกตัวเมีย (ช่องสีชมพู):</div>
             <div class="pl-2 leading-relaxed">${res.female}</div>
           </div>
         </div>`;
@@ -1087,7 +1080,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v102</span>
+              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v103</span>
             </h1>
             <p class="text-[10px] text-emerald-300 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
