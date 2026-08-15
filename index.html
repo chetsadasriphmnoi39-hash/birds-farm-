@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V94 (Multi-Split Genetics Engine)</title>
+  <title>Farm Sook - Pro System V95 (4-Splits Genetics Engine)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -95,7 +95,6 @@
       <option value="BPF">BPF - บลูพายแอปเปิล ฟอลโล่</option>
     `;
 
-    // รายการสปลิตแบบแยกย่อยครอบคลุมทุกยีนพันธุศาสตร์
     const splitsHtml = `
       <option value="">-- ไม่มีสปลิต (Pure) --</option>
       <optgroup label="--- สปลิตสายเขียว (Green Series) ---">
@@ -103,12 +102,12 @@
         <option value="Y">Y (สปลิตเยลโลว์ไซด์)</option>
         <option value="P">P (สปลิตพายแอปเปิล)</option>
       </optgroup>
-      <optgroup label="--- สปลิตสายบลู / ไดลูท / ฟอลโล่ (Advanced & Blue Series) ---">
+      <optgroup label="--- สปลิตสายบลู / ไดลูท / ฟอลโล่ (Advanced & Blue) ---">
         <option value="BN">BN (สปลิตบลูนอมอล)</option>
         <option value="BC">BC (สปลิตบลูชินนามอน)</option>
         <option value="BY">BY (สปลิตบลูเยลโลว์ไซด์)</option>
         <option value="BP">BP (สปลิตบลูพายแอปเปิล)</option>
-        <option value="DI">DI (สปลิตไดลูท / ไบรท์)</option>
+        <option value="DI">DI (สปลิตไดลูท)</option>
         <option value="F">F (สปลิตฟอลโล่)</option>
       </optgroup>
     `;
@@ -137,21 +136,19 @@
 
     window.updateMutationDropdowns = () => {
       const visualSelect = document.getElementById('bird-visual');
-      const split1Select = document.getElementById('bird-split-1');
-      const split2Select = document.getElementById('bird-split-2');
-      if (!visualSelect || !split1Select || !split2Select) return;
-      
+      if (!visualSelect) return;
       const vVal = visualSelect.value;
-      const s1Val = split1Select.value;
-      const s2Val = split2Select.value;
-
       visualSelect.innerHTML = mutationsHtml;
-      split1Select.innerHTML = splitsHtml;
-      split2Select.innerHTML = splitsHtml;
-
       if (vVal) visualSelect.value = vVal;
-      if (s1Val) split1Select.value = s1Val;
-      if (s2Val) split2Select.value = s2Val;
+
+      for (let i = 1; i <= 4; i++) {
+        const sSel = document.getElementById(`bird-split-${i}`);
+        if (sSel) {
+          const sVal = sSel.value;
+          sSel.innerHTML = splitsHtml;
+          if (sVal) sSel.value = sVal;
+        }
+      }
     };
 
     window.toggleCustomSpecies = () => {
@@ -164,12 +161,19 @@
 
     window.updateCalcDropdowns = (type) => {
       const colorSelect = document.getElementById(`calc-${type}-color`);
-      const split1Select = document.getElementById(`calc-${type}-split-1`);
-      const split2Select = document.getElementById(`calc-${type}-split-2`);
-      if(!colorSelect || !split1Select || !split2Select) return;
+      if(!colorSelect) return;
+      const cVal = colorSelect.value;
       colorSelect.innerHTML = mutationsHtml;
-      split1Select.innerHTML = splitsHtml;
-      split2Select.innerHTML = splitsHtml;
+      if(cVal) colorSelect.value = cVal;
+
+      for (let i = 1; i <= 4; i++) {
+        const sSel = document.getElementById(`calc-${type}-split-${i}`);
+        if (sSel) {
+          const sVal = sSel.value;
+          sSel.innerHTML = splitsHtml;
+          if (sVal) sSel.value = sVal;
+        }
+      }
     };
 
     window.calculateDuration = (fromDateStr) => {
@@ -189,10 +193,11 @@
       return result.join(" ");
     };
 
-    window.getCombinedSplitString = (s1, s2) => {
+    window.getCombinedSplitString = (s1, s2, s3, s4) => {
       let splits = [];
-      if (s1) splits.push(s1);
-      if (s2 && s2 !== s1) splits.push(s2);
+      [s1, s2, s3, s4].forEach(val => {
+        if (val && !splits.includes(val)) splits.push(val);
+      });
       return splits.length > 0 ? splits.join("/") : "";
     };
 
@@ -231,7 +236,7 @@
       return `
         <div class="mt-2.5 p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์ (Multi-Split V94):</span></div>
+            <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์ (4-Splits V95):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-indigo-100 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-blue-900"><strong>♂ ลูกตัวผู้ (Male):</strong> ${pair.customGenetics ? pair.customGenetics.male : genetics.male}</div>
@@ -262,7 +267,7 @@
       } catch (err) { alert("❌ เกิดข้อผิดพลาด: " + err.message); }
     };
 
-    const formFields = ['bird-name', 'bird-ring', 'bird-species', 'bird-custom-species', 'bird-visual', 'bird-split-1', 'bird-split-2', 'bird-gender', 'bird-price', 'bird-dna', 'bird-photo', 'bird-father', 'bird-mother', 'bird-hatch', 'bird-arrival', 'bird-rearing', 'bird-status'];
+    const formFields = ['bird-name', 'bird-ring', 'bird-species', 'bird-custom-species', 'bird-visual', 'bird-split-1', 'bird-split-2', 'bird-split-3', 'bird-split-4', 'bird-gender', 'bird-price', 'bird-dna', 'bird-photo', 'bird-father', 'bird-mother', 'bird-hatch', 'bird-arrival', 'bird-rearing', 'bird-status'];
 
     window.saveDraft = () => {
       if (editBirdId) return; 
@@ -320,7 +325,9 @@
 
       const s1 = document.getElementById('bird-split-1').value;
       const s2 = document.getElementById('bird-split-2').value;
-      const combinedSplit = window.getCombinedSplitString(s1, s2);
+      const s3 = document.getElementById('bird-split-3').value;
+      const s4 = document.getElementById('bird-split-4').value;
+      const combinedSplit = window.getCombinedSplitString(s1, s2, s3, s4);
 
       const birdData = {
         farmName: currentFarm,
@@ -330,6 +337,8 @@
         splitColor: combinedSplit,
         split1: s1,
         split2: s2,
+        split3: s3,
+        split4: s4,
         gender: document.getElementById('bird-gender').value || "ผู้",
         price: Number(document.getElementById('bird-price').value) || 0,
         dnaCert: document.getElementById('bird-dna').value.trim(),
@@ -505,6 +514,8 @@
         document.getElementById('bird-visual').value = bird.visualColor || '';
         document.getElementById('bird-split-1').value = bird.split1 || '';
         document.getElementById('bird-split-2').value = bird.split2 || '';
+        document.getElementById('bird-split-3').value = bird.split3 || '';
+        document.getElementById('bird-split-4').value = bird.split4 || '';
       }, 50);
 
       document.getElementById('bird-gender').value = bird.gender || 'ผู้';
@@ -963,12 +974,16 @@
       const fColor = document.getElementById('calc-father-color').value;
       const fS1 = document.getElementById('calc-father-split-1').value;
       const fS2 = document.getElementById('calc-father-split-2').value;
-      const fSplit = window.getCombinedSplitString(fS1, fS2);
+      const fS3 = document.getElementById('calc-father-split-3').value;
+      const fS4 = document.getElementById('calc-father-split-4').value;
+      const fSplit = window.getCombinedSplitString(fS1, fS2, fS3, fS4);
 
       const mColor = document.getElementById('calc-mother-color').value;
       const mS1 = document.getElementById('calc-mother-split-1').value;
       const mS2 = document.getElementById('calc-mother-split-2').value;
-      const mSplit = window.getCombinedSplitString(mS1, mS2);
+      const mS3 = document.getElementById('calc-mother-split-3').value;
+      const mS4 = document.getElementById('calc-mother-split-4').value;
+      const mSplit = window.getCombinedSplitString(mS1, mS2, mS3, mS4);
 
       const resultDiv = document.getElementById('calc-result');
 
@@ -976,7 +991,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (Multi-Split V94):</span></div>
+          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (4-Splits V95):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-indigo-100 text-blue-900 space-y-1">
             <div class="font-bold mb-1">♂ ลูกตัวผู้ (Male):</div>
@@ -1055,7 +1070,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v94</span>
+              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v95</span>
             </h1>
             <p class="text-[10px] text-emerald-300 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
@@ -1197,7 +1212,7 @@
           </div>
           <div><label class="block text-xs font-bold text-slate-500 mb-1">📸 ลิงก์รูปถ่ายนก (URL)</label><input type="text" id="bird-photo" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
           
-          <!-- ช่องแยก สีหลัก และ สปลิตแบบ Multi-Split อิสระ -->
+          <!-- ช่องแยก สีหลัก และ สปลิตแบบ 4 ช่องอิสระ -->
           <div class="p-3.5 bg-emerald-50/50 rounded-2xl border border-emerald-200 space-y-3">
             <div>
               <label class="block text-xs font-bold text-emerald-900 mb-1">🎨 สีหลัก (Visual Color)</label>
@@ -1205,12 +1220,20 @@
             </div>
             <div class="grid grid-cols-2 gap-2 pt-1 border-t border-emerald-100">
               <div>
-                <label class="block text-[11px] font-bold text-emerald-900 mb-1">🧬 สปลิตที่ 1 (Split 1)</label>
+                <label class="block text-[11px] font-bold text-emerald-900 mb-1">🧬 สปลิต 1</label>
                 <select id="bird-split-1" class="w-full border border-emerald-300 rounded-xl p-2 text-xs font-bold bg-white text-emerald-950"></select>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-emerald-900 mb-1">🧬 สปลิตที่ 2 (Split 2)</label>
+                <label class="block text-[11px] font-bold text-emerald-900 mb-1">🧬 สปลิต 2</label>
                 <select id="bird-split-2" class="w-full border border-emerald-300 rounded-xl p-2 text-xs font-bold bg-white text-emerald-950"></select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-emerald-900 mb-1">🧬 สปลิต 3</label>
+                <select id="bird-split-3" class="w-full border border-emerald-300 rounded-xl p-2 text-xs font-bold bg-white text-emerald-950"></select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-emerald-900 mb-1">🧬 สปลิต 4</label>
+                <select id="bird-split-4" class="w-full border border-emerald-300 rounded-xl p-2 text-xs font-bold bg-white text-emerald-950"></select>
               </div>
             </div>
           </div>
@@ -1281,16 +1304,20 @@
           <div class="font-black text-xs text-blue-900 uppercase tracking-wide">♂ พ่อพันธุ์</div>
           <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สีหลัก (Visual):</label><select id="calc-father-color" class="w-full border border-slate-200 rounded-xl p-2 text-xs font-medium bg-white"></select></div>
           <div class="grid grid-cols-2 gap-1.5">
-            <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สปลิต 1:</label><select id="calc-father-split-1" class="w-full border border-slate-200 rounded-xl p-2 text-xs font-medium bg-white"></select></div>
-            <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สปลิต 2:</label><select id="calc-father-split-2" class="w-full border border-slate-200 rounded-xl p-2 text-xs font-medium bg-white"></select></div>
+            <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สปลิต 1:</label><select id="calc-father-split-1" class="w-full border border-slate-200 rounded-xl p-1.5 text-[11px] font-medium bg-white"></select></div>
+            <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สปลิต 2:</label><select id="calc-father-split-2" class="w-full border border-slate-200 rounded-xl p-1.5 text-[11px] font-medium bg-white"></select></div>
+            <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สปลิต 3:</label><select id="calc-father-split-3" class="w-full border border-slate-200 rounded-xl p-1.5 text-[11px] font-medium bg-white"></select></div>
+            <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สปลิต 4:</label><select id="calc-father-split-4" class="w-full border border-slate-200 rounded-xl p-1.5 text-[11px] font-medium bg-white"></select></div>
           </div>
         </div>
         <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
           <div class="font-black text-xs text-pink-900 uppercase tracking-wide">♀ แม่พันธุ์</div>
           <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สีหลัก (Visual):</label><select id="calc-mother-color" class="w-full border border-slate-200 rounded-xl p-2 text-xs font-medium bg-white"></select></div>
           <div class="grid grid-cols-2 gap-1.5">
-            <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สปลิต 1:</label><select id="calc-mother-split-1" class="w-full border border-slate-200 rounded-xl p-2 text-xs font-medium bg-white"></select></div>
-            <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สปลิต 2:</label><select id="calc-mother-split-2" class="w-full border border-slate-200 rounded-xl p-2 text-xs font-medium bg-white"></select></div>
+            <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สปลิต 1:</label><select id="calc-mother-split-1" class="w-full border border-slate-200 rounded-xl p-1.5 text-[11px] font-medium bg-white"></select></div>
+            <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สปลิต 2:</label><select id="calc-mother-split-2" class="w-full border border-slate-200 rounded-xl p-1.5 text-[11px] font-medium bg-white"></select></div>
+            <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สปลิต 3:</label><select id="calc-mother-split-3" class="w-full border border-slate-200 rounded-xl p-1.5 text-[11px] font-medium bg-white"></select></div>
+            <div><label class="block text-[10px] text-slate-500 font-bold mb-0.5">สปลิต 4:</label><select id="calc-mother-split-4" class="w-full border border-slate-200 rounded-xl p-1.5 text-[11px] font-medium bg-white"></select></div>
           </div>
         </div>
         <button type="button" onclick="calculateGenetics()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-2xl text-xs font-black shadow-md transition">⚡ ประมวลผลพันธุกรรม</button>
