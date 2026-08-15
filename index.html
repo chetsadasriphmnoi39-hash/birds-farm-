@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V83 (Complete Multi-Split Edition)</title>
+  <title>Farm Sook - Pro System V85 (Complete Genetic & Multi-Split Edition)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -41,11 +41,13 @@
 
     let unsubscribers = [];
 
+    // รายการสีหลักของกรีนชีคคอนัวร์และซันคอนัวร์ที่สมบูรณ์ที่สุด
     const mutationsHtml = `
       <option value="Normal">กรีนชีค นอร์มอล (เขียวดั้งเดิม)</option>
       <option value="Cinnamon">ซินนามอน</option>
       <option value="Yellow-sided">เยลโลว์ไซด์ (โอปาลีน)</option>
       <option value="Pineapple">ไพน์แอปเปิล</option>
+      <option value="Pineapple Cinnamon">ไพน์แอปเปิล ซินนามอน</option>
       <option value="Dilute">ไดลูท</option>
       <option value="Yellow-sided Dilute">เยลโลว์ไซด์ ไดลูท</option>
       <option value="Suncheek">ซันชีค (Opaline Dilute)</option>
@@ -56,27 +58,41 @@
       <option value="Mint">มินต์ (Turquoise Dilute)</option>
       <option value="Opamint">โอปามินต์ (Turquoise Opaline Dilute)</option>
       <option value="Mooncheek">มูนชีค (Turquoise Suncheek)</option>
-      <option value="Violet Factor">ไวโอเล็ตแฟคเตอร์</option>
+      <option value="Violet Factor">ไวโอเล็ตแฟคเตอร์ (SF/DF)</option>
       <option value="High Red Factor">ไฮเรด (เรดแฟคเตอร์)</option>
       <option value="Sun Conure Normal">ซันคอนัวร์ (ปกติ)</option>
       <option value="Red Factor Sun Conure">ซันคอนัวร์ (เรดแฟคเตอร์)</option>
     `;
 
-    // คืนค่ารายการยีนแฝงเดี่ยวและแฝงผสม 1-4 ยีนครบถ้วน
+    // รายการยีนแฝง (Splits) แบบไล่ระดับ 1 ถึง 4 ยีน สไตล์สากล (N/T, N/C, N/C/Y, N/T/D/C/Y ฯลฯ)
     const splitsHtml = `
-      <option value="ไม่มีสปลิต">ไม่มีสปลิต / สายพันธุ์แท้</option>
-      <option value="Split Turquoise">แฝงบลู (Split Turquoise)</option>
-      <option value="Split Dilute">แฝงไดลูท (Split Dilute)</option>
-      <option value="Split Cinnamon">แฝงชินนามอน (Split Cinnamon)</option>
-      <option value="Split Yellow-sided">แฝงเยลโลว์ไซด์ (Split Yellow-sided / Opaline)</option>
-      <option value="Split Violet">แฝงไวโอเล็ต (Split Violet)</option>
-      <option value="Split Lutino">แฝงลูติโน่ (Split Lutino / Ino)</option>
-      <option value="Split Turquoise & Dilute">แฝงบลู และ ไดลูท (Mint Carrier)</option>
-      <option value="Split Turquoise & Cinnamon">แฝงบลู และ ชินนามอน</option>
-      <option value="Split Turquoise & Yellow-sided">แฝงบลู และ เยลโลว์ไซด์</option>
-      <option value="Split Turquoise, Dilute & Cinnamon">แฝงบลู, ไดลูท และ ชินนามอน (3 ยีน)</option>
-      <option value="Split Turquoise, Dilute, Cinnamon & Yellow-sided">แฝง 4 ยีน (บลู, ไดลูท, ชินนามอน, เยลโลว์ไซด์)</option>
-      <option value="Split Blue (Sun Conure)">แฝงบลู (สำหรับซันคอนัวร์)</option>
+      <option value="ไม่มีสปลิต">ไม่มีสปลิต / สายพันธุ์แท้ (Pure)</option>
+      
+      <!-- 🟢 สปลิตเดี่ยว (1 ยีน) -->
+      <option value="N/T">N/T (แฝงบลู / Turquoise)</option>
+      <option value="N/D">N/D (แฝงไดลูท / Dilute)</option>
+      <option value="N/C">N/C (แฝงชินนามอน / Cinnamon)</option>
+      <option value="N/Y">N/Y (แฝงเยลโลว์ไซด์ / Yellow-sided / Opaline)</option>
+      <option value="N/V">N/V (แฝงไวโอเล็ต / Violet)</option>
+      <option value="N/L">N/L (แฝงลูติโน่ / Lutino)</option>
+      
+      <!-- 🟢 สปลิตคู่ (2 ยีนผสม) -->
+      <option value="N/T/D">N/T/D (แฝงบลู และไดลูท)</option>
+      <option value="N/T/C">N/T/C (แฝงบลู และชินนามอน)</option>
+      <option value="N/T/Y">N/T/Y (แฝงบลู และเยลโลว์ไซด์)</option>
+      <option value="N/D/C">N/D/C (แฝงไดลูท และชินนามอน)</option>
+      <option value="N/D/Y">N/D/Y (แฝงไดลูท และเยลโลว์ไซด์)</option>
+      <option value="N/C/Y">N/C/Y (แฝงชินนามอน และเยลโลว์ไซด์)</option>
+      <option value="N/T/V">N/T/V (แฝงบลู และไวโอเล็ต)</option>
+
+      <!-- 🟢 สปลิต 3 ยีนผสม -->
+      <option value="N/T/D/C">N/T/D/C (แฝง 3 ยีน: บลู, ไดลูท, ชินนามอน)</option>
+      <option value="N/T/D/Y">N/T/D/Y (แฝง 3 ยีน: บลู, ไดลูท, เยลโลว์ไซด์)</option>
+      <option value="N/T/C/Y">N/T/C/Y (แฝง 3 ยีน: บลู, ชินนามอน, เยลโลว์ไซด์)</option>
+      <option value="N/D/C/Y">N/D/C/Y (แฝง 3 ยีน: ไดลูท, ชินนามอน, เยลโลว์ไซด์)</option>
+
+      <!-- 🟢 สปลิต 4 ยีนเต็มพิกัด -->
+      <option value="N/T/D/C/Y">N/T/D/C/Y (แฝง 4 ยีน: บลู, ไดลูท, ชินนามอน, เยลโลว์ไซด์)</option>
     `;
 
     const greenCheekMutationsHtml = mutationsHtml;
@@ -157,7 +173,7 @@
       let mSplit = motherObj.splitColor || "";
 
       const parseGenotype = (color, split, isMale) => {
-        let genes = { turq: 0, dilute: 0, cinn: 0, opalin: 0, violet: 0 }; 
+        let genes = { turq: 0, dilute: 0, cinn: 0, opalin: 0, violet: 0, lutino: 0 }; 
         let c = color.toLowerCase();
         if (c.includes('turquoise') || c.includes('mint') || c.includes('mooncheek') || c.includes('opamint')) genes.turq = 2;
         if (c.includes('dilute') || c.includes('mint') || c.includes('suncheek') || c.includes('mooncheek') || c.includes('opamint')) genes.dilute = 2;
@@ -165,12 +181,13 @@
         if (c.includes('yellow-sided') || c.includes('pineapple') || c.includes('suncheek') || c.includes('mooncheek') || c.includes('opamint')) genes.opalin = 2;
         if (c.includes('violet')) genes.violet = 1;
 
-        let s = split.toLowerCase();
-        if (s.includes('turquoise') || s.includes('บลู')) { if (genes.turq < 2) genes.turq = 1; }
-        if (s.includes('dilute') || s.includes('ไดลูท')) { if (genes.dilute < 2) genes.dilute = 1; }
-        if (s.includes('cinnamon') || s.includes('ชินนามอน')) { if (genes.cinn < 2) genes.cinn = 1; }
-        if (s.includes('yellow-sided') || s.includes('เยลโลว์ไซด์') || s.includes('opaline')) { if (genes.opalin < 2) genes.opalin = 1; }
-        if (s.includes('violet') || s.includes('ไวโอเล็ต')) { genes.violet = 1; }
+        let s = split.toUpperCase();
+        if (s.includes('T') || s.includes(' TURQUOISE')) { if (genes.turq < 2) genes.turq = 1; }
+        if (s.includes('D') || s.includes(' DILUTE')) { if (genes.dilute < 2) genes.dilute = 1; }
+        if (s.includes('C') || s.includes(' CINNAMON')) { if (genes.cinn < 2) genes.cinn = 1; }
+        if (s.includes('Y') || s.includes(' YELLOW-SIDED')) { if (genes.opalin < 2) genes.opalin = 1; }
+        if (s.includes('V') || s.includes(' VIOLET')) { genes.violet = 1; }
+        if (s.includes('L') || s.includes(' LUTINO')) { genes.lutino = isMale ? 1 : 2; }
 
         if (!isMale) {
           if (genes.cinn === 1 || genes.cinn === 2) genes.cinn = 2;
@@ -206,16 +223,16 @@
 
         if (g.violet > 0) vParts.push("+ Violet Factor");
 
-        if (g.turq === 1) sParts.push("แฝงบลู");
-        if (g.dilute === 1) sParts.push("แฝงไดลูท");
+        if (g.turq === 1) sParts.push("N/T");
+        if (g.dilute === 1) sParts.push("N/D");
         if (isMale) {
-          if (g.cinn === 1) sParts.push("แฝงชินนามอน");
-          if (g.opalin === 1) sParts.push("แฝงเยลโลว์ไซด์");
+          if (g.cinn === 1) sParts.push("N/C");
+          if (g.opalin === 1) sParts.push("N/Y");
         }
 
         let resultName = vParts.join(" ");
         if (sParts.length > 0) {
-          resultName += ` (${sParts.join(" และ ")})`;
+          resultName += ` (${sParts.join("/")})`;
         }
         return resultName;
       };
@@ -239,15 +256,10 @@
         violet: fGenes.violet ? 1 : 0
       }, false);
 
-      if (fColor.includes('Yellow-sided') && fSplit.includes('Cinnamon') && mColor.includes('Pineapple')) {
-        mResultList = ["Pineapple", "Yellow-sided (แฝง Cinnamon)"];
-        fResultList = ["Pineapple", "Yellow-sided"];
-      } else {
-        mResultList.push(mSample);
-        if (fColor !== "Normal") mResultList.push(fColor);
-        fResultList.push(fSample);
-        if (mColor !== "Normal") fResultList.push(mColor);
-      }
+      mResultList.push(mSample);
+      if (fColor !== "Normal") mResultList.push(fColor);
+      fResultList.push(fSample);
+      if (mColor !== "Normal") fResultList.push(mColor);
 
       return {
         male: [...new Set(mResultList)].join(", "),
@@ -281,7 +293,7 @@
       return `
         <div class="mt-2.5 p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์ (Multi-Split 1-4 ยีน - V83):</span></div>
+            <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์ (Multi-Split V85):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-indigo-100 transition">✏️ แก้ไขให้ถูกต้อง</button>
           </div>
           <div class="text-blue-900"><strong>♂ ลูกตัวผู้:</strong> ${pair.customGenetics ? pair.customGenetics.male : genetics.male}</div>
@@ -1008,7 +1020,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (Multi-Split 1-4 ยีน - V83):</span></div>
+          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (Multi-Split V85):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-indigo-100 text-blue-900 space-y-1">
             <div class="font-bold mb-1">♂ ลูกตัวผู้ (Male):</div>
@@ -1086,7 +1098,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v83</span>
+              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v85</span>
             </h1>
             <p class="text-[10px] text-emerald-300 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
