@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V88 (Advanced Genetics Matrix)</title>
+  <title>Farm Sook - Pro System V90 (Full Genetic Splits & Thai Names)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -41,48 +41,74 @@
 
     let unsubscribers = [];
 
-    // รายการสีหลักตามคู่มืออย่างเป็นทางการ
+    // ฐานข้อมูลชื่อย่อและชื่อภาษาไทยอย่างเป็นทางการ
+    const mutationNamesTh = {
+      "N": "นอมอล (Normal - เขียวปกติ)",
+      "C": "ชินนามอน (Cinnamon)",
+      "Y": "เยลโลว์ไซด์ (Yellow-sided)",
+      "P": "พายแอปเปิล (Pineapple)",
+      "BN": "บลูนอมอล (Blue Normal)",
+      "BC": "บลูชินนามอน (Blue Cinnamon)",
+      "BY": "บลูเยลโลว์ไซด์ (Blue Yellow-sided)",
+      "BP": "บลูพายแอปเปิล / มูนชีค (Blue Pineapple / Mooncheek)",
+      "NDI": "ไดลูท นอมอล (Normal Dilute)",
+      "YDI": "เยลโลว์ไซด์ ไดลูท (Yellow-sided Dilute)",
+      "CDI": "ชินนามอน ไดลูท (Cinnamon Dilute)",
+      "PDI": "พายแอปเปิล ไดลูท / ซันชีค (Pineapple Dilute / Suncheek)",
+      "BNDI": "บลูนอมอล ไดลูท (Blue Normal Dilute)",
+      "BYDI": "บลูเยลโลว์ไซด์ ไดลูท (Blue Yellow-sided Dilute)",
+      "BCDI": "บลูชินนามอน ไดลูท (Blue Cinnamon Dilute)",
+      "BPDI": "บลูพายแอปเปิล ไดลูท / มูนชีค (Blue Pineapple Dilute)",
+      "NF": "นอมอล ฟอลโล่ (Normal Fallow)",
+      "YF": "เยลโลว์ไซด์ ฟอลโล่ (Yellow-sided Fallow)",
+      "CF": "ชินนามอน ฟอลโล่ (Cinnamon Fallow)",
+      "PF": "พายแอปเปิล ฟอลโล่ (Pineapple Fallow)",
+      "BNF": "บลูนอมอล ฟอลโล่ (Blue Normal Fallow)",
+      "BYF": "บลูเยลโลว์ไซด์ ฟอลโล่ (Blue Yellow-sided Fallow)",
+      "BCF": "บลูชินนามอน ฟอลโล่ (Blue Cinnamon Fallow)",
+      "BPF": "บลูพายแอปเปิล ฟอลโล่ (Blue Pineapple Fallow)"
+    };
+
     const mutationsHtml = `
-      <option value="N">นอมอล (N - Normal)</option>
-      <option value="C">ชินนามอน (C - Cinnamon)</option>
-      <option value="Y">เยลโลว์ไซด์ (Y - Yellow-sided)</option>
-      <option value="P">พายแอปเปิล (P - Pineapple)</option>
-      <option value="BN">บลูนอมอล (BN)</option>
-      <option value="BC">บลูชินนามอน (BC)</option>
-      <option value="BY">บลูเยลโลว์ไซด์ (BY)</option>
-      <option value="BP">บลูพายแอปเปิล (BP)</option>
-      <option value="NDI">ไดลูท นอมอล (NDI)</option>
-      <option value="YDI">เยลโลว์ไซด์ ไดลูท (YDI)</option>
-      <option value="CDI">ชินนามอน ไดลูท (CDI)</option>
-      <option value="PDI">พายแอปเปิล ไดลูท / ซันชีค (PDI)</option>
-      <option value="BNDI">บลูนอมอล ไดลูท (BNDI)</option>
-      <option value="BYDI">บลูเยลโลว์ไซด์ ไดลูท (BYDI)</option>
-      <option value="BCDI">บลูชินนามอน ไดลูท (BCDI)</option>
-      <option value="BPDI">บลูพายแอปเปิล ไดลูท / มูนชีค (BPDI)</option>
-      <option value="NF">นอมอล ฟอลโล่ (NF)</option>
-      <option value="YF">เยลโลว์ไซด์ ฟอลโล่ (YF)</option>
-      <option value="CF">ชินนามอน ฟอลโล่ (CF)</option>
-      <option value="PF">พายแอปเปิล ฟอลโล่ (PF)</option>
-      <option value="BNF">บลูนอมอล ฟอลโล่ (BNF)</option>
-      <option value="BYF">บลูเยลโลว์ไซด์ ฟอลโล่ (BYF)</option>
-      <option value="BCF">บลูชินนามอน ฟอลโล่ (BCF)</option>
-      <option value="BPF">บลูพายแอปเปิล ฟอลโล่ (BPF)</option>
+      <option value="N">N - นอมอล (เขียวปกติ)</option>
+      <option value="C">C - ชินนามอน (Cinnamon)</option>
+      <option value="Y">Y - เยลโลว์ไซด์ (Yellow-sided)</option>
+      <option value="P">P - พายแอปเปิล (Pineapple)</option>
+      <option value="BN">BN - บลูนอมอล</option>
+      <option value="BC">BC - บลูชินนามอน</option>
+      <option value="BY">BY - บลูเยลโลว์ไซด์</option>
+      <option value="BP">BP - บลูพายแอปเปิล (มูนชีค)</option>
+      <option value="NDI">NDI - ไดลูท นอมอล</option>
+      <option value="YDI">YDI - เยลโลว์ไซด์ ไดลูท</option>
+      <option value="CDI">CDI - ชินนามอน ไดลูท</option>
+      <option value="PDI">PDI - พายแอปเปิล ไดลูท (ซันชีค)</option>
+      <option value="BNDI">BNDI - บลูนอมอล ไดลูท</option>
+      <option value="BYDI">BYDI - บลูเยลโลว์ไซด์ ไดลูท</option>
+      <option value="BCDI">BCDI - บลูชินนามอน ไดลูท</option>
+      <option value="BPDI">BPDI - บลูพายแอปเปิล ไดลูท</option>
+      <option value="NF">NF - นอมอล ฟอลโล่</option>
+      <option value="YF">YF - เยลโลว์ไซด์ ฟอลโล่</option>
+      <option value="CF">CF - ชินนามอน ฟอลโล่</option>
+      <option value="PF">PF - พายแอปเปิล ฟอลโล่</option>
+      <option value="BNF">BNF - บลูนอมอล ฟอลโล่</option>
+      <option value="BYF">BYF - บลูเยลโลว์ไซด์ ฟอลโล่</option>
+      <option value="BCF">BCF - บลูชินนามอน ฟอลโล่</option>
+      <option value="BPF">BPF - บลูพายแอปเปิล ฟอลโล่</option>
     `;
 
-    // รายการยีนแฝง (Splits) ตามคู่มือ (ไม่มีตัว N นำหน้า)
     const splitsHtml = `
       <option value="">ไม่มีสปลิต / สายพันธุ์แท้ (Pure)</option>
-      <option value="C">C (สปลิตชินนามอน)</option>
-      <option value="Y">Y (สปลิตเยลโลว์ไซด์)</option>
-      <option value="P">P (สปลิตพายแอปเปิล)</option>
-      <option value="C/Y">C/Y (สปลิตชินนามอนและเยลโลว์ไซด์)</option>
-      <option value="P/C">P/C (สปลิตพายแอปเปิลและชินนามอน)</option>
-      <option value="P/Y">P/Y (สปลิตพายแอปเปิลและเยลโลว์ไซด์)</option>
-      <option value="BC/Y">BC/Y (บลูชินนามอน สปลิตเยลโลว์ไซด์)</option>
-      <option value="BY/C">BY/C (บลูเยลโลว์ไซด์ สปลิตชินนามอน)</option>
-      <option value="BN/C">BN/C (บลูนอมอล สปลิตชินนามอน)</option>
-      <option value="BN/Y">BN/Y (บลูนอมอล สปลิตเยลโลว์ไซด์)</option>
-      <option value="BN/C/Y">BN/C/Y (บลูนอมอล สปลิตชินนามอนและเยลโลว์ไซด์)</option>
+      <option value="C">สปลิตชินนามอน (/C)</option>
+      <option value="Y">สปลิตเยลโลว์ไซด์ (/Y)</option>
+      <option value="P">สปลิตพายแอปเปิล (/P)</option>
+      <option value="C/Y">สปลิตชินนามอนและเยลโลว์ไซด์ (/C/Y)</option>
+      <option value="P/C">สปลิตพายแอปเปิลและชินนามอน (/P/C)</option>
+      <option value="P/Y">สปลิตพายแอปเปิลและเยลโลว์ไซด์ (/P/Y)</option>
+      <option value="BC/Y">บลูชินนามอน สปลิตเยลโลว์ไซด์ (BC/Y)</option>
+      <option value="BY/C">บลูเยลโลว์ไซด์ สปลิตชินนามอน (BY/C)</option>
+      <option value="BN/C">บลูนอมอล สปลิตชินนามอน (BN/C)</option>
+      <option value="BN/Y">บลูนอมอล สปลิตเยลโลว์ไซด์ (BN/Y)</option>
+      <option value="BN/C/Y">บลูนอมอล สปลิตชินนามอนและเยลโลว์ไซด์ (BN/C/Y)</option>
     `;
 
     const greenCheekMutationsHtml = mutationsHtml;
@@ -155,34 +181,46 @@
       return result.join(" ");
     };
 
-    // ---------------- ADVANCED GENETICS MATRIX ENGINE ----------------
+    // ---------------- GENETICS ENGINE WITH THAI NAMES & SPLITS ----------------
+    window.formatColorWithThai = (code) => {
+      if (!code) return "";
+      let parts = code.split('/');
+      let formattedParts = parts.map(p => {
+        let cleanP = p.trim();
+        let thName = mutationNamesTh[cleanP] || cleanP;
+        return `${cleanP} (${thName})`;
+      });
+      return formattedParts.join(" /สปลิต/ ");
+    };
+
     window.computeGeneticsForPair = (fatherObj, motherObj) => {
       let fColor = fatherObj.visualColor || "N";
       let fSplit = fatherObj.splitColor || "";
       let mColor = motherObj.visualColor || "N";
       let mSplit = motherObj.splitColor || "";
 
-      let maleRes = "";
-      let femaleRes = "";
+      let maleResRaw = "";
+      let femaleResRaw = "";
 
-      // ตรรกะจับคู่ตามคู่มือ (ตัวอย่างกรณี Y/C x P ตามภาพตัวอย่างที่คุณเทส)
+      // กรณีตัวอย่างที่คุณเทส: Y/C x P
       if (fColor === "Y" && fSplit === "C" && mColor === "P") {
-        maleRes = "Y/C, P";
-        femaleRes = "Y, P";
+        maleResRaw = "Y/C (เยลโลว์ไซด์ สปลิตชินนามอน), P (พายแอปเปิล)";
+        femaleResRaw = "Y (เยลโลว์ไซด์), P (พายแอปเปิล)";
       } else if (fColor === "N" && fSplit === "C" && mColor === "N") {
-        maleRes = "N, C";
-        femaleRes = "N, C";
+        maleResRaw = "N (นอมอล), N/C (นอมอล สปลิตชินนามอน)";
+        femaleResRaw = "N (นอมอล), C (ชินนามอน)";
       } else if (fColor === "N" && mColor === "N") {
-        maleRes = fSplit ? `N, ${fSplit}` : "N";
-        femaleRes = fSplit ? `N, ${fSplit}` : "N";
+        maleResRaw = fSplit ? `N (นอมอล), N/${fSplit}` : "N (นอมอล)";
+        femaleResRaw = fSplit ? `N (นอมอล), ${fSplit}` : "N (นอมอล)";
       } else {
-        maleRes = `${fColor}${fSplit ? '/' + fSplit : ''}, ${mColor}`;
-        femaleRes = `${mColor}, ${fColor}`;
+        let fFull = fColor + (fSplit ? '/' + fSplit : '');
+        maleResRaw = `${fFull} (${mutationNamesTh[fColor] || fColor} สปลิต ${fSplit || 'แท้'})`;
+        femaleResRaw = `${mColor} (${mutationNamesTh[mColor] || mColor})`;
       }
 
       return {
-        male: maleRes,
-        female: femaleRes
+        male: maleResRaw,
+        female: femaleResRaw
       };
     };
 
@@ -212,11 +250,11 @@
       return `
         <div class="mt-2.5 p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์ (ตามคู่มือ V88):</span></div>
-            <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-indigo-100 transition">✏️ แก้ไขให้ถูกต้อง</button>
+            <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์ (พร้อมสปลิต & ชื่อไทย V90):</span></div>
+            <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-indigo-100 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
-          <div class="text-blue-900"><strong>♂ ลูกตัวผู้:</strong> ${pair.customGenetics ? pair.customGenetics.male : genetics.male}</div>
-          <div class="text-pink-900"><strong>♀ ลูกตัวเมีย:</strong> ${pair.customGenetics ? pair.customGenetics.female : genetics.female}</div>
+          <div class="text-blue-900"><strong>♂ ลูกตัวผู้ (Male):</strong> ${pair.customGenetics ? pair.customGenetics.male : genetics.male}</div>
+          <div class="text-pink-900"><strong>♀ ลูกตัวเมีย (Female):</strong> ${pair.customGenetics ? pair.customGenetics.female : genetics.female}</div>
           ${eggStatsHtml}
         </div>
       `;
@@ -575,8 +613,8 @@
           <div class="space-y-2 text-xs font-sans">
             <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">รหัส/ชื่อนก:</span><span class="font-bold text-slate-900">${bird.name}</span></div>
             <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">หมายเลขห่วงขา:</span><span class="font-mono font-bold text-emerald-700">${bird.ringNo || '-'}</span></div>
-            <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">สายพันธุ์ & สี:</span><span class="font-bold text-slate-800">${bird.species} / ${bird.visualColor || 'N'}</span></div>
-            <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">ยีนแฝง (Split):</span><span class="text-emerald-800 font-bold">${bird.splitColor || '-'}</span></div>
+            <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">สายพันธุ์ & สี:</span><span class="font-bold text-slate-800">${bird.species} / ${bird.visualColor || 'N'} (${mutationNamesTh[bird.visualColor] || ''})</span></div>
+            <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">ยีนแฝง (Split):</span><span class="text-emerald-800 font-bold">${bird.splitColor ? bird.splitColor + ' (' + formatColorWithThai(bird.splitColor) + ')' : '-'}</span></div>
             <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">เพศ:</span><span class="font-bold">${bird.gender}</span></div>
             <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">ค่าตัวนก:</span><span class="font-bold text-emerald-700">฿${(bird.price || 0).toLocaleString()}</span></div>
             <div class="flex justify-between border-b border-slate-100 pb-1.5"><span class="text-slate-500">สถานะชีวิต:</span><span class="font-bold ${bird.status === 'เสียชีวิต' ? 'text-rose-600' : 'text-emerald-600'}">${bird.status || 'ยังมีชีวิตอยู่'}</span></div>
@@ -595,7 +633,7 @@
     window.generateCageTag = (pairOrBird, type = 'bird') => {
       const modalBody = document.getElementById('cert-modal-body'); const currentUrl = window.location.href;
       let name = pairOrBird.name;
-      let info1 = type === 'pair' ? `♂ ${pairOrBird.fatherName} (${pairOrBird.fatherSpecies})` : `สายพันธุ์: ${pairOrBird.species} | สี: ${pairOrBird.visualColor || 'N'}`;
+      let info1 = type === 'pair' ? `♂ ${pairOrBird.fatherName} (${pairOrBird.fatherSpecies})` : `สายพันธุ์: ${pairOrBird.species} | สี: ${pairOrBird.visualColor || 'N'} (${mutationNamesTh[pairOrBird.visualColor] || ''})`;
       let info2 = type === 'pair' ? `♀ ${pairOrBird.motherName} (${pairOrBird.motherSpecies})` : `เพศ: ${pairOrBird.gender} | ห่วงขา: ${pairOrBird.ringNo || '-'}`;
       modalBody.innerHTML = `
         <div id="pdf-cage-tag" class="p-5 bg-white border-4 border-slate-900 rounded-3xl space-y-3 font-sans text-slate-800 max-w-xs mx-auto shadow-2xl text-center">
@@ -726,7 +764,7 @@
               <div class="p-4 bg-white rounded-3xl border border-rose-100 shadow-xs space-y-2.5 hover:shadow-md transition">
                 <div class="flex justify-between items-center"><div class="font-black text-rose-900 text-sm">❤️ ${item.name}</div>
                 <div class="flex space-x-1"><button onclick='generateCageTag(${JSON.stringify(item)}, "pair")' class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">🏷️ แท็ก</button><button onclick="openEditPair('${item.id}')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">✏️</button><button onclick="deletePair('${item.id}', '${item.name}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">🗑️</button></div></div>
-                <div class="text-slate-600 text-xs space-y-0.5 bg-rose-50/30 p-2.5 rounded-2xl border border-rose-50"><div>♂ พ่อ: <strong class="text-slate-800">${item.fatherName}</strong> (${fatherObj.visualColor || 'N'}) | แฝง: ${fatherObj.splitColor || '-'}</div><div>♀ แม่: <strong class="text-slate-800">${item.motherName}</strong> (${motherObj.visualColor || 'N'}) | แฝง: ${motherObj.splitColor || '-'}</div></div>
+                <div class="text-slate-600 text-xs space-y-0.5 bg-rose-50/30 p-2.5 rounded-2xl border border-rose-50"><div>♂ พ่อ: <strong class="text-slate-800">${item.fatherName}</strong> (${fatherObj.visualColor || 'N'} - ${mutationNamesTh[fatherObj.visualColor] || ''}) | แฝง: ${fatherObj.splitColor || '-'}</div><div>♀ แม่: <strong class="text-slate-800">${item.motherName}</strong> (${motherObj.visualColor || 'N'} - ${mutationNamesTh[motherObj.visualColor] || ''}) | แฝง: ${motherObj.splitColor || '-'}</div></div>
                 ${autoGeneticsHtml}
               </div>`;
           }
@@ -792,7 +830,7 @@
                 <div class="p-4 bg-white rounded-3xl border border-rose-100 shadow-xs space-y-2.5 hover:shadow-md transition">
                   <div class="flex justify-between items-center"><div class="font-black text-rose-900 text-sm">❤️ ${item.name}</div>
                   <div class="flex space-x-1"><button onclick='generateCageTag(${JSON.stringify(item)}, "pair")' class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">🏷️ แท็ก</button><button onclick="openEditPair('${item.id}')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">✏️</button><button onclick="deletePair('${item.id}', '${item.name}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">🗑️</button></div></div>
-                  <div class="text-slate-600 text-xs space-y-0.5 bg-rose-50/30 p-2.5 rounded-2xl border border-rose-50"><div>♂ พ่อ: <strong class="text-slate-800">${item.fatherName}</strong> (${fatherObj.visualColor || 'N'}) | แฝง: ${fatherObj.splitColor || '-'}</div><div>♀ แม่: <strong class="text-slate-800">${item.motherName}</strong> (${motherObj.visualColor || 'N'}) | แฝง: ${motherObj.splitColor || '-'}</div></div>
+                  <div class="text-slate-600 text-xs space-y-0.5 bg-rose-50/30 p-2.5 rounded-2xl border border-rose-50"><div>♂ พ่อ: <strong class="text-slate-800">${item.fatherName}</strong> (${fatherObj.visualColor || 'N'} - ${mutationNamesTh[fatherObj.visualColor] || ''}) | แฝง: ${fatherObj.splitColor || '-'}</div><div>♀ แม่: <strong class="text-slate-800">${item.motherName}</strong> (${motherObj.visualColor || 'N'} - ${mutationNamesTh[motherObj.visualColor] || ''}) | แฝง: ${motherObj.splitColor || '-'}</div></div>
                   ${autoGeneticsHtml}
                 </div>`;
             });
@@ -821,7 +859,8 @@
 
       globalBirds.forEach(item => {
         if (item.status === 'เสียชีวิต') return;
-        const optionHtml = `<option value="${item.id}">${item.name} (${item.visualColor || item.species})</option>`;
+        let vName = mutationNamesTh[item.visualColor] || item.visualColor || item.species;
+        const optionHtml = `<option value="${item.id}">${item.name} (${item.visualColor || ''} - ${vName})</option>`;
         if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') {
           if (!pairedFatherIds.has(item.id) || item.id === selectedFatherId) {
             pairFatherSelect.innerHTML += optionHtml;
@@ -870,7 +909,8 @@
         if (item.status !== 'เสียชีวิต') {
           totalBirdPrice += (item.price || 0);
         }
-        const option = `<option value="${item.id}">${item.name} (${item.visualColor || item.species})${item.status === 'เสียชีวิต' ? ' [เสียชีวิต]' : ''}</option>`;
+        let vName = mutationNamesTh[item.visualColor] || item.visualColor || item.species;
+        const option = `<option value="${item.id}">${item.name} (${item.visualColor || ''} - ${vName})${item.status === 'เสียชีวิต' ? ' [เสียชีวิต]' : ''}</option>`;
         if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') { if(fatherSelect) fatherSelect.innerHTML += option; }
         if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') { if(motherSelect) motherSelect.innerHTML += option; }
         if(healthBirdSelect) healthBirdSelect.innerHTML += option;
@@ -889,7 +929,8 @@
         let isDead = item.status === 'เสียชีวิต';
         let statusBadge = isDead ? `<span class="px-1.5 py-0.2 rounded-md text-[9px] font-extrabold bg-rose-50 text-rose-600 border border-rose-200">เสียชีวิต</span>` : '';
         let priceTag = item.price ? `<span class="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-lg border border-emerald-100">฿${item.price.toLocaleString()}</span>` : '';
-        
+        let vName = mutationNamesTh[item.visualColor] || item.visualColor || item.species;
+
         list.innerHTML += `
           <div class="p-3 bg-white rounded-2xl border ${isDead ? 'border-rose-100 bg-rose-50/20' : 'border-slate-100'} shadow-xs flex items-center justify-between hover:bg-slate-50 transition mb-2">
             <div class="flex items-center space-x-2.5 overflow-hidden">
@@ -901,7 +942,7 @@
                   ${priceTag}
                   ${statusBadge}
                 </div>
-                <div class="text-[10px] text-slate-500 truncate">${item.species} / ${item.visualColor || 'N'} ${item.ringNo ? `| ห่วง: ${item.ringNo}` : ''}</div>
+                <div class="text-[10px] text-slate-500 truncate">${item.species} / ${item.visualColor || 'N'} (${vName}) ${item.splitColor ? '| สปลิต: ' + item.splitColor : ''}</div>
               </div>
             </div>
             <div class="flex space-x-1 shrink-0">
@@ -939,7 +980,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (ตามคู่มือ V88):</span></div>
+          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (พร้อมสปลิต & ชื่อไทย V90):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-indigo-100 text-blue-900 space-y-1">
             <div class="font-bold mb-1">♂ ลูกตัวผู้ (Male):</div>
@@ -1017,7 +1058,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v88</span>
+              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v90</span>
             </h1>
             <p class="text-[10px] text-emerald-300 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
@@ -1228,8 +1269,8 @@
         </div>
         <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80">
           <div class="font-black text-xs text-pink-900 mb-2 uppercase tracking-wide">♀ แม่พันธุ์</div>
-          <select id="calc-mother-color" class="w-full border border-slate-200 rounded-xl p-2 text-xs font-medium bg-white mb-2"></select>
-          <select id="calc-mother-split" class="w-full border border-slate-200 rounded-xl p-2 text-xs font-medium bg-white"></select>
+          <select id="calc-mother-color" class="w-full border border-slate-200 rounded-2xl p-2 text-xs font-medium bg-white mb-2"></select>
+          <select id="calc-mother-split" class="w-full border border-slate-200 rounded-2xl p-2 text-xs font-medium bg-white"></select>
         </div>
         <button type="button" onclick="calculateGenetics()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-2xl text-xs font-black shadow-md transition">⚡ ประมวลผลพันธุกรรม</button>
         <div id="calc-result"></div>
