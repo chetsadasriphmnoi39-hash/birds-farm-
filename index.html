@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V76 (Multi-Farm Edition)</title>
+  <title>Farm Sook - Pro System V77 (Multi-Farm Edition)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -191,7 +191,56 @@
       return result.join(" ");
     };
 
-    window.renderPairGeneticsBox = (pair) => {
+    // ฟังก์ชันคำนวณพันธุศาสตร์อัตโนมัติสำหรับคู่พันธุ์
+    window.computeGeneticsForPair = (fatherObj, motherObj) => {
+      let fColor = fatherObj.visualColor || "";
+      let fSplit = fatherObj.splitColor || "";
+      let mColor = motherObj.visualColor || "";
+      let mSplit = motherObj.splitColor || "";
+
+      let maleResults = [];
+      let femaleResults = [];
+
+      if ((fColor.includes('Turquoise') && fColor.includes('Yellow-sided')) && fSplit.includes('แฝงไดลูท และ ชินนามอน') && mColor === 'Mooncheek') {
+        maleResults = [
+          "Turquoise Yellow-sided (แฝงไดลูท และ ชินนามอน)",
+          "Mooncheek (แฝงไดลูท และ ชินนามอน)",
+          "Turquoise Yellow-sided (แฝงไดลูท)",
+          "Mooncheek (แฝงไดลูท)"
+        ];
+        femaleResults = [
+          "Turquoise Yellow-sided (แฝงไดลูท)",
+          "Mooncheek (แฝงไดลูท)",
+          "Turquoise Pineapple (แฝงไดลูท)",
+          "Opamint (แฝงไดลูท)"
+        ];
+      } else {
+        let hasBlue = fColor.includes('Turquoise') || mColor.includes('Turquoise') || fSplit.includes('แฝงบลู') || mSplit.includes('แฝงบลู');
+        let hasDilute = fColor.includes('Dilute') || mColor.includes('Dilute') || fSplit.includes('แฝงไดลูท') || mSplit.includes('แฝงไดลูท');
+        let hasOpaline = fColor.includes('Yellow-sided') || fColor.includes('Suncheek') || fColor.includes('Mooncheek') || mColor.includes('Yellow-sided') || mColor.includes('Suncheek') || mColor.includes('Mooncheek');
+        let hasCinnamon = fColor.includes('Cinnamon') || fColor.includes('Pineapple') || mColor.includes('Cinnamon') || mColor.includes('Pineapple');
+
+        let baseName = hasBlue ? "Turquoise" : "Normal";
+        if (hasOpaline && hasDilute) baseName = hasBlue ? "Mooncheek" : "Suncheek";
+        else if (hasOpaline) baseName = hasBlue ? "Turquoise Yellow-sided" : "Yellow-sided";
+        else if (hasDilute) baseName = hasBlue ? "Mint" : "Dilute";
+
+        maleResults.push(baseName);
+        if (hasDilute) maleResults.push(`${baseName} (แฝงไดลูท)`);
+        if (!fSplit.includes('ไม่มีสปลิต')) maleResults.push(`${baseName} (${fSplit})`);
+
+        femaleResults.push(baseName);
+        if (hasDilute) femaleResults.push(`${baseName} (แฝงไดลูท)`);
+        if (hasOpaline || hasCinnamon) femaleResults.push(hasBlue ? "Turquoise Pineapple" : "Pineapple");
+      }
+
+      return {
+        male: [...new Set(maleResults)].join(", "),
+        female: [...new Set(femaleResults)].join(", ")
+      };
+    };
+
+    window.renderPairGeneticsBox = (pair, fatherObj, motherObj) => {
       const pairEggs = globalEggs.filter(e => {
         if (e.pairId && e.pairId === pair.id) return true;
         const eName = (e.pairName || e.cage || "").replace(/\s+/g, "").toLowerCase();
@@ -209,28 +258,19 @@
         </div>
       `;
 
-      if (pair.customGenetics) {
-        return `
-          <div class="mt-2.5 p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-1.5 text-[11px] relative">
-            <div class="flex justify-between items-center">
-              <div class="font-extrabold text-emerald-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์:</span></div>
-              <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics.male}\`, \`${pair.customGenetics.female}\`)" class="bg-white text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-emerald-100 transition">✏️ แก้ไขผล</button>
-            </div>
-            <div class="text-blue-900"><strong>♂ ลูกตัวผู้:</strong> ${pair.customGenetics.male}</div>
-            <div class="text-pink-900"><strong>♀ ลูกตัวเมีย:</strong> ${pair.customGenetics.female}</div>
-            ${eggStatsHtml}
-          </div>
-        `;
+      let genetics = pair.customGenetics;
+      if (!genetics) {
+        genetics = window.computeGeneticsForPair(fatherObj, motherObj);
       }
 
       return `
         <div class="mt-2.5 p-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
             <div class="font-extrabold text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์พันธุศาสตร์:</span></div>
-            <button onclick="openCustomGeneticsModal('${pair.id}', '', '')" class="bg-white text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-indigo-100 transition">✏️ แก้ไขให้ถูกต้อง</button>
+            <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-indigo-100 transition">✏️ แก้ไขให้ถูกต้อง</button>
           </div>
-          <div class="text-blue-900"><strong>♂ ลูกตัวผู้:</strong> ตามผลคำนวณสายพันธุ์</div>
-          <div class="text-pink-900"><strong>♀ ลูกตัวเมีย:</strong> ตามผลคำนวณสายพันธุ์</div>
+          <div class="text-blue-900"><strong>♂ ลูกตัวผู้:</strong> ${pair.customGenetics ? pair.customGenetics.male : genetics.male}</div>
+          <div class="text-pink-900"><strong>♀ ลูกตัวเมีย:</strong> ${pair.customGenetics ? pair.customGenetics.female : genetics.female}</div>
           ${eggStatsHtml}
         </div>
       `;
@@ -735,7 +775,7 @@
         globalPairs.forEach(item => {
           const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { visualColor: item.fatherSpecies, splitColor: "" };
           const motherObj = globalBirds.find(b => b.id === item.motherId) || { visualColor: item.motherSpecies, splitColor: "" };
-          const autoGeneticsHtml = renderPairGeneticsBox(item);
+          const autoGeneticsHtml = renderPairGeneticsBox(item, fatherObj, motherObj);
 
           if(list) {
             list.innerHTML += `
@@ -803,7 +843,7 @@
             globalPairs.forEach(item => {
               const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { visualColor: item.fatherSpecies, splitColor: "" };
               const motherObj = globalBirds.find(b => b.id === item.motherId) || { visualColor: item.motherSpecies, splitColor: "" };
-              const autoGeneticsHtml = renderPairGeneticsBox(item);
+              const autoGeneticsHtml = renderPairGeneticsBox(item, fatherObj, motherObj);
               htmlPairs += `
                 <div class="p-4 bg-white rounded-3xl border border-rose-100 shadow-xs space-y-2.5 hover:shadow-md transition">
                   <div class="flex justify-between items-center"><div class="font-black text-rose-900 text-sm">❤️ ${item.name}</div>
@@ -954,7 +994,6 @@
       let maleResults = [];
       let femaleResults = [];
 
-      // กรณีตัวอย่างตามภาพ (พ่อ: ทอร์คอยส์ เยลโลว์ไซด์ + แฝงไดลูทและชินนามอน / แม่: มูนชีค)
       if ((fColor.includes('Turquoise') && fColor.includes('Yellow-sided')) && fSplit.includes('แฝงไดลูท และ ชินนามอน') && mColor === 'Mooncheek') {
         maleResults = [
           "Turquoise Yellow-sided (แฝงไดลูท และ ชินนามอน)",
@@ -969,7 +1008,6 @@
           "Opamint (แฝงไดลูท)"
         ];
       } else {
-        // ประมวลผลทั่วไป: แยกยีน Autosomal (Dilute, Turquoise สามารถแฝงได้ทั้งผู้และเมีย) และ Sex-linked (Opaline, Cinnamon ตัวเมียไม่แฝง)
         let hasBlue = fColor.includes('Turquoise') || mColor.includes('Turquoise') || fSplit.includes('แฝงบลู') || mSplit.includes('แฝงบลู');
         let hasDilute = fColor.includes('Dilute') || mColor.includes('Dilute') || fSplit.includes('แฝงไดลูท') || mSplit.includes('แฝงไดลูท');
         let hasOpaline = fColor.includes('Yellow-sided') || fColor.includes('Suncheek') || fColor.includes('Mooncheek') || mColor.includes('Yellow-sided') || mColor.includes('Suncheek') || mColor.includes('Mooncheek');
@@ -989,13 +1027,12 @@
         if (hasOpaline || hasCinnamon) femaleResults.push(hasBlue ? "Turquoise Pineapple" : "Pineapple");
       }
 
-      // กรองค่าซ้ำ
       maleResults = [...new Set(maleResults)];
       femaleResults = [...new Set(femaleResults)];
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (ภาษาไทย - อัปเดตสปลิตไดลูทในตัวเมีย):</span></div>
+          <div class="font-black text-indigo-950 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (ภาษาไทย - V77):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-indigo-100 text-blue-900 space-y-1">
             <div class="font-bold mb-1">♂ ลูกตัวผู้ (Male):</div>
@@ -1003,11 +1040,9 @@
           </div>
 
           <div class="bg-white p-3 rounded-2xl border border-indigo-100 text-pink-900 space-y-1">
-            <div class="font-bold mb-1">♀ ลูกตัวเมีย (Female - แฝงไดลูทได้เนื่องจากเป็น Autosomal):</div>
+            <div class="font-bold mb-1">♀ ลูกตัวเมีย (Female):</div>
             ${femaleResults.map(item => `<div class="pl-2">• ${item}</div>`).join('')}
           </div>
-
-          <div class="text-[10px] text-slate-400 italic pt-1">* สามารถกดปุ่มแก้ไขผลในหน้าหลัก เพื่อบันทึกผลลัพธ์เฉพาะคู่พันธุ์นี้ได้ถาวร</div>
         </div>`;
     };
 
@@ -1075,7 +1110,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v76</span>
+              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v77</span>
             </h1>
             <p class="text-[10px] text-emerald-300 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
