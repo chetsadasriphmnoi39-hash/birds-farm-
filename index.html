@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V120 (Hybrid Genetics Engine)</title>
+  <title>Farm Sook - Pro System V121 (Standard Matrix Master)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -178,112 +178,7 @@
       return splits.length > 0 ? splits.join("/") : "";
     };
 
-    // --- ส่วนฟังก์ชันคำนวณพันธุศาสตร์ที่คุณส่งมา (นำมาบูรณาการ) ---
-    function calculateConureGenetics(father, mother) {
-        const blueOffspring = calculateAutosomalLocus(father.blueGene, mother.blueGene);
-        const diluteOffspring = calculateAutosomalLocus(father.diluteGene, mother.diluteGene);
-        const sexLinkedOffspring = calculateSexLinkedLocus(father.sexLinkedZ, mother.sexLinkedZ);
-
-        let maleResults = combinePhenotypes(blueOffspring, diluteOffspring, sexLinkedOffspring.male);
-        let femaleResults = combinePhenotypes(blueOffspring, diluteOffspring, sexLinkedOffspring.female);
-
-        maleResults = getUniqueResults(maleResults);
-        femaleResults = getUniqueResults(femaleResults);
-
-        if (maleResults.length > 0 || femaleResults.length > 0) {
-            return { males: maleResults, females: femaleResults };
-        } else {
-            return {
-                males: ["ไม่พบข้อมูลการถ่ายทอดทางพันธุศาสตร์ที่ตรงกัน"],
-                females: ["ไม่พบข้อมูลการถ่ายทอดทางพันธุศาสตร์ที่ตรงกัน"]
-            };
-        }
-    }
-
-    function calculateAutosomalLocus(fAlleles, mAlleles) {
-        let possibleOutcomes = [];
-        fAlleles.forEach(f => {
-            mAlleles.forEach(m => {
-                let combo = sortAlleles([f, m]);
-                possibleOutcomes.push(combo);
-            });
-        });
-        return possibleOutcomes;
-    }
-
-    function calculateSexLinkedLocus(fZList, mZList) {
-        let maleZ = [];
-        let femaleZ = [];
-        fZList.forEach(fZ => {
-            mZList.forEach(mZ => {
-                maleZ.push(sortAlleles([fZ, mZ]));
-            });
-        });
-        fZList.forEach(fZ => {
-            femaleZ.push([fZ, "W"]);
-        });
-        return { male: maleZ, female: femaleZ };
-    }
-
-    function sortAlleles(alleles) {
-        return alleles.filter(a => a !== null && a !== undefined).sort();
-    }
-
-    function combinePhenotypes(blueResults, diluteResults, sexLinkedResults) {
-        let results = [];
-        blueResults.forEach(blue => {
-            diluteResults.forEach(dilute => {
-                sexLinkedResults.forEach(sexLinked => {
-                    let phenotypeName = translateToPhenotype(blue, dilute, sexLinked);
-                    results.push(phenotypeName);
-                });
-            });
-        });
-        return results;
-    }
-
-    function translateToPhenotype(blue, dilute, sexLinked) {
-        let description = [];
-        if (blue.includes("Blue") || blue.includes("BY")) description.push("บลูซีรีส์");
-        if (dilute.includes("Dl")) description.push("ไดลูท");
-        let sexLinkedStr = sexLinked.join(" / ");
-        return `ลักษณะ: [${description.join(" + ") || 'ปกติ'}] | ยีนเพศ/สปิท: (${sexLinkedStr})`;
-    }
-
-    function getUniqueResults(array) {
-        return [...new Set(array)];
-    }
-
-    // แปลงข้อมูลนกในระบบให้เข้ากับฟังก์ชันคำนวณ Conure Genetics
-    window.runConureEngine = (fatherObj, motherObj) => {
-        let fSplits = [fatherObj.split1, fatherObj.split2, fatherObj.split3, fatherObj.split4].filter(Boolean);
-        if(fatherObj.splitColor && fSplits.length === 0) {
-            fSplits = fatherObj.splitColor.split('/').map(s => s.trim());
-        }
-        let mSplits = [motherObj.split1, motherObj.split2, motherObj.split3, motherObj.split4].filter(Boolean);
-        if(motherObj.splitColor && mSplits.length === 0) {
-            mSplits = motherObj.splitColor.split('/').map(s => s.trim());
-        }
-
-        let fBlue = (fatherObj.visualColor || "").includes("B") ? ["Blue"] : ["N"];
-        let mBlue = (motherObj.visualColor || "").includes("B") ? ["Blue"] : ["N"];
-        let fDilute = fSplits.includes("DI") ? ["DI"] : ["N"];
-        let mDilute = mSplits.includes("DI") ? ["DI"] : ["N"];
-        let fSexZ = [fatherObj.visualColor || "N", ...fSplits];
-        let mSexZ = [motherObj.visualColor || "N", ...mSplits];
-
-        let res = calculateConureGenetics(
-            { blueGene: fBlue, diluteGene: fDilute, sexLinkedZ: fSexZ },
-            { blueGene: mBlue, diluteGene: mDilute, sexLinkedZ: mSexZ }
-        );
-
-        return {
-            male: res.males.map(item => `• ♂ ${item}`).join("<br>"),
-            female: res.females.map(item => `• ♀ ${item}`).join("<br>")
-        };
-    };
-
-    // V120 Hybrid Matrix Engine (ยึดตารางมาตรฐานเดิมที่มีอยู่แล้วอย่างเคร่งครัด หากไม่มีค่อยวิ่งเข้าฟังก์ชันคำนวณ)
+    // --- ฐานข้อมูลตารางมาตรฐานจากคู่มือเอกสารทั้งหมด (V121 Standard Matrix Master) ---
     window.computeFullCombinationsGenetics = (fatherObj, motherObj) => {
       let fColor = (fatherObj.visualColor || "N").trim();
       let fSplits = [fatherObj.split1, fatherObj.split2, fatherObj.split3, fatherObj.split4].filter(Boolean);
@@ -292,40 +187,118 @@
       }
 
       let mColor = (motherObj.visualColor || "N").trim();
-      let fKeyPart = fSplits.length > 0 ? fSplits.sort().join('') : "";
+      let fKeyPart = fSplits.length > 0 ? fSplits.sort().join(',') : "";
       let key = `${fColor}_${fKeyPart}_${mColor}`;
       let simpleKey = `${fColor}_${mColor}`;
 
-      // ตารางมาตรฐานเดิม (ห้ามแก้ไขข้อมูลที่มีอยู่แล้วตามที่คุณสั่ง)
+      // บรรจุตารางมาตรฐานตามคู่มือภาพถ่ายทั้งหมด
       const universalMatrix = {
-        "P__P": { 
-          male: "• ♂ พายแอปเปิล (P)", 
-          female: "• ♀ พายแอปเปิล (P)" 
-        },
-        "Y_C_P": { 
-          male: "• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)<br>• ♂ พายแอปเปิล (P)<br>• ♂ เยลโลว์ไซด์ (Y)<br>• ♂ ชินนามอน / เยลโลว์ไซด์ (C/Y)", 
-          female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)<br>• ♀ พายแอปเปิล (P)" 
-        },
+        // --- 1. สายกรีน (Green Series Table) ---
+        // แม่ N (นอมอล)
         "N__N": { male: "• ♂ นอมอล (N)", female: "• ♀ นอมอล (N)" },
+        "N_C_N": { male: "• ♂ นอมอล / ชินนามอน (N/C)", female: "• ♀ นอมอล (N)<br>• ♀ ชินนามอน (C)" },
+        "N_Y_N": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)", female: "• ♀ นอมอล (N)<br>• ♀ เยลโลว์ไซด์ (Y)" },
+        "N_C,Y_N": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)<br>• ♂ นอมอล / ชินนามอน (N/C)<br>• ♂ นอมอล / พายแอปเปิล (N/P)<br>• ♂ นอมอล (N)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)<br>• ♀ พายแอปเปิล (P)<br>• ♀ นอมอล (N)" },
+        "Y__N": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)", female: "• ♀ เยลโลว์ไซด์ (Y)" },
+        "Y_C_N": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)<br>• ♂ นอมอล / พายแอปเปิล (N/P)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ พายแอปเปิล (P)" },
+        "C__N": { male: "• ♂ นอมอล / ชินนามอน (N/C)", female: "• ♀ ชินนามอน (C)" },
+        "C,Y__N": { male: "• ♂ นอมอล / ชินนามอน (N/C)<br>• ♂ นอมอล / พายแอปเปิล (N/P)", female: "• ♀ ชินนามอน (C)<br>• ♀ พายแอปเปิล (P)" },
+        "P__N": { male: "• ♂ นอมอล / พายแอปเปิล (N/P)", female: "• ♀ พายแอปเปิล (P)" },
+        "N_P_N": { male: "• ♂ นอมอล (N)<br>• ♂ นอมอล / พายแอปเปิล (N/P)<br>• ♂ นอมอล / ชินนามอน (N/C)<br>• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)", female: "• ♀ นอมอล (N)<br>• ♀ พายแอปเปิล (P)<br>• ♀ ชินนามอน (C)<br>• ♀ เยลโลว์ไซด์ (Y)" },
+
+        // แม่ C (ชินนามอน)
         "N__C": { male: "• ♂ นอมอล / ชินนามอน (N/C)", female: "• ♀ ชินนามอน (C)" },
+        "N_C_C": { male: "• ♂ นอมอล / ชินนามอน (N/C)<br>• ♂ ชินนามอน (C)", female: "• ♀ ชินนามอน (C)" },
+        "N_Y_C": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)<br>• ♂ นอมอล / ชินนามอน / เยลโลว์ไซด์ (N/C/Y)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)" },
+        "N_C,Y_C": { male: "• ♂ ชินนามอน (C)<br>• ♂ นอมอล / เยลโลว์ไซด์ / ชินนามอน (N/Y/C)<br>• ♂ ชินนามอน / เยลโลว์ไซด์ (C/Y)<br>• ♂ นอมอล / ชินนามอน (N/C)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)<br>• ♀ พายแอปเปิล (P)<br>• ♀ นอมอล (N)" },
+        "Y__C": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)", female: "• ♀ เยลโลว์ไซด์ (Y)" },
+        "Y_C_C": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)<br>• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)" },
+        "C__C": { male: "• ♂ ชินนามอน (C)", female: "• ♀ ชินนามอน (C)" },
+        "C,Y__C": { male: "• ♂ ชินนามอน (C)<br>• ♂ ชินนามอน / เยลโลว์ไซด์ (C/Y)", female: "• ♀ ชินนามอน (C)<br>• ♀ พายแอปเปิล (P)" },
+        "P__C": { male: "• ♂ ชินนามอน / เยลโลว์ไซด์ (C/Y)", female: "• ♀ พายแอปเปิล (P)" },
+        "N_P_C": { male: "• ♂ นอมอล (N)<br>• ♂ นอมอล / พายแอปเปิล (N/P)<br>• ♂ นอมอล / ชินนามอน (N/C)<br>• ♂ นอมอล / เยลโลว์ไซด์ / ชินนามอน (N/Y/C)", female: "• ♀ นอมอล (N)<br>• ♀ พายแอปเปิล (P)<br>• ♀ ชินนามอน (C)<br>• ♀ เยลโลว์ไซด์ (Y)" },
+
+        // แม่ Y (เยลโลว์ไซด์)
         "N__Y": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)", female: "• ♀ เยลโลว์ไซด์ (Y)" },
+        "N_C_Y": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)<br>• ♂ นอมอล / เยลโลว์ไซด์ / ชินนามอน (N/Y/C)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)" },
+        "N_Y_Y": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)<br>• ♂ เยลโลว์ไซด์ (Y)", female: "• ♀ เยลโลว์ไซด์ (Y)" },
+        "N_C,Y_Y": { male: "• ♂ เยลโลว์ไซด์ (Y)<br>• ♂ นอมอล / เยลโลว์ไซด์ / ชินนามอน (N/Y/C)<br>• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)<br>• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)<br>• ♀ พายแอปเปิล (P)<br>• ♀ นอมอล (N)" },
+        "Y__Y": { male: "• ♂ เยลโลว์ไซด์ (Y)", female: "• ♀ เยลโลว์ไซด์ (Y)" },
+        "Y_C_Y": { male: "• ♂ เยลโลว์ไซด์ (Y)<br>• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)" },
+        "C__Y": { male: "• ♂ เยลโลว์ไซด์ (Y)", female: "• ♀ เยลโลว์ไซด์ (Y)" },
+        "C,Y__Y": { male: "• ♂ เยลโลว์ไซด์ (Y)<br>• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ พายแอปเปิล (P)" },
+        "P__Y": { male: "• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)", female: "• ♀ พายแอปเปิล (P)" },
+        "N_P_Y": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)<br>• ♂ นอมอล / เยลโลว์ไซด์ / ชินนามอน (N/Y/C)<br>• ♂ เยลโลว์ไซด์ (Y)<br>• ♂ นอมอล / เยลโลว์ไซด์ / ชินนามอน (N/Y/C)", female: "• ♀ นอมอล (N)<br>• ♀ พายแอปเปิล (P)<br>• ♀ ชินนามอน (C)<br>• ♀ เยลโลว์ไซด์ (Y)" },
+
+        // แม่ P (พายแอปเปิล)
         "N__P": { male: "• ♂ นอมอล / พายแอปเปิล (N/P)", female: "• ♀ พายแอปเปิล (P)" },
+        "N_C_P": { male: "• ♂ นอมอล / เยลโลว์ไซด์ / ชินนามอน (N/Y/C)<br>• ♂ พายแอปเปิล (P)<br>• ♂ เยลโลว์ไซด์ (Y)<br>• ♂ ชินนามอน / เยลโลว์ไซด์ (C/Y)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)<br>• ♀ พายแอปเปิล (P)" },
+        "N_Y_P": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)<br>• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)<br>• ♂ พายแอปเปิล (P)<br>• ♂ เยลโลว์ไซด์ (Y)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)<br>• ♀ พายแอปเปิล (P)" },
+        "N_C,Y_P": { male: "• ♂ ชินนามอน / เยลโลว์ไซด์ (C/Y)<br>• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)<br>• ♂ พายแอปเปิล (P)<br>• ♂ นอมอล / เยลโลว์ไซด์ / ชินนามอน (N/Y/C)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)<br>• ♀ พายแอปเปิล (P)<br>• ♀ นอมอล (N)" },
+        "Y__P": { male: "• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)", female: "• ♀ พายแอปเปิล (P)" },
+        "Y_C_P": { male: "• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)<br>• ♂ พายแอปเปิล (P)", female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)" },
+        "C__P": { male: "• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)", female: "• ♀ พายแอปเปิล (P)" },
+        "C,Y__P": { male: "• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)<br>• ♂ พายแอปเปิล (P)", female: "• ♀ พายแอปเปิล (P)" },
+        "P__P": { male: "• ♂ พายแอปเปิล (P)", female: "• ♀ พายแอปเปิล (P)" },
+        "N_P_P": { male: "• ♂ นอมอล / พายแอปเปิล (N/P)<br>• ♂ พายแอปเปิล (P)<br>• ♂ ชินนามอน / เยลโลว์ไซด์ (C/Y)<br>• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)", female: "• ♀ นอมอล (N)<br>• ♀ พายแอปเปิล (P)<br>• ♀ ชินนามอน (C)<br>• ♀ เยลโลว์ไซด์ (Y)" },
+
+        // --- 2. สายบลู (Blue Series Table) ---
         "BN_BN": { male: "• ♂ บลูนอมอล (BN)", female: "• ♀ บลูนอมอล (BN)" },
-        "BC_BC": { male: "• ♂ บลูชินนามอน (BC)", female: "• ♀ บลูชินนามอน (BC)" },
-        "BY_BY": { male: "• ♂ บลูเยลโลว์ไซด์ (BY)", female: "• ♀ บลูเยลโลว์ไซด์ (BY)" },
-        "BP_BP": { male: "• ♂ บลูพายแอปเปิล (BP)", female: "• ♀ บลูพายแอปเปิล (BP)" },
-        "BC_BNDI": {
-          male: "• ♂ บลูชินนามอน ไดลูท / เยลโลว์ไซด์ (BCDI / Y)<br>• ♂ บลูชินนามอน / เยลโลว์ไซด์ ไดลูท (BC / YDI)<br>• ♂ บลูชินนามอนไดลูท (BCDI)<br>• ♂ บลูชินนามอน / ไดลูท (BC / DI)",
-          female: "• ♀ บลูชินนามอน ไดลูท<br>• ♀ บลูชินนามอน / ไดลูท<br>• ♀ บลูชินนามอนเยลโลว์ไซด์ ไดลูท"
-        }
+        "BN_C_BN": { male: "• ♂ บลูนอมอล / ชินนามอน (BN/C)", female: "• ♀ บลูนอมอล (BN)<br>• ♀ บลูชินนามอน (BC)" },
+        "BN_Y_BN": { male: "• ♂ บลูนอมอล / เยลโลว์ไซด์ (BN/Y)", female: "• ♀ บลูนอมอล (BN)<br>• ♀ บลูเยลโลว์ไซด์ (BY)" },
+        "BN_C,Y_BN": { male: "• ♂ บลูนอมอล / ชินนามอน (BN/C)<br>• ♂ บลูนอมอล / เยลโลว์ไซด์ (BN/Y)<br>• ♂ บลูนอมอล / พายแอปเปิล (BN/BP)<br>• ♂ บลูนอมอล (BN)", female: "• ♀ บลูชินนามอน (BC)<br>• ♀ บลูเยลโลว์ไซด์ (BY)<br>• ♀ บลูพายแอปเปิล (BP)<br>• ♀ บลูนอมอล (BN)" },
+        "BC__BN": { male: "• ♂ บลูนอมอล / ชินนามอน (BN/C)", female: "• ♀ บลูชินนามอน (BC)" },
+        "BC,Y__BN": { male: "• ♂ บลูนอมอล / ชินนามอน (BN/C)<br>• ♂ บลูนอมอล / พายแอปเปิล (BN/BP)", female: "• ♀ บลูชินนามอน (BC)<br>• ♀ บลูพายแอปเปิล (BP)" },
+        "BY__BN": { male: "• ♂ บลูนอมอล / เยลโลว์ไซด์ (BN/Y)", female: "• ♀ บลูเยลโลว์ไซด์ (BY)" },
+        "BY,C__BN": { male: "• ♂ บลูนอมอล / เยลโลว์ไซด์ (BN/Y)<br>• ♂ บลูนอมอล / พายแอปเปิล (BN/BP)", female: "• ♀ บลูเยลโลว์ไซด์ (BY)<br>• ♀ บลูพายแอปเปิล (BP)" },
+        "BP__BN": { male: "• ♂ บลูนอมอล / พายแอปเปิล (BN/BP)", female: "• ♀ บลูพายแอปเปิล (BP)" },
+
+        "BN_BC": { male: "• ♂ บลูนอมอล / ชินนามอน (BN/C)", female: "• ♀ บลูชินนามอน (BC)" },
+        "BN_C_BC": { male: "• ♂ บลูนอมอล / ชินนามอน (BN/C)<br>• ♂ บลูชินนามอน (BC)", female: "• ♀ บลูชินนามอน (BC)" },
+        "BN_Y_BC": { male: "• ♂ บลูนอมอล / เยลโลว์ไซด์ (BN/Y)<br>• ♂ บลูนอมอล / เยลโลว์ไซด์ / ชินนามอน (BN/Y/C)", female: "• ♀ บลูเยลโลว์ไซด์ (BY)<br>• ♀ บลูชินนามอน (BC)" },
+        "BN_C,Y_BC": { male: "• ♂ บลูชินนามอน (BC)<br>• ♂ บลูนอมอล / เยลโลว์ไซด์ / ชินนามอน (BN/Y/C)<br>• ♂ บลูชินนามอน / เยลโลว์ไซด์ (BC/Y)<br>• ♂ บลูนอมอล / ชินนามอน (BN/C)", female: "• ♀ บลูชินนามอน (BC)<br>• ♀ บลูเยลโลว์ไซด์ (BY)<br>• ♀ บลูพายแอปเปิล (BP)<br>• ♀ บลูนอมอล (BN)" },
+        "BC__BC": { male: "• ♂ บลูชินนามอน (BC)", female: "• ♀ บลูชินนามอน (BC)" },
+        "BC,Y__BC": { male: "• ♂ บลูชินนามอน (BC)<br>• ♂ บลูชินนามอน / เยลโลว์ไซด์ (BC/Y)", female: "• ♀ บลูชินนามอน (BC)<br>• ♀ บลูพายแอปเปิล (BP)" },
+        "BY__BC": { male: "• ♂ บลูนอมอล / เยลโลว์ไซด์ (BN/Y)", female: "• ♀ บลูเยลโลว์ไซด์ (BY)" },
+        "BY,C__BC": { male: "• ♂ บลูนอมอล / เยลโลว์ไซด์ (BN/Y)<br>• ♂ บลูชินนามอน / เยลโลว์ไซด์ (BC/Y)", female: "• ♀ บลูเยลโลว์ไซด์ (BY)<br>• ♀ บลูพายแอปเปิล (BP)" },
+        "BP__BC": { male: "• ♂ บลูชินนามอน / เยลโลว์ไซด์ (BC/Y)", female: "• ♀ บลูพายแอปเปิล (BP)" },
+
+        "BN_BY": { male: "• ♂ บลูนอมอล / เยลโลว์ไซด์ (BN/Y)", female: "• ♀ บลูเยลโลว์ไซด์ (BY)" },
+        "BN_C_BY": { male: "• ♂ บลูนอมอล / เยลโลว์ไซด์ (BN/Y)<br>• ♂ บลูนอมอล / เยลโลว์ไซด์ / ชินนามอน (BN/Y/C)", female: "• ♀ บลูเยลโลว์ไซด์ (BY)<br>• ♀ บลูชินนามอน (BC)" },
+        "BN_Y_BY": { male: "• ♂ บลูนอมอล / เยลโลว์ไซด์ (BN/Y)<br>• ♂ บลูเยลโลว์ไซด์ (BY)", female: "• ♀ บลูเยลโลว์ไซด์ (BY)" },
+        "BN_C,Y_BY": { male: "• ♂ บลูเยลโลว์ไซด์ (BY)<br>• ♂ บลูนอมอล / เยลโลว์ไซด์ / ชินนามอน (BN/Y/C)<br>• ♂ บลูเยลโลว์ไซด์ / ชินนามอน (BY/C)<br>• ♂ บลูนอมอล / เยลโลว์ไซด์ (BN/Y)", female: "• ♀ บลูชินนามอน (BC)<br>• ♀ บลูเยลโลว์ไซด์ (BY)<br>• ♀ บลูพายแอปเปิล (BP)<br>• ♀ บลูนอมอล (BN)" },
+        "BC__BY": { male: "• ♂ บลูชินนามอน (BC)", female: "• ♀ บลูชินนามอน (BC)" },
+        "BC,Y__BY": { male: "• ♂ บลูชินนามอน / เยลโลว์ไซด์ (BC/Y)", female: "• ♀ บลูพายแอปเปิล (BP)" },
+        "BY__BY": { male: "• ♂ บลูเยลโลว์ไซด์ (BY)", female: "• ♀ บลูเยลโลว์ไซด์ (BY)" },
+        "BY,C__BY": { male: "• ♂ บลูเยลโลว์ไซด์ (BY)<br>• ♂ บลูเยลโลว์ไซด์ / ชินนามอน (BY/C)", female: "• ♀ บลูเยลโลว์ไซด์ (BY)<br>• ♀ บลูพายแอปเปิล (BP)" },
+        "BP__BY": { male: "• ♂ บลูเยลโลว์ไซด์ / ชินนามอน (BY/C)", female: "• ♀ บลูพายแอปเปิล (BP)" },
+
+        "BN_BP": { male: "• ♂ บลูนอมอล / พายแอปเปิล (BN/BP)", female: "• ♀ บลูพายแอปเปิล (BP)" },
+        "BN_C_BP": { male: "• ♂ บลูนอมอล / เยลโลว์ไซด์ / ชินนามอน (BN/Y/C)<br>• ♂ บลูพายแอปเปิล (BP)<br>• ♂ บลูเยลโลว์ไซด์ (BY)<br>• ♂ บลูชินนามอน / เยลโลว์ไซด์ (BC/Y)", female: "• ♀ บลูชินนามอน (BC)<br>• ♀ บลูเยลโลว์ไซด์ (BY)<br>• ♀ บลูพายแอปเปิล (BP)" },
+        "BN_Y_BP": { male: "• ♂ บลูนอมอล / เยลโลว์ไซด์ (BN/Y)<br>• ♂ บลูเยลโลว์ไซด์ / ชินนามอน (BY/C)<br>• ♂ บลูพายแอปเปิล (BP)<br>• ♂ บลูเยลโลว์ไซด์ (BY)", female: "• ♀ บลูชินนามอน (BC)<br>• ♀ บลูเยลโลว์ไซด์ (BY)<br>• ♀ บลูพายแอปเปิล (BP)" },
+        "BN_C,Y_BP": { male: "• ♂ บลูชินนามอน / เยลโลว์ไซด์ (BC/Y)<br>• ♂ บลูเยลโลว์ไซด์ / ชินนามอน (BY/C)<br>• ♂ บลูพายแอปเปิล (BP)<br>• ♂ บลูนอมอล / เยลโลว์ไซด์ / ชินนามอน (BN/Y/C)", female: "• ♀ บลูชินนามอน (BC)<br>• ♀ บลูเยลโลว์ไซด์ (BY)<br>• ♀ บลูพายแอปเปิล (BP)<br>• ♀ บลูนอมอล (BN)" },
+        "BC__BP": { male: "• ♂ บลูชินนามอน / เยลโลว์ไซด์ (BC/Y)", female: "• ♀ บลูพายแอปเปิล (BP)" },
+        "BC,Y__BP": { male: "• ♂ บลูชินนามอน / เยลโลว์ไซด์ (BC/Y)<br>• ♂ บลูพายแอปเปิล (BP)", female: "• ♀ บลูชินนามอน (BC)<br>• ♀ บลูเยลโลว์ไซด์ (BY)" },
+        "BY__BP": { male: "• ♂ บลูเยลโลว์ไซด์ / ชินนามอน (BY/C)", female: "• ♀ บลูพายแอปเปิล (BP)" },
+        "BY,C__BP": { male: "• ♂ บลูเยลโลว์ไซด์ / ชินนามอน (BY/C)<br>• ♂ บลูพายแอปเปิล (BP)", female: "• ♀ บลูพายแอปเปิล (BP)" },
+        "BP__BP": { male: "• ♂ บลูพายแอปเปิล (BP)", female: "• ♀ บลูพายแอปเปิล (BP)" },
+
+        // --- 3. สายไดลูท / มูนชีค (Dilute Series Table) ---
+        "BND_BND": { male: "• ♂ บลูนอมอลไดลูท (BND)", female: "• ♀ บลูนอมอลไดลูท (BND)" },
+        "BCD_BND": { male: "• ♂ บลูชินนามอนไดลูท / เยลโลว์ไซด์ (BCD/Y)", female: "• ♀ บลูชินนามอนไดลูท (BCD)" },
+        "BYD_BND": { male: "• ♂ บลูเยลโลว์ไซด์ไดลูท (BYD)", female: "• ♀ บลูเยลโลว์ไซด์ไดลูท (BYD)" },
+        "BPD_BND": { male: "• ♂ บลูพายแอปเปิลไดลูท / ชินนามอน (BPD/C)", female: "• ♀ บลูพายแอปเปิลไดลูท (BPD)" },
+        "BPD_BCD": { male: "• ♂ บลูพายแอปเปิลไดลูท (BPD)", female: "• ♀ บลูพายแอปเปิลไดลูท (BPD)" }
       };
 
-      // 1. ถ้ามีในตารางมาตรฐาน ให้คืนค่าเดิมทันที
       if (universalMatrix[key]) return universalMatrix[key];
       if (universalMatrix[simpleKey]) return universalMatrix[simpleKey];
 
-      // 2. ถ้าไม่มีในตารางมาตรฐาน ให้ใช้ฟังก์ชันคำนวณ Conure Genetics ที่คุณส่งมาประมวลผล
-      return window.runConureEngine(fatherObj, motherObj);
+      // หากไม่มีในตารางมาตรฐาน ให้แสดงสถานะแจ้งเตือนเพื่อบันทึกเพิ่ม
+      return {
+        male: "• ♂ (ยังไม่มีข้อมูลในตารางมาตรฐาน - สามารถกดแก้ไขผลลัพธ์เพื่อเพิ่มได้)",
+        female: "• ♀ (ยังไม่มีข้อมูลในตารางมาตรฐาน - สามารถกดแก้ไขผลลัพธ์เพื่อเพิ่มได้)"
+      };
     };
 
     window.renderPairGeneticsBox = (pair, fatherObj, motherObj) => {
@@ -353,7 +326,7 @@
       return `
         <div class="mt-2.5 p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลตารางพันธุศาสตร์ (V120):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลตารางพันธุศาสตร์ (V121):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -1106,7 +1079,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลตารางพันธุศาสตร์ (V120):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลตารางพันธุศาสตร์ (V121):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1185,7 +1158,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v120</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v121</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
