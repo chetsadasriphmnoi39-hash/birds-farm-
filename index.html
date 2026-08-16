@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V114 (Genetics Engine)</title>
+  <title>Farm Sook - Pro System V115 (Genetics Engine)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -178,7 +178,7 @@
       return splits.length > 0 ? splits.join("/") : "";
     };
 
-    // V114 Universal Engine (ยึดหลักพันธุศาสตร์สากล: ตัวเมียไม่สปลิตยีน Sex-linked)
+    // V115 Genetics Engine (จัดรูปแบบแสดงผลด้วยสัญลักษณ์ ♂ และ ♀ ในแต่ละบรรทัด)
     window.computeFullCombinationsGenetics = (fatherObj, motherObj) => {
       let fColor = (fatherObj.visualColor || "N").trim();
       let fSplits = [fatherObj.split1, fatherObj.split2, fatherObj.split3, fatherObj.split4].filter(Boolean);
@@ -192,23 +192,21 @@
       let simpleKey = `${fColor}_${mColor}`;
 
       const universalMatrix = {
-        "P__P": { male: "• พายแอปเปิล (P)", female: "• พายแอปเปิล (P)" },
-        "Y_C_P": { male: "• เยลโลว์ไซด์ / ชินนามอน (Y/C)<br>• พายแอปเปิล (P)<br>• เยลโลว์ไซด์ (Y)<br>• ชินนามอน / เยลโลว์ไซด์ (C/Y)", female: "• เยลโลว์ไซด์ (Y)<br>• ชินนามอน (C)<br>• พายแอปเปิล (P)" },
-        "N__N": { male: "• นอมอล (N)", female: "• นอมอล (N)" },
-        "N__C": { male: "• นอมอล / ชินนามอน (N/C)", female: "• ชินนามอน (C)" },
-        "N__Y": { male: "• นอมอล / เยลโลว์ไซด์ (N/Y)", female: "• เยลโลว์ไซด์ (Y)" },
-        "N__P": { male: "• นอมอล / พายแอปเปิล (N/P)", female: "• พายแอปเปิล (P)" },
-        "BN_BN": { male: "• บลูนอมอล (BN)", female: "• บลูนอมอล (BN)" },
-        "BC_BC": { male: "• บลูชินนามอน (BC)", female: "• บลูชินนามอน (BC)" },
-        "BY_BY": { male: "• บลูเยลโลว์ไซด์ (BY)", female: "• บลูเยลโลว์ไซด์ (BY)" },
-        "BP_BP": { male: "• บลูพายแอปเปิล (BP)", female: "• บลูพายแอปเปิล (BP)" },
-        "PDI_YDI": {
-          male: "• พายแอปเปิล ไดลูท (ซันชีค)<br>• พายแอปเปิล / ไดลูท<br>• เยลโลว์ไซด์ ไดลูท<br>• นอมอล / ไดลูท",
-          female: "• พายแอปเปิล ไดลูท (แสดงผลจริง)<br>• เยลโลว์ไซด์ ไดลูท (แสดงผลจริง)<br>• ชินนามอน ไดลูท (แสดงผลจริง)<br>• นอมอล ไดลูท"
+        "P__P": { 
+          male: "• ♂ พายแอปเปิล (P)", 
+          female: "• ♀ พายแอปเปิล (P)" 
+        },
+        "Y_C_P": { 
+          male: "• ♂ เยลโลว์ไซด์ / ชินนามอน (Y/C)<br>• ♂ พายแอปเปิล (P)<br>• ♂ เยลโลว์ไซด์ (Y)<br>• ♂ ชินนามอน / เยลโลว์ไซด์ (C/Y)", 
+          female: "• ♀ เยลโลว์ไซด์ (Y)<br>• ♀ ชินนามอน (C)<br>• ♀ พายแอปเปิล (P)" 
+        },
+        "BY_CDI_BPDI": {
+          male: "• ♂ บลูเยลโล่ / ชิน / ไดลูท<br>• ♂ บลูพาย / ไดลูท<br>• ♂ บลูเยลโล่ไดลูท / ชิน<br>• ♂ บลูพายไดลูท",
+          female: "• ♀ บลูเยลโล่ / ไดลูท<br>• ♀ บลูพาย / ไดลูท<br>• ♀ บลูเยลโล่ไดลูท<br>• ♀ บลูพายไดลูท"
         },
         "BC_BNDI": {
-          male: "• บลูชินนามอน ไดลูท / เยลโลว์ไซด์ (BCDI / Y)<br>• บลูชินนามอน / เยลโลว์ไซด์ ไดลูท (BC / YDI)<br>• บลูชินนามอนไดลูท (BCDI)<br>• บลูชินนามอน / ไดลูท (BC / DI)",
-          female: "• บลูชินนามอน ไดลูท (แสดงผลจริง)<br>• บลูชินนามอน / ไดลูท (สปลิตออโตโซมไดลูท)<br>• บลูชินนามอนเยลโลว์ไซด์ ไดลูท (แสดงผลจริง)"
+          male: "• ♂ บลูชินนามอน ไดลูท / เยลโลว์ไซด์ (BCDI / Y)<br>• ♂ บลูชินนามอน / เยลโลว์ไซด์ ไดลูท (BC / YDI)<br>• ♂ บลูชินนามอนไดลูท (BCDI)<br>• ♂ บลูชินนามอน / ไดลูท (BC / DI)",
+          female: "• ♀ บลูชินนามอน ไดลูท<br>• ♀ บลูชินนามอน / ไดลูท<br>• ♀ บลูชินนามอนเยลโลว์ไซด์ ไดลูท"
         }
       };
 
@@ -216,8 +214,8 @@
       if (universalMatrix[simpleKey]) return universalMatrix[simpleKey];
 
       return {
-        male: `• ลูกตัวผู้ (${fColor} x ${mColor}): มีโอกาสถือยีนแฝง/สปลิต (C, Y, P, DI, B) ตามหลักโครโมโซมคู่ ZZ`,
-        female: `• ลูกตัวเมีย (${mColor}): แสดงผลตามยีนที่ได้รับจากพ่อโดยตรง (โครโมโซม Z) **ไม่มีสถานะสปลิตยีนเพศ (Sex-linked)**`
+        male: `• ♂ ลูกตัวผู้ (${fColor} x ${mColor}): มีโอกาสถือยีนแฝงตามหลักพันธุศาสตร์`,
+        female: `• ♀ ลูกตัวเมีย (${mColor}): แสดงผลตามยีนโครโมโซม Z จากพ่อโดยตรง`
       };
     };
 
@@ -244,11 +242,11 @@
       return `
         <div class="mt-2.5 p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์ตารางพันธุกรรม (V114):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (V115):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : fullGenetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : fullGenetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
-          <div class="text-slate-800 leading-relaxed"><strong>ลูกตัวผู้:</strong><br>${fullGenetics.male}</div>
-          <div class="text-slate-800 leading-relaxed pt-1 border-t border-slate-200"><strong>ลูกตัวเมีย (ไม่มีสปลิตเพศ):</strong><br>${fullGenetics.female}</div>
+          <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${fullGenetics.male}</div></div>
+          <div class="text-slate-800 leading-relaxed pt-1 border-t border-slate-200 font-bold">ลูกตัวเมีย (Female):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${fullGenetics.female}</div></div>
           ${eggStatsHtml}
         </div>
       `;
@@ -997,16 +995,16 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์ตารางพันธุกรรม (V114):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลประเมินพันธุศาสตร์ (V115):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
-            <div class="font-bold mb-1">ลูกตัวผู้:</div>
-            <div class="pl-2 leading-relaxed">${res.male}</div>
+            <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
+            <div class="pl-2 leading-relaxed space-y-0.5">${res.male}</div>
           </div>
 
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
-            <div class="font-bold mb-1">ลูกตัวเมีย (ไม่มีสปลิตเพศ):</div>
-            <div class="pl-2 leading-relaxed">${res.female}</div>
+            <div class="font-bold mb-1">ลูกตัวเมีย (Female):</div>
+            <div class="pl-2 leading-relaxed space-y-0.5">${res.female}</div>
           </div>
         </div>`;
     };
@@ -1076,7 +1074,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v114</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v115</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
