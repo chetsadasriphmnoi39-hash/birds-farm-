@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V121 (Standard Matrix Master)</title>
+  <title>Farm Sook - Pro System V122 (Sun Conure Auto Support)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -178,8 +178,18 @@
       return splits.length > 0 ? splits.join("/") : "";
     };
 
-    // --- ฐานข้อมูลตารางมาตรฐานจากคู่มือเอกสารทั้งหมด (V121 Standard Matrix Master) ---
+    // --- ฐานข้อมูลตารางมาตรฐาน (V122 รองรับ Sun Conure อัตโนมัติ) ---
     window.computeFullCombinationsGenetics = (fatherObj, motherObj) => {
+      // ตรวจสอบว่าเป็นสายพันธุ์ Sun Conure หรือไม่
+      let fSpecies = (fatherObj.species || "").toLowerCase();
+      let mSpecies = (motherObj.species || "").toLowerCase();
+      if (fSpecies.includes('sun conure') || mSpecies.includes('sun conure')) {
+        return {
+          male: "• ♂ ลักษณะ: [Sun Conure] | สายพันธุ์แท้มาตรฐาน",
+          female: "• ♀ ลักษณะ: [Sun Conure] | สายพันธุ์แท้มาตรฐาน"
+        };
+      }
+
       let fColor = (fatherObj.visualColor || "N").trim();
       let fSplits = [fatherObj.split1, fatherObj.split2, fatherObj.split3, fatherObj.split4].filter(Boolean);
       if(fatherObj.splitColor && fSplits.length === 0) {
@@ -191,10 +201,8 @@
       let key = `${fColor}_${fKeyPart}_${mColor}`;
       let simpleKey = `${fColor}_${mColor}`;
 
-      // บรรจุตารางมาตรฐานตามคู่มือภาพถ่ายทั้งหมด
       const universalMatrix = {
         // --- 1. สายกรีน (Green Series Table) ---
-        // แม่ N (นอมอล)
         "N__N": { male: "• ♂ นอมอล (N)", female: "• ♀ นอมอล (N)" },
         "N_C_N": { male: "• ♂ นอมอล / ชินนามอน (N/C)", female: "• ♀ นอมอล (N)<br>• ♀ ชินนามอน (C)" },
         "N_Y_N": { male: "• ♂ นอมอล / เยลโลว์ไซด์ (N/Y)", female: "• ♀ นอมอล (N)<br>• ♀ เยลโลว์ไซด์ (Y)" },
@@ -294,7 +302,6 @@
       if (universalMatrix[key]) return universalMatrix[key];
       if (universalMatrix[simpleKey]) return universalMatrix[simpleKey];
 
-      // หากไม่มีในตารางมาตรฐาน ให้แสดงสถานะแจ้งเตือนเพื่อบันทึกเพิ่ม
       return {
         male: "• ♂ (ยังไม่มีข้อมูลในตารางมาตรฐาน - สามารถกดแก้ไขผลลัพธ์เพื่อเพิ่มได้)",
         female: "• ♀ (ยังไม่มีข้อมูลในตารางมาตรฐาน - สามารถกดแก้ไขผลลัพธ์เพื่อเพิ่มได้)"
@@ -326,7 +333,7 @@
       return `
         <div class="mt-2.5 p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลตารางพันธุศาสตร์ (V121):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลตารางพันธุศาสตร์ (V122):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -467,8 +474,8 @@
       const pairData = {
         farmName: currentFarm,
         name: pairName || `คู่ ${father.name} x ${mother.name}`,
-        fatherId: father.id, fatherName: father.name, fatherSpecies: father.visualColor || father.species,
-        motherId: mother.id, motherName: mother.name, motherSpecies: mother.visualColor || mother.species,
+        fatherId: father.id, fatherName: father.name, fatherSpecies: father.species || father.visualColor,
+        motherId: mother.id, motherName: mother.name, motherSpecies: mother.species || mother.visualColor,
       };
 
       try {
@@ -846,8 +853,8 @@
         window.renderPairDropdownOptions();
 
         globalPairs.forEach(item => {
-          const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { visualColor: item.fatherSpecies, splitColor: "" };
-          const motherObj = globalBirds.find(b => b.id === item.motherId) || { visualColor: item.motherSpecies, splitColor: "" };
+          const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { species: item.fatherSpecies, visualColor: "N", splitColor: "" };
+          const motherObj = globalBirds.find(b => b.id === item.motherId) || { species: item.motherSpecies, visualColor: "N", splitColor: "" };
           const autoGeneticsHtml = renderPairGeneticsBox(item, fatherObj, motherObj);
 
           if(list) {
@@ -855,7 +862,7 @@
               <div class="p-4 bg-white rounded-3xl border border-rose-100 shadow-xs space-y-2.5 hover:shadow-md transition">
                 <div class="flex justify-between items-center"><div class="font-black text-rose-900 text-sm">❤️ ${item.name}</div>
                 <div class="flex space-x-1"><button onclick='generateCageTag(${JSON.stringify(item)}, "pair")' class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">🏷️ แท็ก</button><button onclick="openEditPair('${item.id}')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">✏️</button><button onclick="deletePair('${item.id}', '${item.name}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">🗑️</button></div></div>
-                <div class="text-slate-600 text-xs space-y-0.5 bg-rose-50/30 p-2.5 rounded-2xl border border-rose-50"><div>♂ พ่อ: <strong class="text-slate-800">${item.fatherName}</strong> (${fatherObj.visualColor || 'N'} - ${mutationNamesTh[fatherObj.visualColor] || ''}) | สปลิต: ${fatherObj.splitColor || 'แท้ (Pure)'}</div><div>♀ แม่: <strong class="text-slate-800">${item.motherName}</strong> (${motherObj.visualColor || 'N'} - ${mutationNamesTh[motherObj.visualColor] || ''}) | สปลิต: ${motherObj.splitColor || 'แท้ (Pure)'}</div></div>
+                <div class="text-slate-600 text-xs space-y-0.5 bg-rose-50/30 p-2.5 rounded-2xl border border-rose-50"><div>♂ พ่อ: <strong class="text-slate-800">${item.fatherName}</strong> (${fatherObj.species || 'Conure'})</div><div>♀ แม่: <strong class="text-slate-800">${item.motherName}</strong> (${motherObj.species || 'Conure'})</div></div>
                 ${autoGeneticsHtml}
               </div>`;
           }
@@ -914,14 +921,14 @@
           if(pairsListContainer) {
             let htmlPairs = "";
             globalPairs.forEach(item => {
-              const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { visualColor: item.fatherSpecies, splitColor: "" };
-              const motherObj = globalBirds.find(b => b.id === item.motherId) || { visualColor: item.motherSpecies, splitColor: "" };
+              const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { species: item.fatherSpecies, visualColor: "N", splitColor: "" };
+              const motherObj = globalBirds.find(b => b.id === item.motherId) || { species: item.motherSpecies, visualColor: "N", splitColor: "" };
               const autoGeneticsHtml = renderPairGeneticsBox(item, fatherObj, motherObj);
               htmlPairs += `
                 <div class="p-4 bg-white rounded-3xl border border-rose-100 shadow-xs space-y-2.5 hover:shadow-md transition">
                   <div class="flex justify-between items-center"><div class="font-black text-rose-900 text-sm">❤️ ${item.name}</div>
                   <div class="flex space-x-1"><button onclick='generateCageTag(${JSON.stringify(item)}, "pair")' class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">🏷️ แท็ก</button><button onclick="openEditPair('${item.id}')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">✏️</button><button onclick="deletePair('${item.id}', '${item.name}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition">🗑️</button></div></div>
-                  <div class="text-slate-600 text-xs space-y-0.5 bg-rose-50/30 p-2.5 rounded-2xl border border-rose-50"><div>♂ พ่อ: <strong class="text-slate-800">${item.fatherName}</strong> (${fatherObj.visualColor || 'N'} - ${mutationNamesTh[fatherObj.visualColor] || ''}) | สปลิต: ${fatherObj.splitColor || 'แท้ (Pure)'}</div><div>♀ แม่: <strong class="text-slate-800">${item.motherName}</strong> (${motherObj.visualColor || 'N'} - ${mutationNamesTh[motherObj.visualColor] || ''}) | สปลิต: ${motherObj.splitColor || 'แท้ (Pure)'}</div></div>
+                  <div class="text-slate-600 text-xs space-y-0.5 bg-rose-50/30 p-2.5 rounded-2xl border border-rose-50"><div>♂ พ่อ: <strong class="text-slate-800">${item.fatherName}</strong> (${fatherObj.species || 'Conure'})</div><div>♀ แม่: <strong class="text-slate-800">${item.motherName}</strong> (${motherObj.species || 'Conure'})</div></div>
                   ${autoGeneticsHtml}
                 </div>`;
             });
@@ -951,7 +958,7 @@
       globalBirds.forEach(item => {
         if (item.status === 'เสียชีวิต') return;
         let vName = mutationNamesTh[item.visualColor] || item.visualColor || item.species;
-        const optionHtml = `<option value="${item.id}">${item.name} (${item.visualColor || ''} - ${vName})</option>`;
+        const optionHtml = `<option value="${item.id}">${item.name} (${item.species || ''} - ${vName})</option>`;
         if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') {
           if (!pairedFatherIds.has(item.id) || item.id === selectedFatherId) {
             pairFatherSelect.innerHTML += optionHtml;
@@ -1001,7 +1008,7 @@
           totalBirdPrice += (item.price || 0);
         }
         let vName = mutationNamesTh[item.visualColor] || item.visualColor || item.species;
-        const option = `<option value="${item.id}">${item.name} (${item.visualColor || ''} - ${vName})${item.status === 'เสียชีวิต' ? ' [เสียชีวิต]' : ''}</option>`;
+        const option = `<option value="${item.id}">${item.name} (${item.species || ''} - ${vName})${item.status === 'เสียชีวิต' ? ' [เสียชีวิต]' : ''}</option>`;
         if (item.gender === 'ผู้' || item.gender === 'ไม่ระบุ') { if(fatherSelect) fatherSelect.innerHTML += option; }
         if (item.gender === 'เมีย' || item.gender === 'ไม่ระบุ') { if(motherSelect) motherSelect.innerHTML += option; }
         if(healthBirdSelect) healthBirdSelect.innerHTML += option;
@@ -1033,7 +1040,7 @@
                   ${priceTag}
                   ${statusBadge}
                 </div>
-                <div class="text-[10px] text-slate-500 truncate">🎨 สีหลัก: <strong>${item.visualColor || 'N'} (${vName})</strong> | 🧬 สปลิต: <strong>${item.splitColor || 'สายพันธุ์แท้ (Pure)'}</strong></div>
+                <div class="text-[10px] text-slate-500 truncate">🦜 สายพันธุ์: <strong>${item.species}</strong> | 🎨 สี: <strong>${vName}</strong></div>
               </div>
             </div>
             <div class="flex space-x-1 shrink-0">
@@ -1079,7 +1086,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลตารางพันธุศาสตร์ (V121):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลตารางพันธุศาสตร์ (V122):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1158,7 +1165,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v121</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v122</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
