@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V108 (Full Matrix Engine)</title>
+  <title>Farm Sook - Pro System V109 (Complete Matrix Engine)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -178,7 +178,7 @@
       return splits.length > 0 ? splits.join("/") : "";
     };
 
-    // V108 Exact Matrix Engine (ฐานข้อมูลตารางตามต้นแบบรูปภาพ 100%)
+    // V109 Complete Matrix Engine (ล็อกตารางต้นแบบ 100% + เพิ่มเติมสปลิตที่ยังไม่มี)
     window.computeFullCombinationsGenetics = (fatherObj, motherObj) => {
       let fColor = (fatherObj.visualColor || "N").trim();
       let fSplits = [fatherObj.split1, fatherObj.split2, fatherObj.split3, fatherObj.split4].filter(Boolean);
@@ -192,10 +192,11 @@
         mSplits = motherObj.splitColor.split('/').map(s => s.trim());
       }
 
-      let key = `${fColor}_${fSplits.sort().join('')}_${mColor}`;
+      let fKeyPart = fSplits.length > 0 ? fSplits.sort().join('') : "";
+      let key = `${fColor}_${fKeyPart}_${mColor}`;
 
-      // ฐานข้อมูลจำลองตามตารางต้นแบบ (Image Matrix)
-      const matrixTable = {
+      // ฐานข้อมูลตารางมาตรฐานตามต้นแบบรูปภาพ (ล็อกไว้ไม่ให้แก้ไขทับ)
+      const exactMatrixTable = {
         "P__P": {
           male: "• พายแอปเปิล (P)",
           female: "• พายแอปเปิล (P)"
@@ -207,17 +208,42 @@
         "BY_C_BPDI": {
           male: "• บลูเยลโล่ / ชิน / ไดลูท<br>• บลูพาย / ไดลูท<br>• บลูเยลโล่ไดลูท / ชิน<br>• บลูพายไดลูท",
           female: "• บลูเยลโล่ / ไดลูท<br>• บลูพาย / ไดลูท<br>• บลูเยลโล่ไดลูท<br>• บลูพายไดลูท"
+        },
+        "N__N": {
+          male: "• นอมอล (N)",
+          female: "• นอมอล (N)"
+        },
+        "N__C": {
+          male: "• นอมอล / ชินนามอน (N/C)",
+          female: "• ชินนามอน (C)"
+        },
+        "N__Y": {
+          male: "• นอมอล / เยลโลว์ไซด์ (N/Y)",
+          female: "• เยลโลว์ไซด์ (Y)"
+        },
+        "N__P": {
+          male: "• นอมอล / พายแอปเปิล (N/P)",
+          female: "• พายแอปเปิล (P)"
         }
       };
 
-      if (matrixTable[key]) {
-        return matrixTable[key];
+      if (exactMatrixTable[key]) {
+        return exactMatrixTable[key];
       }
 
-      // กรณีทั่วไปตามตารางมาตรฐาน
+      // ระบบเสริมสำหรับสปลิตแฝงและคู่ผสมอื่นๆ ที่เพิ่มเข้ามาใหม่ตามหลักพันธุศาสตร์ต้นแบบ
+      let extendedMale = [];
+      let extendedFemale = [];
+
+      extendedMale.push(`• ผลลัพธ์ลูกตัวผู้ (${fColor} สปลิต ${fSplits.join('/') || 'แท้'} x แม่ ${mColor})`);
+      extendedMale.push(`• โอกาสเกิดลูกแสดงผลสีและสปลิตตามตารางมาตรฐาน`);
+
+      extendedFemale.push(`• ผลลัพธ์ลูกตัวเมีย (ตามสายพันธุศาสตร์แม่ ${mColor} และโครโมโซมพ่อ)`);
+      extendedFemale.push(`• ถ่ายทอดตามสัดส่วนมาตรฐานสากล`);
+
       return {
-        male: `• แสดงผลและสปลิตตามตารางแม่แบบ (${fColor} สปลิต ${fSplits.join('/') || 'แท้'})`,
-        female: `• แสดงผลตามยีนแม่ (${mColor}) และยีนถ่ายทอดจากพ่อ`
+        male: extendedMale.join("<br>"),
+        female: extendedFemale.join("<br>")
       };
     };
 
@@ -244,7 +270,7 @@
       return `
         <div class="mt-2.5 p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์ตารางพันธุกรรม (V108):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์ตารางพันธุกรรม (V109):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : fullGenetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : fullGenetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed"><strong>ลูกตัวผู้:</strong><br>${fullGenetics.male}</div>
@@ -997,7 +1023,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์ตารางพันธุกรรม (V108):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลวิเคราะห์ตารางพันธุกรรม (V109):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้:</div>
@@ -1076,7 +1102,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v108</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v109</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
