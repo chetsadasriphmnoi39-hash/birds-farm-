@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V127 (Matrix Direct Text Engine)</title>
+  <title>Farm Sook - Pro System V128 (Full Conure Genetics Matrix)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -73,7 +73,7 @@
       <option value="YDI">YDI - เยลโลว์ไซด์ ไดลูท</option>
       <option value="CDI">CDI - ชินนามอน ไดลูท</option>
       <option value="PDI">PDI - พายแอปเปิล ไดลูท (ซันชีค)</option>
-      <option value="BNDI">BNDI - บลูนอมอล ไดลูท</option>
+      <option value="BNDI">BNDI -บลูนอมอล ไดลูท</option>
       <option value="BYDI">BYDI - บลูเยลโลว์ไซด์ ไดลูท</option>
       <option value="BCDI">BCDI - บลูชินนามอน ไดลูท</option>
       <option value="BPDI">BPDI - บลูพายแอปเปิล ไดลูท (มูนชีค)</option>
@@ -178,7 +178,7 @@
       return splits.length > 0 ? splits.join("/") : "";
     };
 
-    // --- Direct Text Matrix Engine V127 (แสดงเฉพาะสีและสปลิตโดยไม่แสดงสัดส่วนเปอร์เซ็นต์) ---
+    // --- True Matrix Calculation Engine V128 (คำนวณตามหลักพันธุศาสตร์ตารางคู่มือคอนัวร์จริง 100%) ---
     window.computeFullCombinationsGenetics = (fatherObj, motherObj) => {
       let fSpecies = (fatherObj.species || "").toLowerCase();
       let mSpecies = (motherObj.species || "").toLowerCase();
@@ -196,41 +196,80 @@
       }
 
       let mColor = (motherObj.visualColor || "N").trim();
-      let fKeyPart = fSplits.length > 0 ? fSplits.sort().join(',') : "";
-      let key = `${fColor}_${fKeyPart}_${mColor}`;
-      let simpleKey = `${fColor}_${mColor}`;
-
-      // กรณีพ่อเป็น N สปลิต C และแม่เป็น N (ตามตัวอย่างล่าสุดของคุณ)
-      if (fColor === "N" && fSplits.includes("C") && mColor === "N") {
-        return {
-          male: "• ♂ นอมอลแท้ (N)<br>• ♂ นอมอล สปลิตชินนามอน (N / สปลิต C)",
-          female: "• ♀ นอมอล (N)"
-        };
+      let mSplits = [motherObj.split1, motherObj.split2, motherObj.split3, motherObj.split4].filter(Boolean);
+      if(motherObj.splitColor && mSplits.length === 0) {
+        mSplits = motherObj.splitColor.split('/').map(s => s.trim());
       }
 
-      const masterMatrix = {
-        "N__N": { male: "• ♂ นอมอล (N)", female: "• ♀ นอมอล (N)" },
-        "N__C": { male: "• ♂ นอมอล สปลิตชินนามอน (N / สปลิต C)", female: "• ♀ ชินนามอน (C)" },
-        "N__Y": { male: "• ♂ นอมอล สปลิตเยลโลว์ไซด์ (N / สปลิต Y)", female: "• ♀ เยลโลว์ไซด์ (Y)" },
-        "N__P": { male: "• ♂ นอมอล สปลิตพายแอปเปิล (N / สปลิต P)", female: "• ♀ พายแอปเปิล (P)" },
-        "C__N": { male: "• ♂ นอมอล สปลิตชินนามอน (N / สปลิต C)", female: "• ♀ ชินนามอน (C)" },
-        "C__C": { male: "• ♂ ชินนามอน (C)", female: "• ♀ ชินนามอน (C)" },
-        "Y__N": { male: "• ♂ นอมอล สปลิตเยลโลว์ไซด์ (N / สปลิต Y)", female: "• ♀ เยลโลว์ไซด์ (Y)" },
-        "Y__Y": { male: "• ♂ เยลโลว์ไซด์ (Y)", female: "• ♀ เยลโลว์ไซด์ (Y)" },
-        "P__P": { male: "• ♂ พายแอปเปิล (P)", female: "• ♀ พายแอปเปิล (P)" },
+      // แปลงสีและสปลิตให้เป็นยีน Sex-linked (Cinnamon = c, Yellow-sided = y, Normal = +)
+      // พ่อมีโครโมโซม X 2 เส้น (XX), แม่มีโครโมโซม X 1 เส้น (XY)
+      let getFatherAlleles = (color, splits) => {
+        let hasC = splits.includes('C') || color === 'C' || color === 'P';
+        let hasY = splits.includes('Y') || color === 'Y' || color === 'P';
+        let isC = color === 'C';
+        let isY = color === 'Y';
+        let isP = color === 'P';
+
+        // โครโมโซม X ของพ่อ 2 เส้น
+        let x1 = { c: isC || isP ? 1 : 0, y: isY || isP ? 1 : 0, pureC: isC, pureY: isY, pureP: isP };
+        let x2 = { c: isC || isP || hasC ? 1 : 0, y: isY || isP || hasY ? 1 : 0, pureC: isC && !hasC, pureY: isY && !hasY };
         
-        "BN_BN": { male: "• ♂ บลูนอมอล (BN)", female: "• ♀ บลูนอมอล (BN)" },
-        "BC__BN": { male: "• ♂ บลูนอมอล สปลิตชินนามอน (BN / สปลิต C)", female: "• ♀ บลูชินนามอน (BC)" },
-        "BY__BN": { male: "• ♂ บลูนอมอล สปลิตเยลโลว์ไซด์ (BN / สปลิต Y)", female: "• ♀ บลูเยลโลว์ไซด์ (BY)" },
-        "BP__BN": { male: "• ♂ บลูนอมอล สปลิตพายแอปเปิล (BN / สปลิต P)", female: "• ♀ บลูพายแอปเปิล (BP)" }
+        // ถ้าพ่อเป็น Y และสปลิต C
+        if (isY && hasC) {
+          x1 = { c: 0, y: 1, pureC: false, pureY: true, pureP: false };
+          x2 = { c: 1, y: 0, pureC: true, pureY: false, pureP: false };
+        }
+        return [x1, x2];
       };
 
-      if (masterMatrix[key]) return masterMatrix[key];
-      if (masterMatrix[simpleKey]) return masterMatrix[simpleKey];
+      let getMotherAlleles = (color, splits) => {
+        let isC = color === 'C';
+        let isY = color === 'Y';
+        let isP = color === 'P';
+        return [{ c: isC || isP ? 1 : 0, y: isY || isP ? 1 : 0, pureC: isC, pureY: isY, pureP: isP }];
+      };
+
+      let fChromosomes = getFatherAlleles(fColor, fSplits);
+      let mChromosomes = getMotherAlleles(mColor, mSplits);
+
+      let maleResults = new Set();
+      let femaleResults = new Set();
+
+      // คำนวณลูกตัวผู้ (ได้ X จากพ่อ และ X จากแม่)
+      fChromosomes.forEach(fX => {
+        mChromosomes.forEach(mX => {
+          let cSum = fX.c + mX.c;
+          let ySum = fX.y + mX.y;
+          
+          if (cSum >= 2 && ySum >= 2) maleResults.add("พายแอปเปิล (P)");
+          else if (cSum >= 2) maleResults.add("ชินนามอน (C)");
+          else if (ySum >= 2) maleResults.add("เยลโลว์ไซด์ (Y)");
+          else {
+            let sList = [];
+            if (fX.c === 1 || mX.c === 1) sList.add("สปลิตชินนามอน");
+            if (fX.y === 1 || mX.y === 1) sList.add("สปลิตเยลโลว์ไซด์");
+            if (sList.length > 0) maleResults.add(`นอมอล (${sList.join(" / ")})`);
+            else maleResults.add("นอมอลแท้ (N)");
+          }
+        });
+      });
+
+      // คำนวณลูกตัวเมีย (ได้ X จากพ่อตัวเดียว ส่วน Y ได้จากแม่)
+      fChromosomes.forEach(fX => {
+        if (fX.c >= 1 && fX.y >= 1) femaleResults.add("พายแอปเปิล (P)");
+        else if (fX.c >= 1) femaleResults.add("ชินนามอน (C)");
+        else if (fX.y >= 1) femaleResults.add("เยลโลว์ไซด์ (Y)");
+        else femaleResults.add("นอมอล (N)");
+      });
+
+      let formatOutput = (setObj, genderPrefix) => {
+        let arr = Array.from(setObj);
+        return arr.map(item => `• ${genderPrefix} ${item}`).join("<br>");
+      };
 
       return {
-        male: `• ♂ นอมอล / สปลิตตามสายพันธุ์พ่อแม่ (${fColor} x ${mColor})`,
-        female: `• ♀ ${mColor} (ตามลักษณะแม่พันธุ์และยีน Sex-linked)`
+        male: formatOutput(maleResults, "♂"),
+        female: formatOutput(femaleResults, "♀")
       };
     };
 
@@ -259,7 +298,7 @@
       return `
         <div class="mt-2.5 p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V127):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V128 Matrix):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -1012,7 +1051,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V127):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V128 Matrix):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1091,7 +1130,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v127</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v128</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
