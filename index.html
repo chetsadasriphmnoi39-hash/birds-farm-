@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V118 (Full Auto Matrix)</title>
+  <title>Farm Sook - Pro System V119 (Strict Table Matrix)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -178,7 +178,7 @@
       return splits.length > 0 ? splits.join("/") : "";
     };
 
-    // V118 Full Auto Matrix Engine (มีตารางมาตรฐาน และเติมเต็มทุกคู่ผสมอัตโนมัติหากไม่มีในตาราง)
+    // V119 Strict Standard Table Matrix Engine (ยึดตามตารางมาตรฐานเท่านั้น ไม่สร้างข้อมูลนอกตารางเอง)
     window.computeFullCombinationsGenetics = (fatherObj, motherObj) => {
       let fColor = (fatherObj.visualColor || "N").trim();
       let fSplits = [fatherObj.split1, fatherObj.split2, fatherObj.split3, fatherObj.split4].filter(Boolean);
@@ -217,15 +217,7 @@
       if (universalMatrix[key]) return universalMatrix[key];
       if (universalMatrix[simpleKey]) return universalMatrix[simpleKey];
 
-      // Auto-generated fallback for any missing combination
-      let fNameTh = mutationNamesTh[fColor] || fColor;
-      let mNameTh = mutationNamesTh[mColor] || mColor;
-      let splitText = fSplits.length > 0 ? ` (ถือสปลิต: ${fSplits.join('/')})` : "";
-
-      return {
-        male: `• ♂ ลูกตัวผู้ (${fNameTh} x ${mNameTh})${splitText}: มีโอกาสถ่ายทอดลักษณะตามพันธุศาสตร์พ่อแม่`,
-        female: `• ♀ ลูกตัวเมีย (${mNameTh}): แสดงผลสีหลักตามสายพันธุ์แม่และโครโมโซมจากพ่อ`
-      };
+      return null; // ไม่มีในตารางมาตรฐาน
     };
 
     window.renderPairGeneticsBox = (pair, fatherObj, motherObj) => {
@@ -247,14 +239,25 @@
       `;
 
       let genetics = window.computeFullCombinationsGenetics(fatherObj, motherObj);
-      let maleDisplay = pair.customGenetics ? pair.customGenetics.male : genetics.male;
-      let femaleDisplay = pair.customGenetics ? pair.customGenetics.female : genetics.female;
+      let maleDisplay = "";
+      let femaleDisplay = "";
+
+      if (pair.customGenetics) {
+        maleDisplay = pair.customGenetics.male;
+        femaleDisplay = pair.customGenetics.female;
+      } else if (genetics) {
+        maleDisplay = genetics.male;
+        femaleDisplay = genetics.female;
+      } else {
+        maleDisplay = "• ♂ (ยังไม่มีข้อมูลในตารางมาตรฐาน - กรุณากดปุ่มแก้ไขเพื่อเพิ่มข้อมูล)";
+        femaleDisplay = "• ♀ (ยังไม่มีข้อมูลในตารางมาตรฐาน - กรุณากดปุ่มแก้ไขเพื่อเพิ่มข้อมูล)";
+      }
 
       return `
         <div class="mt-2.5 p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลตารางพันธุศาสตร์ (V118):</span></div>
-            <button onclick="openCustomGeneticsModal('${pair.id}', \`${maleDisplay}\`, \`${femaleDisplay}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลตารางพันธุศาสตร์ (V119):</span></div>
+            <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : (genetics ? genetics.male : '')}\`, \`${pair.customGenetics ? pair.customGenetics.female : (genetics ? genetics.female : '')}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ เพิ่ม/แก้ไขข้อมูล</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
           <div class="text-slate-800 leading-relaxed pt-1 border-t border-slate-200 font-bold">ลูกตัวเมีย (Female):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${femaleDisplay}</div></div>
@@ -279,7 +282,7 @@
         await updateDoc(doc(db, "pairs", editingGeneticsPairId), {
           customGenetics: { male: maleVal, female: femaleVal }
         });
-        alert("✅ บันทึกและจดจำผลการผสมพันธุ์คู่นี้เรียบร้อย!");
+        alert("✅ บันทึกและจดจำข้อมูลคู่ผสมนี้เรียบร้อย! (จะแสดงผลอัตโนมัติทุกครั้งที่ใช้คู่นี้)");
         closeModal('modal-custom-genetics');
       } catch (err) { alert("❌ เกิดข้อผิดพลาด: " + err.message); }
     };
@@ -1004,18 +1007,21 @@
 
       let res = window.computeFullCombinationsGenetics({ visualColor: fColor, split1: fS1, split2: fS2, split3: fS3, split4: fS4 }, { visualColor: mColor, split1: mS1, split2: mS2, split3: mS3, split4: mS4 });
 
+      let maleText = res ? res.male : "• ♂ (ไม่มีข้อมูลในตารางมาตรฐาน)";
+      let femaleText = res ? res.female : "• ♀ (ไม่มีข้อมูลในตารางมาตรฐาน)";
+
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลตารางพันธุศาสตร์ (V118):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลตารางพันธุศาสตร์ (V119):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
-            <div class="pl-2 leading-relaxed space-y-0.5">${res.male}</div>
+            <div class="pl-2 leading-relaxed space-y-0.5">${maleText}</div>
           </div>
 
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวเมีย (Female):</div>
-            <div class="pl-2 leading-relaxed space-y-0.5">${res.female}</div>
+            <div class="pl-2 leading-relaxed space-y-0.5">${femaleText}</div>
           </div>
         </div>`;
     };
@@ -1085,7 +1091,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v118</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v119</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
@@ -1184,8 +1190,8 @@
       <button type="button" onclick="closeModal('modal-custom-genetics')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
       <h3 class="font-black text-base text-slate-900 pr-6">🧬 เพิ่ม / แก้ไขข้อมูลผลการผสมพันธุ์</h3>
       <form onsubmit="submitCustomGenetics(event)" class="space-y-3">
-        <div><label class="block text-xs font-bold text-slate-800 mb-1">ลูกตัวผู้ (Male - ขึ้นบรรทัดใหม่ได้)</label><textarea id="custom-gen-male" rows="4" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></textarea></div>
-        <div><label class="block text-xs font-bold text-slate-800 mb-1">ลูกตัวเมีย (Female - ขึ้นบรรทัดใหม่ได้)</label><textarea id="custom-gen-female" rows="4" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></textarea></div>
+        <div><label class="block text-xs font-bold text-slate-800 mb-1">ลูกตัวผู้ (Male - ขึ้นบรรทัดใหม่ได้)</label><textarea id="custom-gen-male" rows="4" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50" placeholder="เช่น • ♂ สี..."></textarea></div>
+        <div><label class="block text-xs font-bold text-slate-800 mb-1">ลูกตัวเมีย (Female - ขึ้นบรรทัดใหม่ได้)</label><textarea id="custom-gen-female" rows="4" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50" placeholder="เช่น • ♀ สี..."></textarea></div>
         <div class="flex space-x-2 pt-2"><button type="button" onclick="closeModal('modal-custom-genetics')" class="w-1/2 border border-slate-200 py-3 rounded-2xl text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 transition">ยกเลิก</button><button type="submit" class="w-1/2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-2xl text-xs font-black shadow-md transition">💾 บันทึกและจดจำ</button></div>
       </form>
     </div>
