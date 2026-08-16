@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V124 (Dynamic Genetic Engine)</title>
+  <title>Farm Sook - Pro System V125 (Fixed Genetic Engine)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -178,7 +178,7 @@
       return splits.length > 0 ? splits.join("/") : "";
     };
 
-    // --- ระบบคำนวณพันธุศาสตร์คอนัวร์ตามหลักสัดส่วนจริง (Dynamic Mendelian Engine) ---
+    // --- ระบบคำนวณพันธุศาสตร์คอนัวร์ (Fixed V125 Dynamic Engine) ---
     window.computeFullCombinationsGenetics = (fatherObj, motherObj) => {
       let fSpecies = (fatherObj.species || "").toLowerCase();
       let mSpecies = (motherObj.species || "").toLowerCase();
@@ -201,16 +201,13 @@
         mSplits = motherObj.splitColor.split('/').map(s => s.trim());
       }
 
-      // ฟังก์ชันถอดรหัสยีน Sex-linked (Cinnamon / Yellow-sided / Pineapple)
-      // ตัวเมียมีโครโมโซม XW (แสดงผลตัวเดียว, ไม่มีสปลิต)
-      // ตัวผู้มีโครโมโซม XX (แสดงผล 1 ตัว หรือ สปลิต 2 ตัว)
       let parseSexLinked = (color, splits, isMale) => {
-        let traits = { cin: 0, ys: 0 }; // 0 = ปกติ, 1 = ยีนกลายพันธุ์
+        let traits = { cin: 0, ys: 0 };
         let hasSplitCin = splits.includes('C') || color.includes('C');
         let hasSplitYs = splits.includes('Y') || color.includes('Y');
         
         if (color.includes('P') || (hasSplitCin && hasSplitYs)) {
-          traits.cin = 1; traits.ys = 1; // พายแอปเปิลเกิดจาก Cinnamon + Yellow-sided
+          traits.cin = 1; traits.ys = 1;
         } else if (color.includes('C') || color.includes('BC')) {
           traits.cin = 1;
         } else if (color.includes('Y') || color.includes('BY')) {
@@ -229,18 +226,15 @@
       let fGen = parseSexLinked(fColor, fSplits, true);
       let mGen = parseSexLinked(mColor, mSplits, false);
 
-      // จำลองการรวมยีนของลูกตัวผู้ (ได้ X จากพ่อ และ X จากแม่)
       let maleOutcomes = {};
-      // จำลองการรวมยีนของลูกตัวเมีย (ได้ X จากพ่อ และ W จากแม่ซึ่งไม่มียีน)
       let femaleOutcomes = {};
 
-      // ประมวลผลลูกตัวผู้
       let fChromosomes = [fGen.alleles1, fGen.alleles2];
-      let mChromosomes = [mGen.alleles1]; // แม่ให้ X ตัวเดียว
+      let mChromosomes = [mGen.alleles1];
 
       fChromosomes.forEach(fX => {
         mChromosomes.forEach(mX => {
-          let cinVal = fX.cin + mX.cin; // ถ้ายีนด้อยมารวมกันจะแสดงผล
+          let cinVal = fX.cin + mX.cin;
           let ysVal = fX.ys + mX.ys;
           
           let name = "นอมอล (N)";
@@ -257,7 +251,6 @@
         });
       });
 
-      // ประมวลผลลูกตัวเมีย
       fChromosomes.forEach(fX => {
         let name = "นอมอล (N)";
         if (fX.cin >= 1 && fX.ys >= 1) name = "พายแอปเปิล (P)";
@@ -269,8 +262,9 @@
 
       let formatResults = (outcomes, genderPrefix) => {
         let total = Object.values(outcomes).reduce((a, b) => a + b, 0);
+        if (total === 0) return `• ${genderPrefix} นอมอล (100%)`;
         let htmlList = [];
-        for (let [trait, count] in Object.entries(outcomes)) {
+        for (let trait in outcomes) {
           let percent = Math.round((outcomes[trait] / total) * 100);
           htmlList.push(`• ${genderPrefix} ${trait} (${percent}%)`);
         }
@@ -308,7 +302,7 @@
       return `
         <div class="mt-2.5 p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลคำนวณพันธุศาสตร์ (V124 Dynamic):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลคำนวณพันธุศาสตร์ (V125 Dynamic):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -1061,7 +1055,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลคำนวณพันธุศาสตร์ (V124 Dynamic):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลคำนวณพันธุศาสตร์ (V125 Dynamic):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1140,7 +1134,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v124</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v125</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
