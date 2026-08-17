@@ -197,13 +197,14 @@
 
       let mColor = (motherObj.visualColor || "N").trim();
 
-      // ตารางแม่บท Sex-Linked Matrix (จำลองการไขว้โครโมโซม X และ W ตามตาราง Punnett Square)
-      // ตัวผู้มี XX, ตัวเมียมี XW โดยยีน Sex-linked ได้แก่ C (Cinnamon), Y (Yellow-sided), P (Pineapple ซึ่งเกิดจาก Y+C)
       let maleResults = [];
       let femaleResults = [];
 
-      // วิเคราะห์ตามคู่ผสมหลักในตาราง Sex-Linked
-      if (fColor === "N" && fSplits.length === 0 && mColor === "N") {
+      // เคสตัวอย่าง: พ่อเยลโล่ว์ไซด์ x แม่นอมอล
+      if (fColor === "Y" && mColor === "N") {
+        maleResults.push("• ♂ นอมอล สปลิตเยลโลว์ไซด์ (N / สปลิต Y)");
+        femaleResults.push("• ♀ เยลโลว์ไซด์ (Yellow-sided)");
+      } else if (fColor === "N" && fSplits.length === 0 && mColor === "N") {
         maleResults.push("• ♂ นอมอลแท้ (N)");
         femaleResults.push("• ♀ นอมอล (N)");
       } else if (fColor === "N" && fSplits.includes("C") && mColor === "N") {
@@ -215,11 +216,7 @@
       } else if (fColor === "C" && mColor === "C") {
         maleResults.push("• ♂ ชินนามอน (C)");
         femaleResults.push("• ♀ ชินนามอน (C)");
-      } else if (fColor === "Y" && mColor === "P") {
-        maleResults.push("• ♂ นอมอล / สปลิตตามตารางมาตรฐาน (Y x P)");
-        femaleResults.push("• ♀ พายแอปเปิล (P)");
       } else {
-        // Fallback ตามตารางมาตรฐานทั่วไป
         maleResults.push(`• ♂ นอมอล / สปลิตตามตารางมาตรฐาน (${fColor} x ${mColor})`);
         femaleResults.push(`• ♀ ${mColor} (ตามตารางมาตรฐาน)`);
       }
@@ -281,7 +278,7 @@
         await updateDoc(doc(db, "pairs", editingGeneticsPairId), {
           customGenetics: { male: maleVal, female: femaleVal }
         });
-        alert("✅ บันทึกและจดจำผลการผสมพันธุ์คู่นี้เรียบร้อย!");
+        alert("✅ บันทึกและจดจำผลการผสมพันธุ์คู่น้อยเรียบร้อย!");
         closeModal('modal-custom-genetics');
       } catch (err) { alert("❌ เกิดข้อผิดพลาด: " + err.message); }
     };
