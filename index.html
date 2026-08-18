@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V140</title>
+  <title>Farm Sook - Pro System V141</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -490,7 +490,7 @@
         </div>
         <div class="p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V140 Engine):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V141 Engine):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -569,7 +569,14 @@
       window.renderEggPairDropdown();
     };
 
-    window.resetHealthForm = () => { editHealthId = null; document.getElementById('form-health').reset(); document.getElementById('title-modal-health').innerHTML = "🩺 บันทึกประวัติสุขภาพ"; document.getElementById('health-date').valueAsDate = new Date(); };
+    window.resetHealthForm = () => { 
+      editHealthId = null; 
+      document.getElementById('form-health').reset(); 
+      document.getElementById('title-modal-health').innerHTML = "🩺 บันทึกประวัติสุขภาพ"; 
+      document.getElementById('health-date').valueAsDate = new Date(); 
+      document.getElementById('health-schedule-type').value = "none";
+    };
+
     window.resetFinanceForm = () => { document.getElementById('form-finance').reset(); document.getElementById('finance-date').valueAsDate = new Date(); };
 
     window.renderEggPairDropdown = (selectedPairId = "") => {
@@ -713,31 +720,67 @@
       const type = document.getElementById('health-type').value;
       const detail = document.getElementById('health-detail').value;
       const medicine = document.getElementById('health-medicine').value;
+      const cost = Number(document.getElementById('health-cost').value) || 0;
+      const notes = document.getElementById('health-notes').value.trim();
       const date = document.getElementById('health-date').value;
-      const isMonthly = document.getElementById('health-monthly').checked;
+      const scheduleType = document.getElementById('health-schedule-type').value;
       const bird = globalBirds.find(b => b.id === birdId);
 
-      let nextDueDate = "";
-      if (isMonthly && date) {
-        let d = new Date(date);
-        d.setDate(d.getDate() + 30);
-        nextDueDate = d.toISOString().split('T')[0];
-      }
+      let baseDate = new Date(date);
+      let recordsToCreate = [];
 
-      const healthData = {
-        farmName: currentFarm,
-        birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
-        type, detail, medicine, date, isMonthly, nextDueDate
-      };
+      if (scheduleType === 'every7days_3months') {
+        // ทุกๆ 7 วัน เป็นเวลา 3 เดือน (ประมาณ 12 ครั้ง)
+        for (let i = 0; i < 12; i++) {
+          let nextD = new Date(baseDate);
+          nextD.setDate(nextD.getDate() + (i * 7));
+          recordsToCreate.push({
+            farmName: currentFarm,
+            birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
+            type, detail, medicine, cost, notes,
+            date: nextD.toISOString().split('T')[0],
+            scheduleLabel: `รอบที่ ${i+1} (ทุก 7 วัน)`
+          });
+        }
+      } else if (scheduleType === 'monthly') {
+        let nextD = new Date(baseDate);
+        nextD.setDate(nextD.getDate() + 30);
+        recordsToCreate.push({
+          farmName: currentFarm,
+          birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
+          type, detail, medicine, cost, notes,
+          date, nextDueDate: nextD.toISOString().split('T')[0],
+          scheduleLabel: 'รายเดือน (30 วัน)'
+        });
+      } else {
+        recordsToCreate.push({
+          farmName: currentFarm,
+          birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
+          type, detail, medicine, cost, notes,
+          date, scheduleLabel: 'ครั้งเดียว'
+        });
+      }
 
       try {
         if (editHealthId) {
-          await updateDoc(doc(db, "health_records", editHealthId), healthData);
+          await updateDoc(doc(db, "health_records", editHealthId), recordsToCreate[0]);
           alert("อัปเดตประวัติสุขภาพเรียบร้อย!");
         } else {
-          healthData.createdAt = new Date().toISOString();
-          await addDoc(collection(db, "health_records"), healthData);
-          alert("บันทึกประวัติสุขภาพรายเดือนเรียบร้อย!");
+          for (let rec of recordsToCreate) {
+            rec.createdAt = new Date().toISOString();
+            await addDoc(collection(db, "health_records"), rec);
+          }
+          if (cost > 0) {
+            await addDoc(collection(db, "finances"), {
+              farmName: currentFarm,
+              type: "จ่าย",
+              detail: `ค่ารักษา/ค่ายา (${type}): ${detail}`,
+              amount: cost,
+              date,
+              createdAt: new Date().toISOString()
+            });
+          }
+          alert(`✅ บันทึกประวัติสุขภาพสำเร็จ (${recordsToCreate.length} รายการตามตารางแจ้งเตือน)!`);
         }
         closeModal('modal-health');
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
@@ -834,8 +877,9 @@
       document.getElementById('health-type').value = health.type || '';
       document.getElementById('health-detail').value = health.detail || '';
       document.getElementById('health-medicine').value = health.medicine || '';
+      document.getElementById('health-cost').value = health.cost || '';
+      document.getElementById('health-notes').value = health.notes || '';
       document.getElementById('health-date').value = health.date || '';
-      document.getElementById('health-monthly').checked = health.isMonthly || false;
       openModal('modal-health');
     };
 
@@ -962,35 +1006,39 @@
         const list = document.getElementById('health-records-list'); 
         if(list) list.innerHTML = ""; 
         let reminderHtml = "";
+        let todayStr = new Date().toISOString().split('T')[0];
 
         snapshot.forEach(docSnap => {
           const item = { id: docSnap.id, ...docSnap.data() }; 
           globalHealth.push(item);
-          let monthlyBadge = item.isMonthly ? `<span class="bg-purple-100 text-purple-700 text-[9px] font-extrabold px-2 py-0.5 rounded-md ml-1">🔄 รายเดือน</span>` : '';
+          let badge = item.scheduleLabel ? `<span class="bg-cyan-100 text-cyan-800 text-[9px] font-extrabold px-2 py-0.5 rounded-md ml-1">📅 ${item.scheduleLabel}</span>` : '';
+          let costTag = item.cost ? `<span class="text-[10px] text-rose-600 font-bold ml-1">(-฿${item.cost.toLocaleString()})</span>` : '';
           
           list.innerHTML += `
             <div class="p-3 bg-slate-50/80 border border-slate-100 rounded-2xl text-xs flex justify-between items-center mb-2 hover:bg-slate-50 transition">
               <div>
-                <div class="font-extrabold text-slate-800 flex items-center space-x-1.5">
+                <div class="font-extrabold text-slate-800 flex items-center space-x-1.5 flex-wrap">
                   <span>🩺 ${item.birdName}</span>
                   <span class="text-[10px] text-slate-400 font-normal">(${item.date})</span>
-                  ${monthlyBadge}
+                  ${badge}
+                  ${costTag}
                 </div>
                 <div class="text-[11px] text-slate-600 mt-0.5">${item.type}: ${item.detail}</div>
-                ${item.medicine ? `<div class="text-[10px] text-emerald-700 font-bold mt-0.5">💊 ${item.medicine}</div>` : ''}
-                ${item.nextDueDate ? `<div class="text-[10px] text-purple-700 font-medium mt-0.5">📅 รอบถัดไป: ${item.nextDueDate}</div>` : ''}
+                ${item.medicine ? `<div class="text-[10px] text-emerald-700 font-bold mt-0.5">💊 ยา: ${item.medicine}</div>` : ''}
+                ${item.notes ? `<div class="text-[10px] text-slate-500 italic mt-0.5">📝 หมายเหตุ: ${item.notes}</div>` : ''}
               </div>
-              <div class="flex space-x-1.5">
+              <div class="flex space-x-1.5 shrink-0">
                 <button onclick="openEditHealth('${item.id}')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 p-1.5 rounded-xl transition">✏️</button>
                 <button onclick="deleteHealth('${item.id}', '${item.detail}')" class="bg-rose-50 hover:bg-rose-100 text-rose-500 p-1.5 rounded-xl transition">🗑️</button>
               </div>
             </div>`;
 
-          if (item.isMonthly && item.nextDueDate) {
+          // แจ้งเตือนรายการที่ถึงกำหนดหรือใกล้ถึง
+          if (item.date && item.date >= todayStr) {
             reminderHtml += `
-              <div class="p-3 bg-purple-50/80 text-purple-900 rounded-2xl border border-purple-200 text-xs flex justify-between items-center shadow-xs">
-                <span>💊 รอบให้ยา <strong>${item.type}</strong> (${item.birdName}): ${item.detail}</span>
-                <span class="text-[10px] bg-purple-200/80 font-bold px-2.5 py-1 rounded-xl">📅 ${item.nextDueDate}</span>
+              <div class="p-3 bg-cyan-50/80 text-cyan-950 rounded-2xl border border-cyan-200 text-xs flex justify-between items-center shadow-xs">
+                <span>🔔 นัดให้ยา/ดูแล <strong>${item.type}</strong> (${item.birdName}): ${item.detail} ${item.scheduleLabel ? `[${item.scheduleLabel}]` : ''}</span>
+                <span class="text-[10px] bg-cyan-200/80 font-bold px-2.5 py-1 rounded-xl">📅 ${item.date}</span>
               </div>`;
           }
         });
@@ -1259,7 +1307,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V140 Engine):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V141 Engine):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1338,7 +1386,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v140</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v141</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
@@ -1371,7 +1419,6 @@
         <div id="reminder-list" class="space-y-1.5"><p class="text-xs text-slate-400 text-center py-1">ไม่มีรายการแจ้งเตือนด่วน</p></div>
       </div>
 
-      <!-- Enhanced Menu Grid -->
       <div class="grid grid-cols-2 gap-3">
         <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="p-4 bg-gradient-to-br from-emerald-600 to-teal-800 text-white rounded-3xl shadow-lg hover:shadow-xl text-left flex items-center justify-between active:scale-95 transition transform hover:-translate-y-0.5">
           <div><div class="text-[10px] text-emerald-200 font-bold uppercase tracking-wider">ทะเบียน</div><div class="font-black text-xs mt-0.5">+ เพิ่มนกใหม่</div></div>
@@ -1404,7 +1451,7 @@
 
       <div class="bg-white p-4 rounded-3xl shadow-xs border border-slate-100 space-y-2 custom-shadow">
         <div class="flex justify-between items-center mb-1">
-          <h3 class="font-black text-slate-800 text-xs">🩺 ประวัติสุขภาพและการให้ยา (รอบรายเดือน)</h3>
+          <h3 class="font-black text-slate-800 text-xs">🩺 ประวัติสุขภาพและการให้ยา (รอบต่อเนื่อง)</h3>
           <button type="button" onclick="resetHealthForm(); openModal('modal-health')" class="text-slate-800 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-2xl text-[10px] font-extrabold border border-slate-200 transition">+ บันทึกยา</button>
         </div>
         <div id="health-records-list" class="space-y-1.5"><p class="text-xs text-slate-400 text-center py-2">ยังไม่มีบันทึกประวัติสุขภาพ</p></div>
@@ -1547,30 +1594,36 @@
   </div>
 
   <div id="modal-health" onclick="closeOnBackdrop(event, 'modal-health')" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
-    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-3.5 relative animate-in">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-3.5 relative max-h-[90vh] overflow-y-auto animate-in">
       <button type="button" onclick="closeModal('modal-health')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
-      <h3 class="font-black text-base text-slate-900 pr-6" id="title-modal-health">🩺 บันทึกประวัติสุขภาพ & ยารายเดือน</h3>
+      <h3 class="font-black text-base text-slate-900 pr-6" id="title-modal-health">🩺 บันทึกประวัติสุขภาพละเอียด</h3>
       <form id="form-health" onsubmit="submitHealthRecord(event)" class="space-y-3">
         <div><label class="block text-xs font-bold text-slate-500 mb-1">เลือกรหัสนก / ฟาร์ม</label><select id="health-bird-select" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></select></div>
         <div>
           <label class="block text-xs font-bold text-slate-500 mb-1">ประเภทการดูแล</label>
           <select id="health-type" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-black text-slate-800 bg-slate-50">
-            <option value="ยาถ่ายพยาธิ">💊 ถ่ายพยาธิ (รอบเดือน)</option>
-            <option value="วิตามินและแคลเซียม">🧪 วิตามิน / แคลเซียม (รอบเดือน)</option>
+            <option value="ยาถ่ายพยาธิ">💊 ถ่ายพยาธิ</option>
+            <option value="วิตามินและแคลเซียม">🧪 วิตามิน / แคลเซียม</option>
             <option value="หยดหลังป้องกันไร/เห็บ">🛡️ หยดหลังป้องกันไร/เห็บ</option>
             <option value="ยารักษาโรคทั่วไป">🏥 ยารักษาโรคทั่วไป</option>
             <option value="ตรวจสุขภาพทั่วไป">🩺 ตรวจสุขภาพทั่วไป</option>
           </select>
         </div>
-        <div><label class="block text-xs font-bold text-slate-500 mb-1">รายละเอียด / อาการ</label><input type="text" id="health-detail" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
-        <div><label class="block text-xs font-bold text-slate-500 mb-1">ชื่อยา / โดสที่ใช้</label><input type="text" id="health-medicine" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
+        <div><label class="block text-xs font-bold text-slate-500 mb-1">รายละเอียด / อาการ</label><input type="text" id="health-detail" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50" placeholder="เช่น ให้ยาป้องกันโรค..."></div>
         <div class="grid grid-cols-2 gap-2.5">
-          <div><label class="block text-xs font-bold text-slate-500 mb-1">วันที่ให้ยา</label><input type="date" id="health-date" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
-          <div class="flex items-center pt-5">
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input type="checkbox" id="health-monthly" checked class="w-4 h-4 text-slate-800 rounded border-slate-300 focus:ring-slate-700">
-              <span class="text-xs font-bold text-slate-800">🔄 แจ้งเตือนซ้ำทุก 30 วัน</span>
-            </label>
+          <div><label class="block text-xs font-bold text-slate-500 mb-1">ชื่อยา / โดสที่ใช้</label><input type="text" id="health-medicine" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50" placeholder="เช่น Ronivet S"></div>
+          <div><label class="block text-xs font-bold text-slate-500 mb-1">ค่าใช้จ่าย (บาท)</label><input type="number" id="health-cost" min="0" placeholder="0" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-bold bg-slate-50"></div>
+        </div>
+        <div><label class="block text-xs font-bold text-slate-500 mb-1">หมายเหตุ / บันทึกย่อ</label><input type="text" id="health-notes" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50" placeholder="เช่น อาการดีขึ้น น้ำหนักทรงตัว"></div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div><label class="block text-xs font-bold text-slate-500 mb-1">วันที่เริ่มให้ยา</label><input type="date" id="health-date" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">รอบแจ้งเตือน</label>
+            <select id="health-schedule-type" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-black text-slate-800 bg-slate-50">
+              <option value="none">📌 ครั้งเดียว (ไม่ทำซ้ำ)</option>
+              <option value="every7days_3months">🔄 ทุก 7 วัน (นาน 3 เดือน)</option>
+              <option value="monthly">🔄 รายเดือน (ทุก 30 วัน)</option>
+            </select>
           </div>
         </div>
         <div class="flex space-x-2 pt-2"><button type="button" onclick="closeModal('modal-health')" class="w-1/2 border border-slate-200 py-3 rounded-2xl text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 transition">ยกเลิก</button><button type="submit" class="w-1/2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-2xl text-xs font-black shadow-md transition">บันทึกประวัติ</button></div>
