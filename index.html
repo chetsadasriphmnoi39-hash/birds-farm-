@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V138 (Mega Full Matrix Engine)</title>
+  <title>Farm Sook - Pro System V139 (Mega Plus Full Matrix Engine)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -53,7 +53,11 @@
       "BNF": "บลูนอมอลแฟลโลว์ (BNF)",
       "BCF": "บลูชินนามอนแฟลโลว์ (BCF)",
       "BYF": "บลูเยลโลว์ไซด์แฟลโลว์ (BYF)",
-      "BPF": "บลูพายแอปเปิลแฟลโลว์ (BPF)"
+      "BPF": "บลูพายแอปเปิลแฟลโลว์ (BPF)",
+      "BND": "บลูนอมอลไดลูท (BND)",
+      "BCD": "บลูชินนามอนไดลูท (BCD)",
+      "BYD": "บลูเยลโลว์ไซด์ไดลูท (BYD)",
+      "BPD": "บลูพายแอปเปิลไดลูท (BPD)"
     };
 
     const mutationsHtml = `
@@ -69,6 +73,10 @@
       <option value="BCF">BCF - บลูชินนามอนแฟลโลว์</option>
       <option value="BYF">BYF - บลูเยลโลว์ไซด์แฟลโลว์</option>
       <option value="BPF">BPF - บลูพายแอปเปิลแฟลโลว์</option>
+      <option value="BND">BND - บลูนอมอลไดลูท</option>
+      <option value="BCD">BCD - บลูชินนามอนไดลูท</option>
+      <option value="BYD">BYD - บลูเยลโลว์ไซด์ไดลูท</option>
+      <option value="BPD">BPD - บลูพายแอปเปิลไดลูท</option>
     `;
 
     const splitsHtml = `
@@ -170,7 +178,7 @@
       return splits.length > 0 ? splits.join("/") : "";
     };
 
-    // --- Mega Full Matrix Punnett Square Engine V138 ---
+    // --- Mega Plus Full Matrix Punnett Square Engine V139 ---
     window.computeFullCombinationsGenetics = (fatherObj, motherObj) => {
       let fSpecies = (fatherObj.species || "").toLowerCase();
       let mSpecies = (motherObj.species || "").toLowerCase();
@@ -189,9 +197,15 @@
 
       let mColor = (motherObj.visualColor || "N").trim();
 
-      // Fallow Series
       let fKey = fColor;
-      if (fColor === "BNF" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "BNF/C";
+      // Dilute Blue Series
+      if (fColor === "BND" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "BND/C";
+      else if (fColor === "BND" && fSplits.includes("Y") && !fSplits.includes("C")) fKey = "BND/Y";
+      else if (fColor === "BND" && (fSplits.length >= 2 || fSplits.includes("P") || (fSplits.includes("C") && fSplits.includes("Y")))) fKey = "BND/C/Y";
+      else if (fColor === "BCD" && (fSplits.includes("Y") || fSplits.includes("P") || fSplits.length > 0)) fKey = "BCD/Y";
+      else if (fColor === "BYD" && (fSplits.includes("C") || fSplits.includes("P") || fSplits.length > 0)) fKey = "BYD/C";
+      // Fallow Series
+      else if (fColor === "BNF" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "BNF/C";
       else if (fColor === "BNF" && fSplits.includes("Y") && !fSplits.includes("C")) fKey = "BNF/Y";
       else if (fColor === "BNF" && (fSplits.length >= 2 || fSplits.includes("P") || (fSplits.includes("C") && fSplits.includes("Y")))) fKey = "BNF/C/Y";
       else if (fColor === "BCF" && (fSplits.includes("Y") || fSplits.includes("P") || fSplits.length > 0)) fKey = "BCF/Y";
@@ -213,8 +227,63 @@
       let maleRes = [];
       let femaleRes = [];
 
+      // --- Dilute Blue Series 36 Pairs ---
+      if (fKey === "BND") {
+        if (mKey === "BND") { maleRes = ["BND"]; femaleRes = ["BND"]; }
+        else if (mKey === "BCD") { maleRes = ["BND/C"]; femaleRes = ["BND"]; }
+        else if (mKey === "BYD") { maleRes = ["BND/Y"]; femaleRes = ["BND"]; }
+        else if (mKey === "BPD") { maleRes = ["BND/C/Y"]; femaleRes = ["BND"]; }
+      }
+      else if (fKey === "BND/C") {
+        if (mKey === "BND") { maleRes = ["BND", "BND/C"]; femaleRes = ["BND", "BCD"]; }
+        else if (mKey === "BCD") { maleRes = ["BND/C", "BCD"]; femaleRes = ["BND", "BCD"]; }
+        else if (mKey === "BYD") { maleRes = ["BND/C", "BND/C/Y"]; femaleRes = ["BND", "BCD"]; }
+        else if (mKey === "BPD") { maleRes = ["BND/C/Y", "BCD/Y"]; femaleRes = ["BND", "BCD"]; }
+      }
+      else if (fKey === "BND/Y") {
+        if (mKey === "BND") { maleRes = ["BND", "BND/Y"]; femaleRes = ["BND", "BYD"]; }
+        else if (mKey === "BCD") { maleRes = ["BND/C", "BND/C/Y"]; femaleRes = ["BND", "BYD"]; }
+        else if (mKey === "BYD") { maleRes = ["BND/Y", "BYD"]; femaleRes = ["BND", "BYD"]; }
+        else if (mKey === "BPD") { maleRes = ["BND/C/Y", "BYD/C"]; femaleRes = ["BND", "BYD"]; }
+      }
+      else if (fKey === "BND/C/Y") {
+        if (mKey === "BND") { maleRes = ["BND", "BND/C", "BND/Y", "BPD"]; femaleRes = ["BND", "BCD", "BYD", "BPD"]; }
+        else if (mKey === "BCD") { maleRes = ["BND/C", "BND/C/Y", "BCD", "BCD/Y"]; femaleRes = ["BND", "BCD", "BYD", "BPD"]; }
+        else if (mKey === "BYD") { maleRes = ["BND/Y", "BND/C/Y", "BYD", "BYD/C"]; femaleRes = ["BND", "BCD", "BYD", "BPD"]; }
+        else if (mKey === "BPD") { maleRes = ["BND/C/Y", "BCD/Y", "BYD/C", "BPD"]; femaleRes = ["BND", "BCD", "BYD", "BPD"]; }
+      }
+      else if (fKey === "BCD") {
+        if (mKey === "BND") { maleRes = ["BND/C"]; femaleRes = ["BCD"]; }
+        else if (mKey === "BCD") { maleRes = ["BCD"]; femaleRes = ["BCD"]; }
+        else if (mKey === "BYD") { maleRes = ["BND/C/Y"]; femaleRes = ["BCD"]; }
+        else if (mKey === "BPD") { maleRes = ["BCD/Y"]; femaleRes = ["BCD"]; }
+      }
+      else if (fKey === "BCD/Y") {
+        if (mKey === "BND") { maleRes = ["BND/C", "BND/C/Y"]; femaleRes = ["BCD", "BPD"]; }
+        else if (mKey === "BCD") { maleRes = ["BCD", "BCD/Y"]; femaleRes = ["BCD", "BPD"]; }
+        else if (mKey === "BYD") { maleRes = ["BND/C/Y", "BYD/C"]; femaleRes = ["BCD", "BPD"]; }
+        else if (mKey === "BPD") { maleRes = ["BCD/Y", "BPD"]; femaleRes = ["BCD", "BPD"]; }
+      }
+      else if (fKey === "BYD") {
+        if (mKey === "BND") { maleRes = ["BND/Y"]; femaleRes = ["BYD"]; }
+        else if (mKey === "BCD") { maleRes = ["BND/C/Y"]; femaleRes = ["BYD"]; }
+        else if (mKey === "BYD") { maleRes = ["BYD"]; femaleRes = ["BYD"]; }
+        else if (mKey === "BPD") { maleRes = ["BYD/C"]; femaleRes = ["BYD"]; }
+      }
+      else if (fKey === "BYD/C") {
+        if (mKey === "BND") { maleRes = ["BND/Y", "BND/C/Y"]; femaleRes = ["BYD", "BPD"]; }
+        else if (mKey === "BCD") { maleRes = ["BND/C/Y", "BCD/Y"]; femaleRes = ["BYD", "BPD"]; }
+        else if (mKey === "BYD") { maleRes = ["BYD", "BYD/C"]; femaleRes = ["BYD", "BPD"]; }
+        else if (mKey === "BPD") { maleRes = ["BYD/C", "BPD"]; femaleRes = ["BYD", "BPD"]; }
+      }
+      else if (fKey === "BPD") {
+        if (mKey === "BND") { maleRes = ["BND/C/Y"]; femaleRes = ["BPD"]; }
+        else if (mKey === "BCD") { maleRes = ["BCD/Y"]; femaleRes = ["BPD"]; }
+        else if (mKey === "BYD") { maleRes = ["BYD/C"]; femaleRes = ["BPD"]; }
+        else if (mKey === "BPD") { maleRes = ["BPD"]; femaleRes = ["BPD"]; }
+      }
       // --- Fallow Series 36 Pairs ---
-      if (fKey === "BNF") {
+      else if (fKey === "BNF") {
         if (mKey === "BNF") { maleRes = ["BNF"]; femaleRes = ["BNF"]; }
         else if (mKey === "BCF") { maleRes = ["BNF/C"]; femaleRes = ["BNF"]; }
         else if (mKey === "BYF") { maleRes = ["BNF/Y"]; femaleRes = ["BNF"]; }
@@ -417,7 +486,7 @@
       return `
         <div class="mt-2.5 p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V138 Mega Engine):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V139 Mega Plus Engine):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -1188,7 +1257,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V138 Mega Engine):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V139 Mega Plus Engine):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1267,7 +1336,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v138</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v139</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
