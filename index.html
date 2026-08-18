@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V137 (Full Blue Series Matrix Engine)</title>
+  <title>Farm Sook - Pro System V138 (Mega Full Matrix Engine)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -49,7 +49,11 @@
       "BN": "บลูนอมอล (Blue Normal)",
       "BC": "บลูชินนามอน (Blue Cinnamon)",
       "BY": "บลูเยลโลว์ไซด์ (Blue Yellow-sided)",
-      "BP": "บลูพายแอปเปิล (Blue Pineapple)"
+      "BP": "บลูพายแอปเปิล (Blue Pineapple)",
+      "BNF": "บลูนอมอลแฟลโลว์ (BNF)",
+      "BCF": "บลูชินนามอนแฟลโลว์ (BCF)",
+      "BYF": "บลูเยลโลว์ไซด์แฟลโลว์ (BYF)",
+      "BPF": "บลูพายแอปเปิลแฟลโลว์ (BPF)"
     };
 
     const mutationsHtml = `
@@ -61,6 +65,10 @@
       <option value="BC">BC - บลูชินนามอน</option>
       <option value="BY">BY - บลูเยลโลว์ไซด์</option>
       <option value="BP">BP - บลูพายแอปเปิล</option>
+      <option value="BNF">BNF - บลูนอมอลแฟลโลว์</option>
+      <option value="BCF">BCF - บลูชินนามอนแฟลโลว์</option>
+      <option value="BYF">BYF - บลูเยลโลว์ไซด์แฟลโลว์</option>
+      <option value="BPF">BPF - บลูพายแอปเปิลแฟลโลว์</option>
     `;
 
     const splitsHtml = `
@@ -162,8 +170,17 @@
       return splits.length > 0 ? splits.join("/") : "";
     };
 
-    // --- Full Blue Series Matrix Punnett Square Engine V137 ---
+    // --- Mega Full Matrix Punnett Square Engine V138 ---
     window.computeFullCombinationsGenetics = (fatherObj, motherObj) => {
+      let fSpecies = (fatherObj.species || "").toLowerCase();
+      let mSpecies = (motherObj.species || "").toLowerCase();
+      if (fSpecies.includes('sun conure') || mSpecies.includes('sun conure')) {
+        return {
+          male: "• ♂ [Sun Conure] สายพันธุ์แท้มาตรฐาน",
+          female: "• ♀ [Sun Conure] สายพันธุ์แท้มาตรฐาน"
+        };
+      }
+
       let fColor = (fatherObj.visualColor || "N").trim();
       let fSplits = [fatherObj.split1, fatherObj.split2, fatherObj.split3, fatherObj.split4].filter(Boolean);
       if(fatherObj.splitColor && fSplits.length === 0) {
@@ -172,83 +189,197 @@
 
       let mColor = (motherObj.visualColor || "N").trim();
 
+      // Fallow Series
       let fKey = fColor;
-      if (fColor === "BN" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "BN/C";
+      if (fColor === "BNF" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "BNF/C";
+      else if (fColor === "BNF" && fSplits.includes("Y") && !fSplits.includes("C")) fKey = "BNF/Y";
+      else if (fColor === "BNF" && (fSplits.length >= 2 || fSplits.includes("P") || (fSplits.includes("C") && fSplits.includes("Y")))) fKey = "BNF/C/Y";
+      else if (fColor === "BCF" && (fSplits.includes("Y") || fSplits.includes("P") || fSplits.length > 0)) fKey = "BCF/Y";
+      else if (fColor === "BYF" && (fSplits.includes("C") || fSplits.includes("P") || fSplits.length > 0)) fKey = "BYF/C";
+      // Blue Series
+      else if (fColor === "BN" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "BN/C";
       else if (fColor === "BN" && fSplits.includes("Y") && !fSplits.includes("C")) fKey = "BN/Y";
       else if (fColor === "BN" && (fSplits.length >= 2 || fSplits.includes("P") || (fSplits.includes("C") && fSplits.includes("Y")))) fKey = "BN/C/Y";
       else if (fColor === "BC" && (fSplits.includes("Y") || fSplits.includes("P") || fSplits.length > 0)) fKey = "BC/Y";
       else if (fColor === "BY" && (fSplits.includes("C") || fSplits.includes("P") || fSplits.length > 0)) fKey = "BY/C";
+      // Normal Green Series
+      else if (fColor === "N" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "N/C";
+      else if (fColor === "N" && fSplits.includes("Y") && !fSplits.includes("C")) fKey = "N/Y";
+      else if (fColor === "N" && (fSplits.includes("Y/C") || (fSplits.includes("Y") && fSplits.includes("C")) || fSplits.includes("P"))) fKey = "N/P";
+      else if (fColor === "Y" && (fSplits.includes("C") || fSplits.includes("P"))) fKey = "Y/C";
+      else if (fColor === "C" && (fSplits.includes("Y") || fSplits.includes("P"))) fKey = "C/Y";
 
       let mKey = mColor;
-
       let maleRes = [];
       let femaleRes = [];
 
-      // 1. กลุ่มพ่อ BN
-      if (fKey === "BN") {
+      // --- Fallow Series 36 Pairs ---
+      if (fKey === "BNF") {
+        if (mKey === "BNF") { maleRes = ["BNF"]; femaleRes = ["BNF"]; }
+        else if (mKey === "BCF") { maleRes = ["BNF/C"]; femaleRes = ["BNF"]; }
+        else if (mKey === "BYF") { maleRes = ["BNF/Y"]; femaleRes = ["BNF"]; }
+        else if (mKey === "BPF") { maleRes = ["BNF/C/Y"]; femaleRes = ["BNF"]; }
+      }
+      else if (fKey === "BNF/C") {
+        if (mKey === "BNF") { maleRes = ["BNF", "BNF/C"]; femaleRes = ["BNF", "BCF"]; }
+        else if (mKey === "BCF") { maleRes = ["BNF/C", "BCF"]; femaleRes = ["BNF", "BCF"]; }
+        else if (mKey === "BYF") { maleRes = ["BNF/C", "BNF/C/Y"]; femaleRes = ["BNF", "BCF"]; }
+        else if (mKey === "BPF") { maleRes = ["BNF/C/Y", "BCF/Y"]; femaleRes = ["BNF", "BCF"]; }
+      }
+      else if (fKey === "BNF/Y") {
+        if (mKey === "BNF") { maleRes = ["BNF", "BNF/Y"]; femaleRes = ["BNF", "BYF"]; }
+        else if (mKey === "BCF") { maleRes = ["BNF/C", "BNF/C/Y"]; femaleRes = ["BNF", "BYF"]; }
+        else if (mKey === "BYF") { maleRes = ["BNF/Y", "BYF"]; femaleRes = ["BNF", "BYF"]; }
+        else if (mKey === "BPF") { maleRes = ["BNF/C/Y", "BYF/C"]; femaleRes = ["BNF", "BYF"]; }
+      }
+      else if (fKey === "BNF/C/Y") {
+        if (mKey === "BNF") { maleRes = ["BNF", "BNF/C", "BNF/Y", "BPF"]; femaleRes = ["BNF", "BCF", "BYF", "BPF"]; }
+        else if (mKey === "BCF") { maleRes = ["BNF/C", "BNF/C/Y", "BCF", "BCF/Y"]; femaleRes = ["BNF", "BCF", "BYF", "BPF"]; }
+        else if (mKey === "BYF") { maleRes = ["BNF/Y", "BNF/C/Y", "BYF", "BYF/C"]; femaleRes = ["BNF", "BCF", "BYF", "BPF"]; }
+        else if (mKey === "BPF") { maleRes = ["BNF/C/Y", "BCF/Y", "BYF/C", "BPF"]; femaleRes = ["BNF", "BCF", "BYF", "BPF"]; }
+      }
+      else if (fKey === "BCF") {
+        if (mKey === "BNF") { maleRes = ["BNF/C"]; femaleRes = ["BCF"]; }
+        else if (mKey === "BCF") { maleRes = ["BCF"]; femaleRes = ["BCF"]; }
+        else if (mKey === "BYF") { maleRes = ["BNF/C/Y"]; femaleRes = ["BCF"]; }
+        else if (mKey === "BPF") { maleRes = ["BCF/Y"]; femaleRes = ["BCF"]; }
+      }
+      else if (fKey === "BCF/Y") {
+        if (mKey === "BNF") { maleRes = ["BNF/C", "BNF/C/Y"]; femaleRes = ["BCF", "BPF"]; }
+        else if (mKey === "BCF") { maleRes = ["BCF", "BCF/Y"]; femaleRes = ["BCF", "BPF"]; }
+        else if (mKey === "BYF") { maleRes = ["BNF/C/Y", "BYF/C"]; femaleRes = ["BCF", "BPF"]; }
+        else if (mKey === "BPF") { maleRes = ["BCF/Y", "BPF"]; femaleRes = ["BCF", "BPF"]; }
+      }
+      else if (fKey === "BYF") {
+        if (mKey === "BNF") { maleRes = ["BNF/Y"]; femaleRes = ["BYF"]; }
+        else if (mKey === "BCF") { maleRes = ["BNF/C/Y"]; femaleRes = ["BYF"]; }
+        else if (mKey === "BYF") { maleRes = ["BYF"]; femaleRes = ["BYF"]; }
+        else if (mKey === "BPF") { maleRes = ["BYF/C"]; femaleRes = ["BYF"]; }
+      }
+      else if (fKey === "BYF/C") {
+        if (mKey === "BNF") { maleRes = ["BNF/Y", "BNF/C/Y"]; femaleRes = ["BYF", "BPF"]; }
+        else if (mKey === "BCF") { maleRes = ["BNF/C/Y", "BCF/Y"]; femaleRes = ["BYF", "BPF"]; }
+        else if (mKey === "BYF") { maleRes = ["BYF", "BYF/C"]; femaleRes = ["BYF", "BPF"]; }
+        else if (mKey === "BPF") { maleRes = ["BYF/C", "BPF"]; femaleRes = ["BYF", "BPF"]; }
+      }
+      else if (fKey === "BPF") {
+        if (mKey === "BNF") { maleRes = ["BNF/C/Y"]; femaleRes = ["BPF"]; }
+        else if (mKey === "BCF") { maleRes = ["BCF/Y"]; femaleRes = ["BPF"]; }
+        else if (mKey === "BYF") { maleRes = ["BYF/C"]; femaleRes = ["BPF"]; }
+        else if (mKey === "BPF") { maleRes = ["BPF"]; femaleRes = ["BPF"]; }
+      }
+      // --- Blue Series 36 Pairs ---
+      else if (fKey === "BN") {
         if (mKey === "BN") { maleRes = ["BN"]; femaleRes = ["BN"]; }
         else if (mKey === "BC") { maleRes = ["BN/C"]; femaleRes = ["BN"]; }
         else if (mKey === "BY") { maleRes = ["BN/Y"]; femaleRes = ["BN"]; }
         else if (mKey === "BP") { maleRes = ["BN/C/Y"]; femaleRes = ["BN"]; }
       }
-      // 2. กลุ่มพ่อ BN/C
       else if (fKey === "BN/C") {
         if (mKey === "BN") { maleRes = ["BN", "BN/C"]; femaleRes = ["BN", "BC"]; }
         else if (mKey === "BC") { maleRes = ["BN/C", "BC"]; femaleRes = ["BN", "BC"]; }
         else if (mKey === "BY") { maleRes = ["BN/C", "BN/C/Y"]; femaleRes = ["BN", "BC"]; }
         else if (mKey === "BP") { maleRes = ["BN/C/Y", "BC/Y"]; femaleRes = ["BN", "BC"]; }
       }
-      // 3. กลุ่มพ่อ BN/Y
       else if (fKey === "BN/Y") {
         if (mKey === "BN") { maleRes = ["BN", "BN/Y"]; femaleRes = ["BN", "BY"]; }
         else if (mKey === "BC") { maleRes = ["BN/C", "BN/C/Y"]; femaleRes = ["BN", "BY"]; }
         else if (mKey === "BY") { maleRes = ["BN/Y", "BY"]; femaleRes = ["BN", "BY"]; }
         else if (mKey === "BP") { maleRes = ["BN/C/Y", "BY/C"]; femaleRes = ["BN", "BY"]; }
       }
-      // 4. กลุ่มพ่อ BN/C/Y
       else if (fKey === "BN/C/Y") {
         if (mKey === "BN") { maleRes = ["BN", "BN/C", "BN/Y", "BP"]; femaleRes = ["BN", "BC", "BY", "BP"]; }
         else if (mKey === "BC") { maleRes = ["BN/C", "BN/C/Y", "BC", "BC/Y"]; femaleRes = ["BN", "BC", "BY", "BP"]; }
         else if (mKey === "BY") { maleRes = ["BN/Y", "BN/C/Y", "BY", "BY/C"]; femaleRes = ["BN", "BC", "BY", "BP"]; }
         else if (mKey === "BP") { maleRes = ["BN/C/Y", "BC/Y", "BY/C", "BP"]; femaleRes = ["BN", "BC", "BY", "BP"]; }
       }
-      // 5. กลุ่มพ่อ BC
       else if (fKey === "BC") {
         if (mKey === "BN") { maleRes = ["BN/C"]; femaleRes = ["BC"]; }
         else if (mKey === "BC") { maleRes = ["BC"]; femaleRes = ["BC"]; }
         else if (mKey === "BY") { maleRes = ["BN/C/Y"]; femaleRes = ["BC"]; }
         else if (mKey === "BP") { maleRes = ["BC/Y"]; femaleRes = ["BC"]; }
       }
-      // 6. กลุ่มพ่อ BC/Y
       else if (fKey === "BC/Y") {
         if (mKey === "BN") { maleRes = ["BN/C", "BN/C/Y"]; femaleRes = ["BC", "BP"]; }
         else if (mKey === "BC") { maleRes = ["BC", "BC/Y"]; femaleRes = ["BC", "BP"]; }
         else if (mKey === "BY") { maleRes = ["BN/C/Y", "BY/C"]; femaleRes = ["BC", "BP"]; }
         else if (mKey === "BP") { maleRes = ["BC/Y", "BP"]; femaleRes = ["BC", "BP"]; }
       }
-      // 7. กลุ่มพ่อ BY
       else if (fKey === "BY") {
         if (mKey === "BN") { maleRes = ["BN/Y"]; femaleRes = ["BY"]; }
         else if (mKey === "BC") { maleRes = ["BN/C/Y"]; femaleRes = ["BY"]; }
         else if (mKey === "BY") { maleRes = ["BY"]; femaleRes = ["BY"]; }
         else if (mKey === "BP") { maleRes = ["BY/C"]; femaleRes = ["BY"]; }
       }
-      // 8. กลุ่มพ่อ BY/C
       else if (fKey === "BY/C") {
         if (mKey === "BN") { maleRes = ["BN/Y", "BN/C/Y"]; femaleRes = ["BY", "BP"]; }
         else if (mKey === "BC") { maleRes = ["BN/C/Y", "BC/Y"]; femaleRes = ["BY", "BP"]; }
         else if (mKey === "BY") { maleRes = ["BY", "BY/C"]; femaleRes = ["BY", "BP"]; }
         else if (mKey === "BP") { maleRes = ["BY/C", "BP"]; femaleRes = ["BY", "BP"]; }
       }
-      // 9. กลุ่มพ่อ BP
       else if (fKey === "BP") {
         if (mKey === "BN") { maleRes = ["BN/C/Y"]; femaleRes = ["BP"]; }
         else if (mKey === "BC") { maleRes = ["BC/Y"]; femaleRes = ["BP"]; }
         else if (mKey === "BY") { maleRes = ["BY/C"]; femaleRes = ["BP"]; }
         else if (mKey === "BP") { maleRes = ["BP"]; femaleRes = ["BP"]; }
       }
+      // --- Normal Green Series 40 Pairs ---
+      else if (fKey === "N") {
+        if (mKey === "N") { maleRes = ["N"]; femaleRes = ["N"]; }
+        else if (mKey === "C") { maleRes = ["N/C"]; femaleRes = ["N"]; }
+        else if (mKey === "Y") { maleRes = ["N/Y"]; femaleRes = ["N"]; }
+        else if (mKey === "P") { maleRes = ["N/P"]; femaleRes = ["N"]; }
+      }
+      else if (fKey === "N/C") {
+        if (mKey === "N") { maleRes = ["N", "N/C"]; femaleRes = ["N", "C"]; }
+        else if (mKey === "C") { maleRes = ["N/C", "C"]; femaleRes = ["N", "C"]; }
+        else if (mKey === "Y") { maleRes = ["N/Y", "N/Y/C"]; femaleRes = ["N", "C"]; }
+        else if (mKey === "P") { maleRes = ["N/P", "C/Y"]; femaleRes = ["N", "C"]; }
+      }
+      else if (fKey === "N/Y") {
+        if (mKey === "N") { maleRes = ["N", "N/Y"]; femaleRes = ["N", "Y"]; }
+        else if (mKey === "C") { maleRes = ["N/C", "N/C/Y"]; femaleRes = ["N", "Y"]; }
+        else if (mKey === "Y") { maleRes = ["N/Y", "Y"]; femaleRes = ["N", "Y"]; }
+        else if (mKey === "P") { maleRes = ["N/P", "Y/C"]; femaleRes = ["N", "Y"]; }
+      }
+      else if (fKey === "N/P" || fKey === "N/Y/C") {
+        if (mKey === "N") { maleRes = ["N", "N/P", "N/C", "N/Y"]; femaleRes = ["N", "P", "C", "Y"]; }
+        else if (mKey === "C") { maleRes = ["N/C", "C/Y", "C", "N/Y/C"]; femaleRes = ["N", "P", "C", "Y"]; }
+        else if (mKey === "Y") { maleRes = ["N/Y", "Y/C", "Y", "N/Y/C"]; femaleRes = ["N", "P", "C", "Y"]; }
+        else if (mKey === "P") { maleRes = ["N/P", "P", "C/Y", "Y/C"]; femaleRes = ["N", "P", "C", "Y"]; }
+      }
+      else if (fKey === "Y") {
+        if (mKey === "N") { maleRes = ["N/Y"]; femaleRes = ["Y"]; }
+        else if (mKey === "C") { maleRes = ["N/Y/C"]; femaleRes = ["Y"]; }
+        else if (mKey === "Y") { maleRes = ["Y"]; femaleRes = ["Y"]; }
+        else if (mKey === "P") { maleRes = ["Y/P"]; femaleRes = ["Y"]; }
+      }
+      else if (fKey === "Y/C") {
+        if (mKey === "N") { maleRes = ["N/Y", "N/P"]; femaleRes = ["Y", "P"]; }
+        else if (mKey === "C") { maleRes = ["N/C/Y", "C/Y"]; femaleRes = ["Y", "P"]; }
+        else if (mKey === "Y") { maleRes = ["Y", "Y/C"]; femaleRes = ["Y", "P"]; }
+        else if (mKey === "P") { maleRes = ["Y/C", "P"]; femaleRes = ["Y", "P"]; }
+      }
+      else if (fKey === "C") {
+        if (mKey === "N") { maleRes = ["N/C"]; femaleRes = ["C"]; }
+        else if (mKey === "C") { maleRes = ["C"]; femaleRes = ["C"]; }
+        else if (mKey === "Y") { maleRes = ["N/Y/C"]; femaleRes = ["C"]; }
+        else if (mKey === "P") { maleRes = ["C/Y"]; femaleRes = ["C"]; }
+      }
+      else if (fKey === "C/Y") {
+        if (mKey === "N") { maleRes = ["N/C", "N/P"]; femaleRes = ["C", "P"]; }
+        else if (mKey === "C") { maleRes = ["C", "C/Y"]; femaleRes = ["C", "P"]; }
+        else if (mKey === "Y") { maleRes = ["N/Y/C", "Y/C"]; femaleRes = ["C", "P"]; }
+        else if (mKey === "P") { maleRes = ["C/Y", "P"]; femaleRes = ["C", "P"]; }
+      }
+      else if (fKey === "P") {
+        if (mKey === "N") { maleRes = ["N/P"]; femaleRes = ["P"]; }
+        else if (mKey === "C") { maleRes = ["C/Y"]; femaleRes = ["P"]; }
+        else if (mKey === "Y") { maleRes = ["Y/C"]; femaleRes = ["P"]; }
+        else if (mKey === "P") { maleRes = ["P"]; femaleRes = ["P"]; }
+      }
       else {
-        maleRes = [`♂ ${fColor} x ${mColor} (ตามตารางมาตรฐาน Blue Series)`];
+        maleRes = [`♂ ${fColor} x ${mColor} (ตามตารางมาตรฐาน)`];
         femaleRes = [`♀ ${mColor}`];
       }
 
@@ -286,7 +417,7 @@
       return `
         <div class="mt-2.5 p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V137 Blue Series Matrix):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V138 Mega Engine):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -824,8 +955,8 @@
         window.renderEggPairDropdown();
 
         globalPairs.forEach(item => {
-          const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { species: item.fatherSpecies, visualColor: "BN", splitColor: "" };
-          const motherObj = globalBirds.find(b => b.id === item.motherId) || { species: item.motherSpecies, visualColor: "BN", splitColor: "" };
+          const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { species: item.fatherSpecies, visualColor: "N", splitColor: "" };
+          const motherObj = globalBirds.find(b => b.id === item.motherId) || { species: item.motherSpecies, visualColor: "N", splitColor: "" };
           const autoGeneticsHtml = renderPairGeneticsBox(item, fatherObj, motherObj);
 
           if(list) {
@@ -892,8 +1023,8 @@
           if(pairsListContainer) {
             let htmlPairs = "";
             globalPairs.forEach(item => {
-              const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { species: item.fatherSpecies, visualColor: "BN", splitColor: "" };
-              const motherObj = globalBirds.find(b => b.id === item.motherId) || { species: item.motherSpecies, visualColor: "BN", splitColor: "" };
+              const fatherObj = globalBirds.find(b => b.id === item.fatherId) || { species: item.fatherSpecies, visualColor: "N", splitColor: "" };
+              const motherObj = globalBirds.find(b => b.id === item.motherId) || { species: item.motherSpecies, visualColor: "N", splitColor: "" };
               const autoGeneticsHtml = renderPairGeneticsBox(item, fatherObj, motherObj);
               htmlPairs += `
                 <div class="p-4 bg-white rounded-3xl border border-rose-100 shadow-xs space-y-2.5 hover:shadow-md transition">
@@ -1057,7 +1188,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V137 Blue Series Matrix):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V138 Mega Engine):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1136,7 +1267,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v137</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v138</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
