@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V141</title>
+  <title>Farm Sook - Pro System V142</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -490,7 +490,7 @@
         </div>
         <div class="p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V141 Engine):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V142 Engine):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -730,7 +730,6 @@
       let recordsToCreate = [];
 
       if (scheduleType === 'every7days_3months') {
-        // ทุกๆ 7 วัน เป็นเวลา 3 เดือน (ประมาณ 12 ครั้ง)
         for (let i = 0; i < 12; i++) {
           let nextD = new Date(baseDate);
           nextD.setDate(nextD.getDate() + (i * 7));
@@ -997,6 +996,15 @@
       unsubscribers.push(onSnapshot(qBirds, (snapshot) => {
         globalBirds = [];
         snapshot.forEach(docSnap => { globalBirds.push({ id: docSnap.id, ...docSnap.data() }); });
+        
+        // เรียงจาก ใหม่สุด ไป เก่าสุด โดยอ้างอิงจาก createdAt (ถ้าไม่มีใช้ไอดี)
+        globalBirds.sort((a, b) => {
+          let timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          let timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          if (timeA !== timeB) return timeB - timeA;
+          return b.id.localeCompare(a.id);
+        });
+
         window.renderBirdsList();
         window.renderPairDropdownOptions();
       }));
@@ -1033,7 +1041,6 @@
               </div>
             </div>`;
 
-          // แจ้งเตือนรายการที่ถึงกำหนดหรือใกล้ถึง
           if (item.date && item.date >= todayStr) {
             reminderHtml += `
               <div class="p-3 bg-cyan-50/80 text-cyan-950 rounded-2xl border border-cyan-200 text-xs flex justify-between items-center shadow-xs">
@@ -1199,22 +1206,38 @@
     window.renderBirdsList = () => {
       const list = document.getElementById('birds-list');
       const searchInput = document.getElementById('search-bird-input');
+      const speciesFilter = document.getElementById('filter-species');
       const genderFilter = document.getElementById('filter-gender');
       const statusFilter = document.getElementById('filter-status');
       if (!list) return;
 
       let searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
+      let selectedSpecies = speciesFilter ? speciesFilter.value : "all";
       let selectedGender = genderFilter ? genderFilter.value : "all";
       let selectedStatus = statusFilter ? statusFilter.value : "all";
+
+      // อัปเดตรายการตัวเลือกสายพันธุ์ในตัวกรองอัตโนมัติจากข้อมูลนกที่มีจริงในฟาร์ม
+      if (speciesFilter) {
+        let currentSpeciesVal = speciesFilter.value;
+        let uniqueSpecies = [...new Set(globalBirds.map(b => b.species).filter(Boolean))];
+        let speciesOptionsHtml = `<option value="all">🌐 ทุกสายพันธุ์</option>`;
+        uniqueSpecies.forEach(sp => {
+          speciesOptionsHtml += `<option value="${sp}">${sp}</option>`;
+        });
+        speciesFilter.innerHTML = speciesOptionsHtml;
+        speciesFilter.value = uniqueSpecies.includes(currentSpeciesVal) ? currentSpeciesVal : "all";
+        selectedSpecies = speciesFilter.value;
+      }
 
       let filtered = globalBirds.filter(item => {
         let matchName = (item.name || "").toLowerCase().includes(searchTerm);
         let matchRing = (item.ringNo || "").toLowerCase().includes(searchTerm);
         let matchSearch = matchName || matchRing;
+        let matchSpecies = selectedSpecies === "all" || item.species === selectedSpecies;
         let matchGender = selectedGender === "all" || item.gender === selectedGender;
         let birdStatus = item.status || "ยังมีชีวิตอยู่";
         let matchStatus = selectedStatus === "all" || birdStatus === selectedStatus;
-        return matchSearch && matchGender && matchStatus;
+        return matchSearch && matchSpecies && matchGender && matchStatus;
       });
 
       list.innerHTML = "";
@@ -1307,7 +1330,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V141 Engine):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V142 Engine):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1386,7 +1409,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v141</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v142</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
@@ -1459,11 +1482,16 @@
 
       <div class="bg-white p-5 rounded-3xl shadow-xs border border-slate-100 space-y-3 custom-shadow">
         <div class="flex justify-between items-center">
-          <h3 class="font-black text-slate-900 text-sm">🦜 รายชื่อนกในฟาร์ม</h3>
+          <h3 class="font-black text-slate-900 text-sm">🦜 รายชื่อนกในฟาร์ม (ใหม่สุด -> เก่าสุด)</h3>
           <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-2xl text-xs font-black border border-slate-200 transition">+ เพิ่มนก</button>
         </div>
-        <div class="grid grid-cols-3 gap-1.5">
+        
+        <!-- Filter Controls -->
+        <div class="grid grid-cols-2 gap-1.5">
           <input type="text" id="search-bird-input" oninput="renderBirdsList()" placeholder="🔍 ค้นหาชื่อ..." class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs bg-slate-50">
+          <select id="filter-species" onchange="renderBirdsList()" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs bg-slate-50 font-bold text-slate-700">
+            <option value="all">🌐 ทุกสายพันธุ์</option>
+          </select>
           <select id="filter-gender" onchange="renderBirdsList()" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs bg-slate-50 font-bold text-slate-700">
             <option value="all">🌐 ทุกเพศ</option>
             <option value="ผู้">♂ ตัวผู้</option>
@@ -1476,6 +1504,7 @@
             <option value="เสียชีวิต">🔴 เสียชีวิต</option>
           </select>
         </div>
+
         <div id="birds-list" class="space-y-1.5 max-h-[350px] overflow-y-auto pr-1"><p class="text-xs text-slate-400 text-center py-4">ยังไม่มีข้อมูลนก</p></div>
       </div>
 
