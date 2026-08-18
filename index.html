@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V144</title>
+  <title>Farm Sook - Pro System V143</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -57,7 +57,11 @@
       "BND": "บลูนอมอลไดลูท (BND)",
       "BCD": "บลูชินนามอนไดลูท (BCD)",
       "BYD": "บลูเยลโลว์ไซด์ไดลูท (BYD)",
-      "BPD": "บลูพายแอปเปิลไดลูท (BPD)"
+      "BPD": "บลูพายแอปเปิลไดลูท (BPD)",
+      "PND": "ไพน์เนัปเปิลไดลูทนอมอล (PND)",
+      "PCD": "ไพน์เนัปเปิลไดลูทชินนามอน (PCD)",
+      "PYD": "ไพน์เนัปเปิลไดลูทเยลโลว์ไซด์ (PYD)",
+      "PD": "ไพน์เนัปเปิลไดลูท / ซันชีค (PD)"
     };
 
     const mutationsHtml = `
@@ -77,6 +81,10 @@
       <option value="BCD">BCD - บลูชินนามอนไดลูท</option>
       <option value="BYD">BYD - บลูเยลโลว์ไซด์ไดลูท</option>
       <option value="BPD">BPD - บลูพายแอปเปิลไดลูท</option>
+      <option value="PND">PND - ไพน์เนัปเปิลไดลูทนอมอล</option>
+      <option value="PCD">PCD - ไพน์เนัปเปิลไดลูทชินนามอน</option>
+      <option value="PYD">PYD - ไพน์เนัปเปิลไดลูทเยลโลว์ไซด์</option>
+      <option value="PD">PD - ไพน์เนัปเปิลไดลูท / ซันชีค</option>
     `;
 
     const splitsHtml = `
@@ -197,7 +205,12 @@
       let mColor = (motherObj.visualColor || "N").trim();
 
       let fKey = fColor;
-      if (fColor === "BND" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "BND/C";
+      if (fColor === "PND" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "PND/C";
+      else if (fColor === "PND" && fSplits.includes("Y") && !fSplits.includes("C")) fKey = "PND/Y";
+      else if (fColor === "PND" && (fSplits.length >= 2 || fSplits.includes("P") || (fSplits.includes("C") && fSplits.includes("Y")))) fKey = "PND/C/Y";
+      else if (fColor === "PCD" && (fSplits.includes("Y") || fSplits.includes("P") || fSplits.length > 0)) fKey = "PCD/Y";
+      else if (fColor === "PYD" && (fSplits.includes("C") || fSplits.includes("P") || fSplits.length > 0)) fKey = "PYD/C";
+      else if (fColor === "BND" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "BND/C";
       else if (fColor === "BND" && fSplits.includes("Y") && !fSplits.includes("C")) fKey = "BND/Y";
       else if (fColor === "BND" && (fSplits.length >= 2 || fSplits.includes("P") || (fSplits.includes("C") && fSplits.includes("Y")))) fKey = "BND/C/Y";
       else if (fColor === "BCD" && (fSplits.includes("Y") || fSplits.includes("P") || fSplits.length > 0)) fKey = "BCD/Y";
@@ -222,8 +235,63 @@
       let maleRes = [];
       let femaleRes = [];
 
+      // --- Pineapple Dilute / Suncheek Series ---
+      if (fKey === "PND") {
+        if (mKey === "PND") { maleRes = ["PND"]; femaleRes = ["PND"]; }
+        else if (mKey === "PCD") { maleRes = ["PND/C"]; femaleRes = ["PND"]; }
+        else if (mKey === "PYD") { maleRes = ["PND/Y"]; femaleRes = ["PND"]; }
+        else if (mKey === "PD")  { maleRes = ["PND/C/Y"]; femaleRes = ["PND"]; }
+      }
+      else if (fKey === "PND/C") {
+        if (mKey === "PND") { maleRes = ["PND", "PND/C"]; femaleRes = ["PND", "PCD"]; }
+        else if (mKey === "PCD") { maleRes = ["PND/C", "PCD"]; femaleRes = ["PND", "PCD"]; }
+        else if (mKey === "PYD") { maleRes = ["PND/C", "PND/C/Y"]; femaleRes = ["PND", "PCD"]; }
+        else if (mKey === "PD")  { maleRes = ["PND/C/Y", "PCD/Y"]; femaleRes = ["PND", "PCD"]; }
+      }
+      else if (fKey === "PND/Y") {
+        if (mKey === "PND") { maleRes = ["PND", "PND/Y"]; femaleRes = ["PND", "PYD"]; }
+        else if (mKey === "PCD") { maleRes = ["PND/C", "PND/C/Y"]; femaleRes = ["PND", "PYD"]; }
+        else if (mKey === "PYD") { maleRes = ["PND/Y", "PYD"]; femaleRes = ["PND", "PYD"]; }
+        else if (mKey === "PD")  { maleRes = ["PND/C/Y", "PYD/C"]; femaleRes = ["PND", "PYD"]; }
+      }
+      else if (fKey === "PND/C/Y") {
+        if (mKey === "PND") { maleRes = ["PND", "PND/C", "PND/Y", "PD"]; femaleRes = ["PND", "PCD", "PYD", "PD"]; }
+        else if (mKey === "PCD") { maleRes = ["PND/C", "PND/C/Y", "PCD", "PCD/Y"]; femaleRes = ["PND", "PCD", "PYD", "PD"]; }
+        else if (mKey === "PYD") { maleRes = ["PND/Y", "PND/C/Y", "PYD", "PYD/C"]; femaleRes = ["PND", "PCD", "PYD", "PD"]; }
+        else if (mKey === "PD")  { maleRes = ["PND/C/Y", "PCD/Y", "PYD/C", "PD"]; femaleRes = ["PND", "PCD", "PYD", "PD"]; }
+      }
+      else if (fKey === "PCD") {
+        if (mKey === "PND") { maleRes = ["PND/C"]; femaleRes = ["PCD"]; }
+        else if (mKey === "PCD") { maleRes = ["PCD"]; femaleRes = ["PCD"]; }
+        else if (mKey === "PYD") { maleRes = ["PND/C/Y"]; femaleRes = ["PCD"]; }
+        else if (mKey === "PD")  { maleRes = ["PCD/Y"]; femaleRes = ["PCD"]; }
+      }
+      else if (fKey === "PCD/Y") {
+        if (mKey === "PND") { maleRes = ["PND/C", "PND/C/Y"]; femaleRes = ["PCD", "PD"]; }
+        else if (mKey === "PCD") { maleRes = ["PCD", "PCD/Y"]; femaleRes = ["PCD", "PD"]; }
+        else if (mKey === "PYD") { maleRes = ["PND/C/Y", "PYD/C"]; femaleRes = ["PCD", "PD"]; }
+        else if (mKey === "PD")  { maleRes = ["PCD/Y", "PD"]; femaleRes = ["PCD", "PD"]; }
+      }
+      else if (fKey === "PYD") {
+        if (mKey === "PND") { maleRes = ["PND/Y"]; femaleRes = ["PYD"]; }
+        else if (mKey === "PCD") { maleRes = ["PND/C/Y"]; femaleRes = ["PYD"]; }
+        else if (mKey === "PYD") { maleRes = ["PYD"]; femaleRes = ["PYD"]; }
+        else if (mKey === "PD")  { maleRes = ["PYD/C"]; femaleRes = ["PYD"]; }
+      }
+      else if (fKey === "PYD/C") {
+        if (mKey === "PND") { maleRes = ["PND/Y", "PND/C/Y"]; femaleRes = ["PYD", "PD"]; }
+        else if (mKey === "PCD") { maleRes = ["PND/C/Y", "PCD/Y"]; femaleRes = ["PYD", "PD"]; }
+        else if (mKey === "PYD") { maleRes = ["PYD", "PYD/C"]; femaleRes = ["PYD", "PD"]; }
+        else if (mKey === "PD")  { maleRes = ["PYD/C", "PD"]; femaleRes = ["PYD", "PD"]; }
+      }
+      else if (fKey === "PD") {
+        if (mKey === "PND") { maleRes = ["PND/C/Y"]; femaleRes = ["PD"]; }
+        else if (mKey === "PCD") { maleRes = ["PCD/Y"]; femaleRes = ["PD"]; }
+        else if (mKey === "PYD") { maleRes = ["PYD/C"]; femaleRes = ["PD"]; }
+        else if (mKey === "PD")  { maleRes = ["PD"]; femaleRes = ["PD"]; }
+      }
       // --- Dilute Blue Series ---
-      if (fKey === "BND") {
+      else if (fKey === "BND") {
         if (mKey === "BND") { maleRes = ["BND"]; femaleRes = ["BND"]; }
         else if (mKey === "BCD") { maleRes = ["BND/C"]; femaleRes = ["BND"]; }
         else if (mKey === "BYD") { maleRes = ["BND/Y"]; femaleRes = ["BND"]; }
@@ -490,7 +558,7 @@
         </div>
         <div class="p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V144 Engine):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V143 Engine):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -729,7 +797,7 @@
       let baseDate = new Date(date);
       let recordsToCreate = [];
 
-      if (scheduleType === 'every7days') {
+      if (scheduleType === 'every7days_3months') {
         for (let i = 0; i < 12; i++) {
           let nextD = new Date(baseDate);
           nextD.setDate(nextD.getDate() + (i * 7));
@@ -741,42 +809,16 @@
             scheduleLabel: `รอบที่ ${i+1} (ทุก 7 วัน)`
           });
         }
-      } else if (scheduleType === 'every14days') {
-        for (let i = 0; i < 6; i++) {
-          let nextD = new Date(baseDate);
-          nextD.setDate(nextD.getDate() + (i * 14));
-          recordsToCreate.push({
-            farmName: currentFarm,
-            birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
-            type, detail, medicine, cost, notes,
-            date: nextD.toISOString().split('T')[0],
-            scheduleLabel: `รอบที่ ${i+1} (ทุก 14 วัน)`
-          });
-        }
       } else if (scheduleType === 'monthly') {
-        for (let i = 0; i < 6; i++) {
-          let nextD = new Date(baseDate);
-          nextD.setMonth(nextD.getMonth() + i);
-          recordsToCreate.push({
-            farmName: currentFarm,
-            birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
-            type, detail, medicine, cost, notes,
-            date: nextD.toISOString().split('T')[0],
-            scheduleLabel: `รอบที่ ${i+1} (รายเดือน)`
-          });
-        }
-      } else if (scheduleType === 'every3months') {
-        for (let i = 0; i < 4; i++) {
-          let nextD = new Date(baseDate);
-          nextD.setMonth(nextD.getMonth() + (i * 3));
-          recordsToCreate.push({
-            farmName: currentFarm,
-            birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
-            type, detail, medicine, cost, notes,
-            date: nextD.toISOString().split('T')[0],
-            scheduleLabel: `รอบที่ ${i+1} (ทุก 3 เดือน)`
-          });
-        }
+        let nextD = new Date(baseDate);
+        nextD.setDate(nextD.getDate() + 30);
+        recordsToCreate.push({
+          farmName: currentFarm,
+          birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
+          type, detail, medicine, cost, notes,
+          date, nextDueDate: nextD.toISOString().split('T')[0],
+          scheduleLabel: 'รายเดือน (30 วัน)'
+        });
       } else {
         recordsToCreate.push({
           farmName: currentFarm,
@@ -1354,7 +1396,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V144 Engine):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V143 Engine):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1405,7 +1447,7 @@
   <style> 
     body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; } 
     .custom-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
-    select option { font-weight: bold; color: #0f172a; padding: 10px; }
+    select option { font-weight: bold; color: #0f172a; padding: 8px; }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen pb-16">
@@ -1433,7 +1475,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v144</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v143</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
@@ -1506,11 +1548,10 @@
 
       <div class="bg-white p-5 rounded-3xl shadow-xs border border-slate-100 space-y-3 custom-shadow">
         <div class="flex justify-between items-center">
-          <h3 class="font-black text-slate-900 text-sm">🦜 รายชื่อนกในฟาร์ม</h3>
+          <h3 class="font-black text-slate-900 text-sm">🦜 รายชื่อนกในฟาร์ม (ใหม่สุด -> เก่าสุด)</h3>
           <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-2xl text-xs font-black border border-slate-200 transition">+ เพิ่มนก</button>
         </div>
         
-        <!-- Filter Controls -->
         <div class="grid grid-cols-2 gap-1.5">
           <input type="text" id="search-bird-input" oninput="renderBirdsList()" placeholder="🔍 ค้นหาชื่อ..." class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs bg-slate-50">
           <select id="filter-species" onchange="renderBirdsList()" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs bg-slate-50 font-bold text-slate-700">
@@ -1599,24 +1640,24 @@
           <div class="p-3.5 bg-slate-100 rounded-2xl border border-slate-200 space-y-3">
             <div>
               <label class="block text-xs font-bold text-slate-900 mb-1">🎨 สีหลัก (Visual Color)</label>
-              <select id="bird-visual" class="w-full max-h-48 border border-slate-300 rounded-xl p-2.5 text-xs font-bold bg-white text-slate-950"></select>
+              <select id="bird-visual" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs font-bold bg-white text-slate-950"></select>
             </div>
             <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200">
               <div>
                 <label class="block text-[11px] font-bold text-slate-900 mb-1">🧬 สปลิต 1</label>
-                <select id="bird-split-1" class="w-full max-h-48 border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
+                <select id="bird-split-1" class="w-full border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-900 mb-1">🧬 สปลิต 2</label>
-                <select id="bird-split-2" class="w-full max-h-48 border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
+                <select id="bird-split-2" class="w-full border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-900 mb-1">🧬 สปลิต 3</label>
-                <select id="bird-split-3" class="w-full max-h-48 border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
+                <select id="bird-split-3" class="w-full border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-900 mb-1">🧬 สปลิต 4</label>
-                <select id="bird-split-4" class="w-full max-h-48 border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
+                <select id="bird-split-4" class="w-full border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
               </div>
             </div>
           </div>
@@ -1674,10 +1715,8 @@
             <label class="block text-xs font-bold text-slate-500 mb-1">รอบแจ้งเตือน</label>
             <select id="health-schedule-type" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-black text-slate-800 bg-slate-50">
               <option value="none">📌 ครั้งเดียว (ไม่ทำซ้ำ)</option>
-              <option value="every7days">🔄 ทุก 7 วัน</option>
-              <option value="every14days">🔄 ทุก 14 วัน</option>
-              <option value="monthly">🔄 ทุก 1 เดือน</option>
-              <option value="every3months">🔄 ทุก 3 เดือน</option>
+              <option value="every7days_3months">🔄 ทุก 7 วัน (นาน 3 เดือน)</option>
+              <option value="monthly">🔄 รายเดือน (ทุก 30 วัน)</option>
             </select>
           </div>
         </div>
