@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V134 (Full Matrix Genetics Engine)</title>
+  <title>Farm Sook - Pro System V135 (Full 40-Pairs Matrix Engine)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -178,7 +178,7 @@
       return splits.length > 0 ? splits.join("/") : "";
     };
 
-    // --- Full Matrix Punnett Square Engine V134 (ถอดรหัสตามตารางพี่วิทูนแบบครบถ้วน) ---
+    // --- Full 40 Pairs Matrix Punnett Square Engine V135 ---
     window.computeFullCombinationsGenetics = (fatherObj, motherObj) => {
       let fSpecies = (fatherObj.species || "").toLowerCase();
       let mSpecies = (motherObj.species || "").toLowerCase();
@@ -196,49 +196,94 @@
       }
 
       let mColor = (motherObj.visualColor || "N").trim();
-      let maleResults = [];
-      let femaleResults = [];
 
-      // 1. พ่อ Pineapple (P = YC) x แม่ Normal (N)
-      if (fColor === "P" && mColor === "N") {
-        maleResults.push("• ♂ นอมอล สปลิตเยลโลว์ไซด์ สปลิตชินนามอน (N / สปลิต Y, C) [พอส-สปลิต]");
-        femaleResults.push("• ♀ พายแอปเปิล (Pineapple / P)");
-      } 
-      // 2. พ่อ Yellow-sided (Y) x แม่ Normal (N)
-      else if (fColor === "Y" && mColor === "N") {
-        maleResults.push("• ♂ นอมอล สปลิตเยลโลว์ไซด์ (N / สปลิต Y)");
-        femaleResults.push("• ♀ เยลโลว์ไซด์ (Yellow-sided / Y)");
-      } 
-      // 3. พ่อ Normal + สปลิต Cinnamon (N / C) x แม่ Normal (N)
-      else if (fColor === "N" && fSplits.includes("C") && mColor === "N") {
-        maleResults.push("• ♂ นอมอลแท้ (N)", "• ♂ นอมอล สปลิตชินนามอน (N / สปลิต C)");
-        femaleResults.push("• ♀ นอมอล (N)");
-      } 
-      // 4. พ่อ Normal (N) x แม่ Cinnamon (C)
-      else if (fColor === "N" && fSplits.length === 0 && mColor === "C") {
-        maleResults.push("• ♂ นอมอล สปลิตชินนามอน (N / สปลิต C)");
-        femaleResults.push("• ♀ ชินนามอน (Cinnamon / C)");
-      } 
-      // 5. พ่อ Cinnamon + สปลิต Yellow-sided (C / Y) x แม่ Cinnamon (C)
-      else if (fColor === "C" && fSplits.includes("Y") && mColor === "C") {
-        maleResults.push("• ♂ ชินนามอน สปลิตเยลโลว์ไซด์ (C / สปลิต Y)", "• ♂ ชินนามอนแท้ (C) [รวมกลุ่ม พอส-สปลิต]");
-        femaleResults.push("• ♀ ชินนามอน (C)", "• ♀ พายแอปเปิล (P)");
+      // ตรวจสอบสถานะพ่อและแม่ตามกลุ่มทั้ง 40 คู่
+      let fKey = fColor;
+      if (fColor === "N" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "N/C";
+      else if (fColor === "N" && fSplits.includes("Y") && !fSplits.includes("C")) fKey = "N/Y";
+      else if (fColor === "N" && (fSplits.includes("Y/C") || (fSplits.includes("Y") && fSplits.includes("C")) || fSplits.includes("P"))) fKey = "N/P";
+      else if (fColor === "Y" && (fSplits.includes("C") || fSplits.includes("P"))) fKey = "Y/C";
+      else if (fColor === "C" && (fSplits.includes("Y") || fSplits.includes("P"))) fKey = "C/Y";
+
+      let mKey = mColor; // Mother color can be N, C, Y, P
+
+      let maleRes = [];
+      let femaleRes = [];
+
+      // 1. กลุ่มพ่อ N
+      if (fKey === "N") {
+        if (mKey === "N") { maleRes = ["N"]; femaleRes = ["N"]; }
+        else if (mKey === "C") { maleRes = ["N/C"]; femaleRes = ["N"]; }
+        else if (mKey === "Y") { maleRes = ["N/Y"]; femaleRes = ["N"]; }
+        else if (mKey === "P") { maleRes = ["N/P"]; femaleRes = ["N"]; }
       }
-      // 6. พ่อ Cinnamon (C) x แม่ Cinnamon (C)
-      else if (fColor === "C" && mColor === "C" && fSplits.length === 0) {
-        maleResults.push("• ♂ ชินนามอนแท้ (C)");
-        femaleResults.push("• ♀ ชินนามอน (C)");
+      // 2. กลุ่มพ่อ N/C
+      else if (fKey === "N/C") {
+        if (mKey === "N") { maleRes = ["N", "N/C"]; femaleRes = ["N", "C"]; }
+        else if (mKey === "C") { maleRes = ["N/C", "C"]; femaleRes = ["N", "C"]; }
+        else if (mKey === "Y") { maleRes = ["N/Y", "N/Y/C"]; femaleRes = ["N", "C"]; }
+        else if (mKey === "P") { maleRes = ["N/P", "C/Y"]; femaleRes = ["N", "C"]; }
       }
-      // กรณีอื่นๆ ตามตารางเมทริกซ์มาตรฐาน
+      // 3. กลุ่มพ่อ N/Y
+      else if (fKey === "N/Y") {
+        if (mKey === "N") { maleRes = ["N", "N/Y"]; femaleRes = ["N", "Y"]; }
+        else if (mKey === "C") { maleRes = ["N/C", "N/C/Y"]; femaleRes = ["N", "Y"]; }
+        else if (mKey === "Y") { maleRes = ["N/Y", "Y"]; femaleRes = ["N", "Y"]; }
+        else if (mKey === "P") { maleRes = ["N/P", "Y/C"]; femaleRes = ["N", "Y"]; }
+      }
+      // 4. กลุ่มพ่อ N/Y/C หรือ N/P
+      else if (fKey === "N/P" || fKey === "N/Y/C") {
+        if (mKey === "N") { maleRes = ["N", "N/P", "N/C", "N/Y"]; femaleRes = ["N", "P", "C", "Y"]; }
+        else if (mKey === "C") { maleRes = ["N/C", "C/Y", "C", "N/Y/C"]; femaleRes = ["N", "P", "C", "Y"]; }
+        else if (mKey === "Y") { maleRes = ["N/Y", "Y/C", "Y", "N/Y/C"]; femaleRes = ["N", "P", "C", "Y"]; }
+        else if (mKey === "P") { maleRes = ["N/P", "P", "C/Y", "Y/C"]; femaleRes = ["N", "P", "C", "Y"]; }
+      }
+      // 5. กลุ่มพ่อ Y
+      else if (fKey === "Y") {
+        if (mKey === "N") { maleRes = ["N/Y"]; femaleRes = ["Y"]; }
+        else if (mKey === "C") { maleRes = ["N/Y/C"]; femaleRes = ["Y"]; }
+        else if (mKey === "Y") { maleRes = ["Y"]; femaleRes = ["Y"]; }
+        else if (mKey === "P") { maleRes = ["Y/P"]; femaleRes = ["Y"]; }
+      }
+      // 6. กลุ่มพ่อ Y/C
+      else if (fKey === "Y/C") {
+        if (mKey === "N") { maleRes = ["N/Y", "N/P"]; femaleRes = ["Y", "P"]; }
+        else if (mKey === "C") { maleRes = ["N/C/Y", "C/Y"]; femaleRes = ["Y", "P"]; }
+        else if (mKey === "Y") { maleRes = ["Y", "Y/C"]; femaleRes = ["Y", "P"]; }
+        else if (mKey === "P") { maleRes = ["Y/C", "P"]; femaleRes = ["Y", "P"]; }
+      }
+      // 7. กลุ่มพ่อ C
+      else if (fKey === "C") {
+        if (mKey === "N") { maleRes = ["N/C"]; femaleRes = ["C"]; }
+        else if (mKey === "C") { maleRes = ["C"]; femaleRes = ["C"]; }
+        else if (mKey === "Y") { maleRes = ["N/Y/C"]; femaleRes = ["C"]; }
+        else if (mKey === "P") { maleRes = ["C/Y"]; femaleRes = ["C"]; }
+      }
+      // 8. กลุ่มพ่อ C/Y
+      else if (fKey === "C/Y") {
+        if (mKey === "N") { maleRes = ["N/C", "N/P"]; femaleRes = ["C", "P"]; }
+        else if (mKey === "C") { maleRes = ["C", "C/Y"]; femaleRes = ["C", "P"]; }
+        else if (mKey === "Y") { maleRes = ["N/Y/C", "Y/C"]; femaleRes = ["C", "P"]; }
+        else if (mKey === "P") { maleRes = ["C/Y", "P"]; femaleRes = ["C", "P"]; }
+      }
+      // 9. กลุ่มพ่อ P
+      else if (fKey === "P") {
+        if (mKey === "N") { maleRes = ["N/P"]; femaleRes = ["P"]; }
+        else if (mKey === "C") { maleRes = ["C/Y"]; femaleRes = ["P"]; }
+        else if (mKey === "Y") { maleRes = ["Y/C"]; femaleRes = ["P"]; }
+        else if (mKey === "P") { maleRes = ["P"]; femaleRes = ["P"]; }
+      }
       else {
-        let splitText = fSplits.length > 0 ? ` (สปลิต ${fSplits.join(", ")})` : "";
-        maleResults.push(`• ♂ ${fColor}${splitText} x ${mColor} (ตามตารางมาตรฐาน)`);
-        femaleResults.push(`• ♀ ${mColor} (ตามตารางมาตรฐาน)`);
+        maleRes = [`♂ ${fColor} x ${mColor} (ตามตารางมาตรฐาน)`];
+        femaleRes = [`♀ ${mColor}`];
       }
+
+      let formattedMale = maleRes.map(m => `• ♂ ${m}`).join("<br>");
+      let formattedFemale = femaleRes.map(f => `• ♀ ${f}`).join("<br>");
 
       return {
-        male: maleResults.join("<br>"),
-        female: femaleResults.join("<br>")
+        male: formattedMale,
+        female: formattedFemale
       };
     };
 
@@ -267,7 +312,7 @@
       return `
         <div class="mt-2.5 p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V134 Matrix Engine):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V135 40-Pairs Engine):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -1038,7 +1083,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V134 Matrix Engine):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V135 40-Pairs Engine):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1117,7 +1162,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v134</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v135</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
