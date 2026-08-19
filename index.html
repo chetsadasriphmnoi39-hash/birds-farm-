@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V147</title>
+  <title>Farm Sook - Pro System V149</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -42,7 +42,6 @@
 
     let unsubscribers = [];
 
-    // ฟังก์ชัน Toast Notification สวยๆ แทน alert() เดิม
     window.showToast = (message, isError = false) => {
       const container = document.getElementById('toast-container');
       if (!container) return;
@@ -184,6 +183,7 @@
 
       currentFarm = inputVal;
       localStorage.setItem("farm_sook_active_farm", currentFarm);
+      localStorage.setItem("farm_sook_last_typed_name", currentFarm); // บันทึกชื่อล่าสุดไว้ที่หน้า Login
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-app-content').style.display = 'block';
       document.getElementById('header-farm-title').innerText = currentFarm;
@@ -199,7 +199,10 @@
       unsubscribers = [];
       document.getElementById('main-app-content').style.display = 'none';
       document.getElementById('login-screen').style.display = 'flex';
-      document.getElementById('farm-name-input').value = "";
+      
+      // ดึงชื่อฟาร์มล่าสุดมาใส่ช่องให้อัตโนมัติเมื่อกดออกจากระบบ
+      const lastTyped = localStorage.getItem("farm_sook_last_typed_name") || "";
+      document.getElementById('farm-name-input').value = lastTyped;
       document.getElementById('farm-pass-input').value = "";
     };
 
@@ -582,7 +585,7 @@
         </div>
         <div class="p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V147 Engine):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V149 Engine):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -1483,7 +1486,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V147 Engine):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V149 Engine):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1511,6 +1514,13 @@
     window.addEventListener('DOMContentLoaded', () => {
       window.updateMutationDropdowns();
       window.toggleCustomSpecies();
+      
+      // ดึงชื่อฟาร์มล่าสุดมาแสดงในช่องกรอกตอนเปิดหน้าแรก
+      const lastTyped = localStorage.getItem("farm_sook_last_typed_name") || "";
+      if (lastTyped && !document.getElementById('farm-name-input').value) {
+        document.getElementById('farm-name-input').value = lastTyped;
+      }
+
       if (currentFarm) {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('main-app-content').style.display = 'block';
@@ -1551,7 +1561,7 @@
       <div class="space-y-3 pt-2 text-left">
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อฟาร์ม:</label>
-          <input type="text" id="farm-name-input" placeholder="เช่น Farm Sook" class="w-full border border-slate-300 rounded-2xl p-3 text-sm font-bold bg-slate-50 outline-none focus:border-slate-700">
+          <input type="text" id="farm-name-input" placeholder="เช่น ฟาร์มนกของฉัน" class="w-full border border-slate-300 rounded-2xl p-3 text-sm font-bold bg-slate-50 outline-none focus:border-slate-700">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">รหัสผ่าน:</label>
@@ -1571,7 +1581,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v147</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v149</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
