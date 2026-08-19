@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V144</title>
+  <title>Farm Sook - Pro System V146</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDWi5aJTt4fhY6eHgup0IFzq8maOc30cZI",
@@ -38,6 +38,7 @@
     let editEggId = null;
     let editHealthId = null;
     let editingGeneticsPairId = null;
+    let currentFarmDocId = null;
 
     let unsubscribers = [];
 
@@ -57,11 +58,7 @@
       "BND": "บลูนอมอลไดลูท (BND)",
       "BCD": "บลูชินนามอนไดลูท (BCD)",
       "BYD": "บลูเยลโลว์ไซด์ไดลูท (BYD)",
-      "BPD": "บลูพายแอปเปิลไดลูท (BPD)",
-      "ND": "ไดลูทนอมอล (ND)",
-      "CD": "ไดลูทชินนามอน (CD)",
-      "YD": "ไดลูทเยลโลว์ไซด์ (YD)",
-      "PD": "ไดลูทพายแอปเปิล / ซันชีค (PD)"
+      "BPD": "บลูพายแอปเปิลไดลูท (BPD)"
     };
 
     const mutationsHtml = `
@@ -81,10 +78,6 @@
       <option value="BCD">BCD - บลูชินนามอนไดลูท</option>
       <option value="BYD">BYD - บลูเยลโลว์ไซด์ไดลูท</option>
       <option value="BPD">BPD - บลูพายแอปเปิลไดลูท</option>
-      <option value="ND">ND - ไดลูทนอมอล</option>
-      <option value="CD">CD - ไดลูทชินนามอน</option>
-      <option value="YD">YD - ไดลูทเยลโลว์ไซด์</option>
-      <option value="PD">PD - ไดลูทพายแอปเปิล / ซันชีค</option>
     `;
 
     const splitsHtml = `
@@ -97,9 +90,85 @@
       <option value="F">F (สปลิตฟอลโล่)</option>
     `;
 
-    window.enterFarmSystem = () => {
+    // ฟังก์ชันตรวจสอบและลบฟาร์มร้างที่ไม่ได้ใช้งานเกิน 1 เดือน (30 วัน)
+    async function checkAndDeleteInactiveFarms() {
+      try {
+        const farmSnapshot = await getDocs(collection(db, "farm_settings"));
+        const now = new Date().getTime();
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+
+        farmSnapshot.forEach(async (farmDoc) => {
+          const data = farmDoc.data();
+          const lastActive = data.lastActive ? new Date(data.lastActive).getTime() : data.createdAt ? new Date(data.createdAt).getTime() : now;
+          
+          if (now - lastActive > thirtyDaysMs) {
+            const farmName = data.farmName;
+            // ลบข้อมูลทั้งหมดที่ผูกกับฟาร์มนี้
+            const collectionsToDelete = ["birds", "pairs", "egg_details", "health_records", "finances"];
+            for (const colName of collectionsToDelete) {
+              const q = query(collection(db, colName), where("farmName", "==", farmName));
+              const snap = await getDocs(q);
+              snap.forEach(async (d) => {
+                await deleteDoc(doc(db, colName, d.id));
+              });
+            }
+            // ลบตัวตั้งค่าฟาร์มทิ้ง
+            await deleteDoc(doc(db, "farm_settings", farmDoc.id));
+          }
+        });
+      } catch (err) {
+        console.error("Inactive check error:", err);
+      }
+    }
+
+    window.touchFarmActivity = async () => {
+      if (!currentFarmDocId) return;
+      try {
+        await updateDoc(doc(db, "farm_settings", currentFarmDocId), {
+          lastActive: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error("Touch activity error:", err);
+      }
+    };
+
+    window.enterFarmSystem = async () => {
       const inputVal = document.getElementById('farm-name-input').value.trim();
+      const inputPass = document.getElementById('farm-pass-input').value.trim();
       if (!inputVal) { alert("กรุณากรอกชื่อฟาร์มก่อนเข้าสู่ระบบ"); return; }
+      if (!inputPass) { alert("กรุณากรอกรหัสผ่านเพื่อความปลอดภัย"); return; }
+
+      await checkAndDeleteInactiveFarms();
+
+      try {
+        const qFarm = query(collection(db, "farm_settings"), where("farmName", "==", inputVal));
+        const querySnapshot = await getDocs(qFarm);
+
+        if (!querySnapshot.empty) {
+          const farmDoc = querySnapshot.docs[0];
+          const farmData = farmDoc.data();
+          if (farmData.password && farmData.password !== inputPass) {
+            alert("❌ รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง");
+            return;
+          } else if (!farmData.password) {
+            await updateDoc(doc(db, "farm_settings", farmDoc.id), { password: inputPass, lastActive: new Date().toISOString() });
+          } else {
+            await updateDoc(doc(db, "farm_settings", farmDoc.id), { lastActive: new Date().toISOString() });
+          }
+          currentFarmDocId = farmDoc.id;
+        } else {
+          const newDoc = await addDoc(collection(db, "farm_settings"), {
+            farmName: inputVal,
+            password: inputPass,
+            createdAt: new Date().toISOString(),
+            lastActive: new Date().toISOString()
+          });
+          currentFarmDocId = newDoc.id;
+        }
+      } catch (err) {
+        console.error("Auth error:", err);
+      }
+
       currentFarm = inputVal;
       localStorage.setItem("farm_sook_active_farm", currentFarm);
       document.getElementById('login-screen').style.display = 'none';
@@ -112,11 +181,13 @@
       if (!confirm("ต้องการเปลี่ยนฟาร์ม / ออกจากระบบใช่หรือไม่?")) return;
       localStorage.removeItem("farm_sook_active_farm");
       currentFarm = "";
+      currentFarmDocId = null;
       unsubscribers.forEach(unsub => unsub());
       unsubscribers = [];
       document.getElementById('main-app-content').style.display = 'none';
       document.getElementById('login-screen').style.display = 'flex';
       document.getElementById('farm-name-input').value = "";
+      document.getElementById('farm-pass-input').value = "";
     };
 
     window.updateMutationDropdowns = () => {
@@ -205,12 +276,7 @@
       let mColor = (motherObj.visualColor || "N").trim();
 
       let fKey = fColor;
-      if (fColor === "ND" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "ND/C";
-      else if (fColor === "ND" && fSplits.includes("Y") && !fSplits.includes("C")) fKey = "ND/Y";
-      else if (fColor === "ND" && (fSplits.length >= 2 || fSplits.includes("P") || (fSplits.includes("C") && fSplits.includes("Y")))) fKey = "ND/C/Y";
-      else if (fColor === "CD" && (fSplits.includes("Y") || fSplits.includes("P") || fSplits.length > 0)) fKey = "CD/Y";
-      else if (fColor === "YD" && (fSplits.includes("C") || fSplits.includes("P") || fSplits.length > 0)) fKey = "YD/C";
-      else if (fColor === "BND" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "BND/C";
+      if (fColor === "BND" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "BND/C";
       else if (fColor === "BND" && fSplits.includes("Y") && !fSplits.includes("C")) fKey = "BND/Y";
       else if (fColor === "BND" && (fSplits.length >= 2 || fSplits.includes("P") || (fSplits.includes("C") && fSplits.includes("Y")))) fKey = "BND/C/Y";
       else if (fColor === "BCD" && (fSplits.includes("Y") || fSplits.includes("P") || fSplits.length > 0)) fKey = "BCD/Y";
@@ -235,63 +301,8 @@
       let maleRes = [];
       let femaleRes = [];
 
-      // --- Dilute Series (ND, CD, YD, PD) ---
-      if (fKey === "ND") {
-        if (mKey === "ND") { maleRes = ["ND"]; femaleRes = ["ND"]; }
-        else if (mKey === "CD") { maleRes = ["ND/C"]; femaleRes = ["ND"]; }
-        else if (mKey === "YD") { maleRes = ["ND/Y"]; femaleRes = ["ND"]; }
-        else if (mKey === "PD")  { maleRes = ["ND/C/Y"]; femaleRes = ["ND"]; }
-      }
-      else if (fKey === "ND/C") {
-        if (mKey === "ND") { maleRes = ["ND", "ND/C"]; femaleRes = ["ND", "CD"]; }
-        else if (mKey === "CD") { maleRes = ["ND/C", "CD"]; femaleRes = ["ND", "CD"]; }
-        else if (mKey === "YD") { maleRes = ["ND/C", "ND/C/Y"]; femaleRes = ["ND", "CD"]; }
-        else if (mKey === "PD")  { maleRes = ["ND/C/Y", "CD/Y"]; femaleRes = ["ND", "CD"]; }
-      }
-      else if (fKey === "ND/Y") {
-        if (mKey === "ND") { maleRes = ["ND", "ND/Y"]; femaleRes = ["ND", "YD"]; }
-        else if (mKey === "CD") { maleRes = ["ND/C", "ND/C/Y"]; femaleRes = ["ND", "YD"]; }
-        else if (mKey === "YD") { maleRes = ["ND/Y", "YD"]; femaleRes = ["ND", "YD"]; }
-        else if (mKey === "PD")  { maleRes = ["ND/C/Y", "YD/C"]; femaleRes = ["ND", "YD"]; }
-      }
-      else if (fKey === "ND/C/Y") {
-        if (mKey === "ND") { maleRes = ["ND", "ND/C", "ND/Y", "PD"]; femaleRes = ["ND", "CD", "YD", "PD"]; }
-        else if (mKey === "CD") { maleRes = ["ND/C", "ND/C/Y", "CD", "CD/Y"]; femaleRes = ["ND", "CD", "YD", "PD"]; }
-        else if (mKey === "YD") { maleRes = ["ND/Y", "ND/C/Y", "YD", "YD/C"]; femaleRes = ["ND", "CD", "YD", "PD"]; }
-        else if (mKey === "PD")  { maleRes = ["ND/C/Y", "CD/Y", "YD/C", "PD"]; femaleRes = ["ND", "CD", "YD", "PD"]; }
-      }
-      else if (fKey === "CD") {
-        if (mKey === "ND") { maleRes = ["ND/C"]; femaleRes = ["CD"]; }
-        else if (mKey === "CD") { maleRes = ["CD"]; femaleRes = ["CD"]; }
-        else if (mKey === "YD") { maleRes = ["ND/C/Y"]; femaleRes = ["CD"]; }
-        else if (mKey === "PD")  { maleRes = ["CD/Y"]; femaleRes = ["CD"]; }
-      }
-      else if (fKey === "CD/Y") {
-        if (mKey === "ND") { maleRes = ["ND/C", "ND/C/Y"]; femaleRes = ["CD", "PD"]; }
-        else if (mKey === "CD") { maleRes = ["CD", "CD/Y"]; femaleRes = ["CD", "PD"]; }
-        else if (mKey === "YD") { maleRes = ["ND/C/Y", "YD/C"]; femaleRes = ["CD", "PD"]; }
-        else if (mKey === "PD")  { maleRes = ["CD/Y", "PD"]; femaleRes = ["CD", "PD"]; }
-      }
-      else if (fKey === "YD") {
-        if (mKey === "ND") { maleRes = ["ND/Y"]; femaleRes = ["YD"]; }
-        else if (mKey === "CD") { maleRes = ["ND/C/Y"]; femaleRes = ["YD"]; }
-        else if (mKey === "YD") { maleRes = ["YD"]; femaleRes = ["YD"]; }
-        else if (mKey === "PD")  { maleRes = ["YD/C"]; femaleRes = ["YD"]; }
-      }
-      else if (fKey === "YD/C") {
-        if (mKey === "ND") { maleRes = ["ND/Y", "ND/C/Y"]; femaleRes = ["YD", "PD"]; }
-        else if (mKey === "CD") { maleRes = ["ND/C/Y", "CD/Y"]; femaleRes = ["YD", "PD"]; }
-        else if (mKey === "YD") { maleRes = ["YD", "YD/C"]; femaleRes = ["YD", "PD"]; }
-        else if (mKey === "PD")  { maleRes = ["YD/C", "PD"]; femaleRes = ["YD", "PD"]; }
-      }
-      else if (fKey === "PD") {
-        if (mKey === "ND") { maleRes = ["ND/C/Y"]; femaleRes = ["PD"]; }
-        else if (mKey === "CD") { maleRes = ["CD/Y"]; femaleRes = ["PD"]; }
-        else if (mKey === "YD") { maleRes = ["YD/C"]; femaleRes = ["PD"]; }
-        else if (mKey === "PD")  { maleRes = ["PD"]; femaleRes = ["PD"]; }
-      }
       // --- Dilute Blue Series ---
-      else if (fKey === "BND") {
+      if (fKey === "BND") {
         if (mKey === "BND") { maleRes = ["BND"]; femaleRes = ["BND"]; }
         else if (mKey === "BCD") { maleRes = ["BND/C"]; femaleRes = ["BND"]; }
         else if (mKey === "BYD") { maleRes = ["BND/Y"]; femaleRes = ["BND"]; }
@@ -558,7 +569,7 @@
         </div>
         <div class="p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V144 Engine):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V146 Engine):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -584,6 +595,7 @@
         await updateDoc(doc(db, "pairs", editingGeneticsPairId), {
           customGenetics: { male: maleVal, female: femaleVal }
         });
+        await window.touchFarmActivity();
         alert("✅ บันทึกและจดจำผลการผสมพันธุ์คู่นี้เรียบร้อย!");
         closeModal('modal-custom-genetics');
       } catch (err) { alert("❌ เกิดข้อผิดพลาด: " + err.message); }
@@ -707,6 +719,7 @@
           alert("✅ บันทึกข้อมูลนกเข้าทะเบียนเรียบร้อย!");
           window.clearDraft();
         }
+        await window.touchFarmActivity();
         closeModal('modal-bird');
       } catch (err) { alert("❌ เกิดข้อผิดพลาด: " + err.message); }
     };
@@ -736,6 +749,7 @@
           await addDoc(collection(db, "pairs"), pairData);
           alert("จับคู่พ่อแม่พันธุ์สำเร็จ!");
         }
+        await window.touchFarmActivity();
         closeModal('modal-pair');
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
     };
@@ -778,6 +792,7 @@
           await addDoc(collection(db, "egg_details"), eggData);
           alert(`บันทึกไข่ใบที่ ${eggNo} เรียบร้อย!`);
         }
+        await window.touchFarmActivity();
         closeModal('modal-egg');
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
     };
@@ -797,7 +812,7 @@
       let baseDate = new Date(date);
       let recordsToCreate = [];
 
-      if (scheduleType === 'every7days_3months') {
+      if (scheduleType === 'every7days') {
         for (let i = 0; i < 12; i++) {
           let nextD = new Date(baseDate);
           nextD.setDate(nextD.getDate() + (i * 7));
@@ -809,16 +824,42 @@
             scheduleLabel: `รอบที่ ${i+1} (ทุก 7 วัน)`
           });
         }
+      } else if (scheduleType === 'every14days') {
+        for (let i = 0; i < 6; i++) {
+          let nextD = new Date(baseDate);
+          nextD.setDate(nextD.getDate() + (i * 14));
+          recordsToCreate.push({
+            farmName: currentFarm,
+            birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
+            type, detail, medicine, cost, notes,
+            date: nextD.toISOString().split('T')[0],
+            scheduleLabel: `รอบที่ ${i+1} (ทุก 14 วัน)`
+          });
+        }
       } else if (scheduleType === 'monthly') {
-        let nextD = new Date(baseDate);
-        nextD.setDate(nextD.getDate() + 30);
-        recordsToCreate.push({
-          farmName: currentFarm,
-          birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
-          type, detail, medicine, cost, notes,
-          date, nextDueDate: nextD.toISOString().split('T')[0],
-          scheduleLabel: 'รายเดือน (30 วัน)'
-        });
+        for (let i = 0; i < 6; i++) {
+          let nextD = new Date(baseDate);
+          nextD.setMonth(nextD.getMonth() + i);
+          recordsToCreate.push({
+            farmName: currentFarm,
+            birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
+            type, detail, medicine, cost, notes,
+            date: nextD.toISOString().split('T')[0],
+            scheduleLabel: `รอบที่ ${i+1} (รายเดือน)`
+          });
+        }
+      } else if (scheduleType === 'every3months') {
+        for (let i = 0; i < 4; i++) {
+          let nextD = new Date(baseDate);
+          nextD.setMonth(nextD.getMonth() + (i * 3));
+          recordsToCreate.push({
+            farmName: currentFarm,
+            birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
+            type, detail, medicine, cost, notes,
+            date: nextD.toISOString().split('T')[0],
+            scheduleLabel: `รอบที่ ${i+1} (ทุก 3 เดือน)`
+          });
+        }
       } else {
         recordsToCreate.push({
           farmName: currentFarm,
@@ -849,6 +890,7 @@
           }
           alert(`✅ บันทึกประวัติสุขภาพสำเร็จ (${recordsToCreate.length} รายการตามตารางแจ้งเตือน)!`);
         }
+        await window.touchFarmActivity();
         closeModal('modal-health');
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
     };
@@ -865,6 +907,7 @@
           farmName: currentFarm,
           type, detail, amount, date, createdAt: new Date().toISOString()
         });
+        await window.touchFarmActivity();
         alert("บันทึกบัญชีเรียบร้อย!");
         closeModal('modal-finance');
       } catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
@@ -952,31 +995,51 @@
 
     window.deleteBird = async (id, name) => {
       if (confirm(`คุณต้องการลบรายการนก "${name}" ใช่หรือไม่?`)) {
-        try { await deleteDoc(doc(db, "birds", id)); alert("ลบข้อมูลนกเรียบร้อย!"); } 
+        try { 
+          await deleteDoc(doc(db, "birds", id)); 
+          await window.touchFarmActivity();
+          alert("ลบข้อมูลนกเรียบร้อย!"); 
+        } 
         catch (err) { alert("เกิดข้อผิดพลาดในการลบ: " + err.message); }
       }
     };
     window.deletePair = async (id, name) => {
       if (confirm(`คุณต้องการลบคู่ "${name}" ใช่หรือไม่?\n(ข้อมูลไข่จะไม่ถูกลบ)`)) {
-        try { await deleteDoc(doc(db, "pairs", id)); alert("ลบคู่ผสมพันธุ์เรียบร้อย!"); } 
+        try { 
+          await deleteDoc(doc(db, "pairs", id)); 
+          await window.touchFarmActivity();
+          alert("ลบคู่ผสมพันธุ์เรียบร้อย!"); 
+        } 
         catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
       }
     };
     window.deleteEgg = async (id, no, pairName) => {
       if (confirm(`ลบไข่ใบที่ ${no} ของคู่ ${pairName} ใช่หรือไม่?`)) {
-        try { await deleteDoc(doc(db, "egg_details", id)); alert("ลบข้อมูลไข่เรียบร้อย!"); } 
+        try { 
+          await deleteDoc(doc(db, "egg_details", id)); 
+          await window.touchFarmActivity();
+          alert("ลบข้อมูลไข่เรียบร้อย!"); 
+        } 
         catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
       }
     };
     window.deleteHealth = async (id, detail) => {
       if (confirm(`ลบประวัติ "${detail}" ใช่หรือไม่?`)) {
-        try { await deleteDoc(doc(db, "health_records", id)); alert("ลบประวัติเรียบร้อย!"); } 
+        try { 
+          await deleteDoc(doc(db, "health_records", id)); 
+          await window.touchFarmActivity();
+          alert("ลบประวัติเรียบร้อย!"); 
+        } 
         catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
       }
     };
     window.deleteFinance = async (id, detail) => {
       if (confirm(`ลบรายการบัญชี "${detail}" ใช่หรือไม่?`)) {
-        try { await deleteDoc(doc(db, "finances", id)); alert("ลบรายการเรียบร้อย!"); }
+        try { 
+          await deleteDoc(doc(db, "finances", id)); 
+          await window.touchFarmActivity();
+          alert("ลบรายการเรียบร้อย!"); 
+        }
         catch (err) { alert("เกิดข้อผิดพลาด: " + err.message); }
       }
     };
@@ -1038,6 +1101,13 @@
       const qEggs = query(collection(db, "egg_details"), where("farmName", "==", currentFarm));
       const qHealth = query(collection(db, "health_records"), where("farmName", "==", currentFarm));
       const qFinances = query(collection(db, "finances"), where("farmName", "==", currentFarm));
+
+      // ดึง Doc ID ของ farm_settings มาเก็บไว้เพื่อใช้ touchFarmActivity
+      getDocs(query(collection(db, "farm_settings"), where("farmName", "==", currentFarm))).then(snap => {
+        if (!snap.empty) {
+          currentFarmDocId = snap.docs[0].id;
+        }
+      });
 
       unsubscribers.push(onSnapshot(qFinances, (snapshot) => {
         let totalBalance = 0;
@@ -1396,7 +1466,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V144 Engine):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V146 Engine):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1447,7 +1517,7 @@
   <style> 
     body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; } 
     .custom-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
-    select option { font-weight: bold; color: #0f172a; padding: 8px; }
+    select option { font-weight: bold; color: #0f172a; padding: 10px; }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen pb-16">
@@ -1457,11 +1527,17 @@
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 text-center">
       <div class="text-4xl">🦜</div>
       <h2 class="text-xl font-black text-slate-900">ระบบจัดการฟาร์มนก</h2>
-      <p class="text-xs text-slate-500">กรอกชื่อฟาร์มหรือชื่อของคุณ เพื่อเข้าถึงข้อมูลเฉพาะตัว (แยกใครแยกมัน)</p>
+      <p class="text-xs text-slate-500">กรอกชื่อฟาร์มและรหัสผ่าน เพื่อความปลอดภัยของข้อมูล</p>
       <div class="space-y-3 pt-2 text-left">
-        <label class="block text-xs font-bold text-slate-700">ชื่อฟาร์มของคุณ:</label>
-        <input type="text" id="farm-name-input" placeholder="เช่น Farm Sook, ฟาร์มคุณเอก" class="w-full border border-slate-300 rounded-2xl p-3 text-sm font-bold bg-slate-50 outline-none focus:border-slate-700">
-        <button type="button" onclick="enterFarmSystem()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-2xl text-xs font-black shadow-lg transition">เข้าสู่ฟาร์มของฉัน</button>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อฟาร์ม:</label>
+          <input type="text" id="farm-name-input" placeholder="เช่น Farm Sook" class="w-full border border-slate-300 rounded-2xl p-3 text-sm font-bold bg-slate-50 outline-none focus:border-slate-700">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">รหัสผ่าน:</label>
+          <input type="password" id="farm-pass-input" placeholder="รหัสผ่านเข้าฟาร์ม" class="w-full border border-slate-300 rounded-2xl p-3 text-sm font-bold bg-slate-50 outline-none focus:border-slate-700">
+        </div>
+        <button type="button" onclick="enterFarmSystem()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-2xl text-xs font-black shadow-lg transition mt-2">เข้าสู่ฟาร์มของฉัน</button>
       </div>
     </div>
   </div>
@@ -1475,7 +1551,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v144</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v146</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
@@ -1548,10 +1624,11 @@
 
       <div class="bg-white p-5 rounded-3xl shadow-xs border border-slate-100 space-y-3 custom-shadow">
         <div class="flex justify-between items-center">
-          <h3 class="font-black text-slate-900 text-sm">🦜 รายชื่อนกในฟาร์ม (ใหม่สุด -> เก่าสุด)</h3>
+          <h3 class="font-black text-slate-900 text-sm">🦜 รายชื่อนกในฟาร์ม</h3>
           <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-2xl text-xs font-black border border-slate-200 transition">+ เพิ่มนก</button>
         </div>
         
+        <!-- Filter Controls -->
         <div class="grid grid-cols-2 gap-1.5">
           <input type="text" id="search-bird-input" oninput="renderBirdsList()" placeholder="🔍 ค้นหาชื่อ..." class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs bg-slate-50">
           <select id="filter-species" onchange="renderBirdsList()" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs bg-slate-50 font-bold text-slate-700">
@@ -1640,24 +1717,24 @@
           <div class="p-3.5 bg-slate-100 rounded-2xl border border-slate-200 space-y-3">
             <div>
               <label class="block text-xs font-bold text-slate-900 mb-1">🎨 สีหลัก (Visual Color)</label>
-              <select id="bird-visual" class="w-full border border-slate-300 rounded-xl p-2.5 text-xs font-bold bg-white text-slate-950"></select>
+              <select id="bird-visual" class="w-full max-h-48 border border-slate-300 rounded-xl p-2.5 text-xs font-bold bg-white text-slate-950"></select>
             </div>
             <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200">
               <div>
                 <label class="block text-[11px] font-bold text-slate-900 mb-1">🧬 สปลิต 1</label>
-                <select id="bird-split-1" class="w-full border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
+                <select id="bird-split-1" class="w-full max-h-48 border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-900 mb-1">🧬 สปลิต 2</label>
-                <select id="bird-split-2" class="w-full border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
+                <select id="bird-split-2" class="w-full max-h-48 border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-900 mb-1">🧬 สปลิต 3</label>
-                <select id="bird-split-3" class="w-full border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
+                <select id="bird-split-3" class="w-full max-h-48 border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-900 mb-1">🧬 สปลิต 4</label>
-                <select id="bird-split-4" class="w-full border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
+                <select id="bird-split-4" class="w-full max-h-48 border border-slate-300 rounded-xl p-2 text-xs font-bold bg-white text-slate-950"></select>
               </div>
             </div>
           </div>
@@ -1715,8 +1792,10 @@
             <label class="block text-xs font-bold text-slate-500 mb-1">รอบแจ้งเตือน</label>
             <select id="health-schedule-type" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-black text-slate-800 bg-slate-50">
               <option value="none">📌 ครั้งเดียว (ไม่ทำซ้ำ)</option>
-              <option value="every7days_3months">🔄 ทุก 7 วัน (นาน 3 เดือน)</option>
-              <option value="monthly">🔄 รายเดือน (ทุก 30 วัน)</option>
+              <option value="every7days">🔄 ทุก 7 วัน</option>
+              <option value="every14days">🔄 ทุก 14 วัน</option>
+              <option value="monthly">🔄 ทุก 1 เดือน</option>
+              <option value="every3months">🔄 ทุก 3 เดือน</option>
             </select>
           </div>
         </div>
