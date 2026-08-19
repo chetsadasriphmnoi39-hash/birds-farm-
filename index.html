@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V149</title>
+  <title>Farm Sook - Pro System V150</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -72,7 +72,11 @@
       "BND": "บลูนอมอลไดลูท (BND)",
       "BCD": "บลูชินนามอนไดลูท (BCD)",
       "BYD": "บลูเยลโลว์ไซด์ไดลูท (BYD)",
-      "BPD": "บลูพายแอปเปิลไดลูท (BPD)"
+      "BPD": "บลูพายแอปเปิลไดลูท (BPD)",
+      "ND": "Normal Dilute (ND)",
+      "CD": "Cinnamon Dilute (CD)",
+      "YD": "Yellowside Dilute (YD)",
+      "PD": "Pineapple Dilute / Suncheek (PD)"
     };
 
     const mutationsHtml = `
@@ -92,6 +96,10 @@
       <option value="BCD">BCD - บลูชินนามอนไดลูท</option>
       <option value="BYD">BYD - บลูเยลโลว์ไซด์ไดลูท</option>
       <option value="BPD">BPD - บลูพายแอปเปิลไดลูท</option>
+      <option value="ND">ND - Normal Dilute</option>
+      <option value="CD">CD - Cinnamon Dilute</option>
+      <option value="YD">YD - Yellowside Dilute</option>
+      <option value="PD">PD - Pineapple Dilute / Suncheek</option>
     `;
 
     const splitsHtml = `
@@ -183,7 +191,7 @@
 
       currentFarm = inputVal;
       localStorage.setItem("farm_sook_active_farm", currentFarm);
-      localStorage.setItem("farm_sook_last_typed_name", currentFarm); // บันทึกชื่อล่าสุดไว้ที่หน้า Login
+      localStorage.setItem("farm_sook_last_typed_name", currentFarm);
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-app-content').style.display = 'block';
       document.getElementById('header-farm-title').innerText = currentFarm;
@@ -200,7 +208,6 @@
       document.getElementById('main-app-content').style.display = 'none';
       document.getElementById('login-screen').style.display = 'flex';
       
-      // ดึงชื่อฟาร์มล่าสุดมาใส่ช่องให้อัตโนมัติเมื่อกดออกจากระบบ
       const lastTyped = localStorage.getItem("farm_sook_last_typed_name") || "";
       document.getElementById('farm-name-input').value = lastTyped;
       document.getElementById('farm-pass-input').value = "";
@@ -292,7 +299,12 @@
       let mColor = (motherObj.visualColor || "N").trim();
 
       let fKey = fColor;
-      if (fColor === "BND" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "BND/C";
+      if (fColor === "ND" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "ND/C";
+      else if (fColor === "ND" && fSplits.includes("Y") && !fSplits.includes("C")) fKey = "ND/Y";
+      else if (fColor === "ND" && (fSplits.length >= 2 || fSplits.includes("P") || (fSplits.includes("C") && fSplits.includes("Y")))) fKey = "ND/C/Y";
+      else if (fColor === "CD" && (fSplits.includes("Y") || fSplits.includes("P") || fSplits.length > 0)) fKey = "CD/Y";
+      else if (fColor === "YD" && (fSplits.includes("C") || fSplits.includes("P") || fSplits.length > 0)) fKey = "YD/C";
+      else if (fColor === "BND" && fSplits.includes("C") && !fSplits.includes("Y")) fKey = "BND/C";
       else if (fColor === "BND" && fSplits.includes("Y") && !fSplits.includes("C")) fKey = "BND/Y";
       else if (fColor === "BND" && (fSplits.length >= 2 || fSplits.includes("P") || (fSplits.includes("C") && fSplits.includes("Y")))) fKey = "BND/C/Y";
       else if (fColor === "BCD" && (fSplits.includes("Y") || fSplits.includes("P") || fSplits.length > 0)) fKey = "BCD/Y";
@@ -317,8 +329,63 @@
       let maleRes = [];
       let femaleRes = [];
 
+      // --- Suncheek / Pineaple Dilute Series (ND, CD, YD, PD) ---
+      if (fKey === "ND") {
+        if (mKey === "ND") { maleRes = ["ND"]; femaleRes = ["ND"]; }
+        else if (mKey === "CD") { maleRes = ["ND/C"]; femaleRes = ["ND"]; }
+        else if (mKey === "YD") { maleRes = ["ND/Y"]; femaleRes = ["ND"]; }
+        else if (mKey === "PD") { maleRes = ["ND/C/Y"]; femaleRes = ["ND"]; }
+      }
+      else if (fKey === "ND/C") {
+        if (mKey === "ND") { maleRes = ["ND", "ND/C"]; femaleRes = ["ND", "CD"]; }
+        else if (mKey === "CD") { maleRes = ["ND/C", "CD"]; femaleRes = ["ND", "CD"]; }
+        else if (mKey === "YD") { maleRes = ["ND/C", "ND/C/Y"]; femaleRes = ["ND", "CD"]; }
+        else if (mKey === "PD") { maleRes = ["ND/C/Y", "CD/Y"]; femaleRes = ["ND", "CD"]; }
+      }
+      else if (fKey === "ND/Y") {
+        if (mKey === "ND") { maleRes = ["ND", "ND/Y"]; femaleRes = ["ND", "YD"]; }
+        else if (mKey === "CD") { maleRes = ["ND/C", "ND/C/Y"]; femaleRes = ["ND", "YD"]; }
+        else if (mKey === "YD") { maleRes = ["ND/Y", "YD"]; femaleRes = ["ND", "YD"]; }
+        else if (mKey === "PD") { maleRes = ["ND/C/Y", "YD/C"]; femaleRes = ["ND", "YD"]; }
+      }
+      else if (fKey === "ND/C/Y") {
+        if (mKey === "ND") { maleRes = ["ND", "ND/C", "ND/Y", "PD"]; femaleRes = ["ND", "CD", "YD", "PD"]; }
+        else if (mKey === "CD") { maleRes = ["ND/C", "ND/C/Y", "CD", "CD/Y"]; femaleRes = ["ND", "CD", "YD", "PD"]; }
+        else if (mKey === "YD") { maleRes = ["ND/Y", "ND/C/Y", "YD", "YD/C"]; femaleRes = ["ND", "CD", "YD", "PD"]; }
+        else if (mKey === "PD") { maleRes = ["ND/C/Y", "CD/Y", "YD/C", "PD"]; femaleRes = ["ND", "CD", "YD", "PD"]; }
+      }
+      else if (fKey === "CD") {
+        if (mKey === "ND") { maleRes = ["ND/C"]; femaleRes = ["CD"]; }
+        else if (mKey === "CD") { maleRes = ["CD"]; femaleRes = ["CD"]; }
+        else if (mKey === "YD") { maleRes = ["ND/C/Y"]; femaleRes = ["CD"]; }
+        else if (mKey === "PD") { maleRes = ["CD/Y"]; femaleRes = ["CD"]; }
+      }
+      else if (fKey === "CD/Y") {
+        if (mKey === "ND") { maleRes = ["ND/C", "ND/C/Y"]; femaleRes = ["CD", "PD"]; }
+        else if (mKey === "CD") { maleRes = ["CD", "CD/Y"]; femaleRes = ["CD", "PD"]; }
+        else if (mKey === "YD") { maleRes = ["ND/C/Y", "YD/C"]; femaleRes = ["CD", "PD"]; }
+        else if (mKey === "PD") { maleRes = ["CD/Y", "PD"]; femaleRes = ["CD", "PD"]; }
+      }
+      else if (fKey === "YD") {
+        if (mKey === "ND") { maleRes = ["ND/Y"]; femaleRes = ["YD"]; }
+        else if (mKey === "CD") { maleRes = ["ND/C/Y"]; femaleRes = ["YD"]; }
+        else if (mKey === "YD") { maleRes = ["YD"]; femaleRes = ["YD"]; }
+        else if (mKey === "PD") { maleRes = ["YD/C"]; femaleRes = ["YD"]; }
+      }
+      else if (fKey === "YD/C") {
+        if (mKey === "ND") { maleRes = ["ND/Y", "ND/C/Y"]; femaleRes = ["YD", "PD"]; }
+        else if (mKey === "CD") { maleRes = ["ND/C/Y", "CD/Y"]; femaleRes = ["YD", "PD"]; }
+        else if (mKey === "YD") { maleRes = ["YD", "YD/C"]; femaleRes = ["YD", "PD"]; }
+        else if (mKey === "PD") { maleRes = ["YD/C", "PD"]; femaleRes = ["YD", "PD"]; }
+      }
+      else if (fKey === "PD") {
+        if (mKey === "ND") { maleRes = ["ND/C/Y"]; femaleRes = ["PD"]; }
+        else if (mKey === "CD") { maleRes = ["CD/Y"]; femaleRes = ["PD"]; }
+        else if (mKey === "YD") { maleRes = ["YD/C"]; femaleRes = ["PD"]; }
+        else if (mKey === "PD") { maleRes = ["PD"]; femaleRes = ["PD"]; }
+      }
       // --- Dilute Blue Series ---
-      if (fKey === "BND") {
+      else if (fKey === "BND") {
         if (mKey === "BND") { maleRes = ["BND"]; femaleRes = ["BND"]; }
         else if (mKey === "BCD") { maleRes = ["BND/C"]; femaleRes = ["BND"]; }
         else if (mKey === "BYD") { maleRes = ["BND/Y"]; femaleRes = ["BND"]; }
@@ -328,7 +395,7 @@
         if (mKey === "BND") { maleRes = ["BND", "BND/C"]; femaleRes = ["BND", "BCD"]; }
         else if (mKey === "BCD") { maleRes = ["BND/C", "BCD"]; femaleRes = ["BND", "BCD"]; }
         else if (mKey === "BYD") { maleRes = ["BND/C", "BND/C/Y"]; femaleRes = ["BND", "BCD"]; }
-        else if (mKey === "BPD") { maleRes = ["BND/C/Y", "BCD/Y"]; femaleRes = ["BND", "BCD"]; }
+        else if (mKey === "BPD") { maleRes = ["BND/C/Y", "CD/Y"]; femaleRes = ["BND", "BCD"]; }
       }
       else if (fKey === "BND/Y") {
         if (mKey === "BND") { maleRes = ["BND", "BND/Y"]; femaleRes = ["BND", "BYD"]; }
@@ -585,7 +652,7 @@
         </div>
         <div class="p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V149 Engine):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V150 Engine):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -1486,7 +1553,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V149 Engine):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V150 Engine):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1515,7 +1582,6 @@
       window.updateMutationDropdowns();
       window.toggleCustomSpecies();
       
-      // ดึงชื่อฟาร์มล่าสุดมาแสดงในช่องกรอกตอนเปิดหน้าแรก
       const lastTyped = localStorage.getItem("farm_sook_last_typed_name") || "";
       if (lastTyped && !document.getElementById('farm-name-input').value) {
         document.getElementById('farm-name-input').value = lastTyped;
@@ -1549,10 +1615,8 @@
 </head>
 <body class="bg-slate-50 min-h-screen pb-16">
 
-  <!-- TOAST NOTIFICATION CONTAINER -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
 
-  <!-- LOGIN / FARM SELECTOR SCREEN -->
   <div id="login-screen" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 z-50">
     <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 text-center">
       <div class="text-4xl">🦜</div>
@@ -1572,7 +1636,6 @@
     </div>
   </div>
 
-  <!-- MAIN APP CONTAINER -->
   <div id="main-app-content" style="display: none;">
     <header class="w-full bg-slate-900 text-white p-4 sticky top-0 z-20 shadow-md">
       <div class="w-full max-w-md mx-auto flex justify-between items-center">
@@ -1581,7 +1644,7 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v149</span>
+              <span class="ml-2 text-[9px] font-bold bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-700 tracking-wider">v150</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
@@ -1658,7 +1721,6 @@
           <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-2xl text-xs font-black border border-slate-200 transition">+ เพิ่มนก</button>
         </div>
         
-        <!-- Filter Controls -->
         <div class="grid grid-cols-2 gap-1.5">
           <input type="text" id="search-bird-input" oninput="renderBirdsList()" placeholder="🔍 ค้นหาชื่อ..." class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs bg-slate-50">
           <select id="filter-species" onchange="renderBirdsList()" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs bg-slate-50 font-bold text-slate-700">
@@ -1695,7 +1757,6 @@
     </main>
   </div>
 
-  <!-- MODALS -->
   <div id="modal-custom-genetics" onclick="closeOnBackdrop(event, 'modal-custom-genetics')" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 hidden z-50">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 relative animate-in">
       <button type="button" onclick="closeModal('modal-custom-genetics')" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
