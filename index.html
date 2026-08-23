@@ -676,7 +676,7 @@
       const totalEggs = pairEggs.length;
       const totalFertile = pairEggs.filter(e => {
         const s = (e.status || "").trim();
-        return s.includes('มีเชื้อ') || s.includes('ฟักแล้ว');
+        return (s.includes('มีเชื้อ') && !s.includes('ไม่มีเชื้อ')) || s.includes('ฟักแล้ว');
       }).length;
 
       let eggStatsHtml = `
@@ -1249,7 +1249,7 @@
       const totalEggs = birdEggs.length;
       const fertileEggs = birdEggs.filter(e => {
         const s = (e.status || "").trim();
-        return s.includes('มีเชื้อ') || s.includes('ฟักแล้ว');
+        return (s.includes('มีเชื้อ') && !s.includes('ไม่มีเชื้อ')) || s.includes('ฟักแล้ว');
       }).length;
       const hatchedEggs = birdEggs.filter(e => (e.status || "").includes('ฟักแล้ว')).length;
 
@@ -1504,7 +1504,8 @@
           globalEggs.push(data); 
           totalEggsCount++;
           let statusStr = (data.status || "").toString();
-          if(statusStr.includes('ฟักแล้ว') || statusStr.includes('มีเชื้อ')) { totalHatchedCount++; }
+          let isFertile = (statusStr.includes('มีเชื้อ') && !statusStr.includes('ไม่มีเชื้อ')) || statusStr.includes('ฟักแล้ว');
+          if(isFertile) { totalHatchedCount++; }
 
           if (statusStr === 'รอส่องเชื้อ') {
             eggReminderHtml += `<div class="p-3 bg-amber-50/80 text-amber-900 rounded-2xl border border-amber-200 text-xs flex justify-between items-center shadow-xs"><span>🔦 ส่องเชื้อไข่: <strong>${data.pairName || data.cage}</strong> (ใบที่ ${data.eggNo})</span><span class="text-[10px] bg-amber-200/80 font-bold px-2.5 py-1 rounded-xl">${data.candlingDate || 'ครบ 6 วัน'}</span></div>`;
@@ -1670,7 +1671,7 @@
         const birdTotalEggs = birdEggs.length;
         const birdFertileEggs = birdEggs.filter(e => {
           const s = (e.status || "").trim();
-          return s.includes('มีเชื้อ') || s.includes('ฟักแล้ว');
+          return (s.includes('มีเชื้อ') && !s.includes('ไม่มีเชื้อ')) || s.includes('ฟักแล้ว');
         }).length;
         const birdHatchedEggs = birdEggs.filter(e => (e.status || "").includes('ฟักแล้ว')).length;
         let birdEggStatBadge = birdTotalEggs > 0 ? `<div class="text-[10px] text-amber-800 font-bold mt-0.5 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100 inline-block">🥚 สถิติติดตัว: ไข่ ${birdTotalEggs} | มีเชื้อ ${birdFertileEggs} | ฟัก ${birdHatchedEggs}</div>` : '';
@@ -1805,18 +1806,26 @@
       <div class="flex items-center space-x-3 border-b border-slate-100 pb-3">
         <span class="text-3xl">🚀</span>
         <div>
-          <h3 class="font-black text-base text-slate-900">อัปเดตระบบใหม่: Farm Sook V151</h3>
-          <p class="text-[10px] text-emerald-700 font-bold">ปรับปรุงระบบแสดงผลสถิติไข่มีเชื้อและประสิทธิภาพใบเซอร์</p>
+          <h3 class="font-black text-base text-slate-900">ประกาศอัปเดตระบบใหม่: Farm Sook V151</h3>
+          <p class="text-[10px] text-emerald-700 font-bold">อัปเดตฟีเจอร์ใหม่เพื่อการจัดการฟาร์มที่สมบูรณ์แบบยิ่งขึ้น</p>
         </div>
       </div>
       <div class="space-y-2.5 text-xs text-slate-700 leading-relaxed">
         <div class="flex items-start space-x-2">
           <span class="text-emerald-700 font-black">1.</span>
-          <div><strong>แก้ไขการนับสถิติไข่มีเชื้อ:</strong> ระบบดึงข้อมูลสถานะ "มีเชื้อ" และ "ฟักแล้ว" มาแสดงผลในกล่องสถิติติดตัวของใบเซอร์ได้อย่างแม่นยำ 100%</div>
+          <div><strong>พิมพ์ระบุสีหลักและสปลิตเองได้:</strong> เลือกตัวเลือก "✍️ อื่นๆ (พิมพ์เพิ่มเติมเอง)" เพื่อกรอกชื่อหรือยีนแฝงตามต้องการ</div>
         </div>
         <div class="flex items-start space-x-2">
           <span class="text-emerald-700 font-black">2.</span>
-          <div><strong>ระบบแจ้งเตือนอัจฉริยะ:</strong> หน้าต่างประกาศอัปเดตจะแสดงขึ้นเพียงครั้งเดียวเมื่อคุณเข้าใช้งานเวอร์ชันนี้</div>
+          <div><strong>สรุปรายรับ-รายจ่ายประจำเดือนอัตโนมัติ:</strong> เริ่มรอบใหม่ทุกเดือนอัตโนมัติ พร้อมรองรับการเปิดดูประวัติรายการย้อนหลังทั้งหมด</div>
+        </div>
+        <div class="flex items-start space-x-2">
+          <span class="text-emerald-700 font-black">3.</span>
+          <div><strong>สถิติไข่ติดตัวพ่อแม่พันธุ์ถาวร:</strong> ตรวจสอบประวัติผลผลิตไข่และลูกนกของนกแต่ละตัวได้ต่อเนื่องแม้จะเปลี่ยนคู่</div>
+        </div>
+        <div class="flex items-start space-x-2">
+          <span class="text-emerald-700 font-black">4.</span>
+          <div><strong>ปุ่มรีเซ็ตการคำนวณพันธุศาสตร์:</strong> ล้างค่าและกลับสู่ค่าเริ่มต้นในหน้าคำนวณสีได้อย่างรวดเร็วในคลิกเดียว</div>
         </div>
       </div>
       <button type="button" onclick="closeUpdateModalAndRemember()" class="w-full bg-emerald-800 hover:bg-emerald-700 text-white py-3 rounded-2xl text-xs font-black shadow-lg transition mt-2">รับทราบและเริ่มใช้งาน V151</button>
