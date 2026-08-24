@@ -225,6 +225,17 @@
       document.getElementById('farm-pass-input').value = "";
     };
 
+    window.toggleHealthScheduleOptions = () => {
+      const scheduleType = document.getElementById('health-schedule-type').value;
+      const customBox = document.getElementById('health-custom-schedule-box');
+      if (!customBox) return;
+      if (scheduleType === 'custom') {
+        customBox.classList.remove('hidden');
+      } else {
+        customBox.classList.add('hidden');
+      }
+    };
+
     window.updateMutationDropdowns = () => {
       const visualSelect = document.getElementById('bird-visual');
       if (!visualSelect) return;
@@ -792,6 +803,9 @@
       document.getElementById('title-modal-health').innerHTML = "🩺 บันทึกประวัติสุขภาพ"; 
       document.getElementById('health-date').valueAsDate = new Date(); 
       document.getElementById('health-schedule-type').value = "none";
+      document.getElementById('health-custom-days').value = "7";
+      document.getElementById('health-custom-count').value = "5";
+      window.toggleHealthScheduleOptions();
     };
 
     window.resetFinanceForm = () => { document.getElementById('form-finance').reset(); document.getElementById('finance-date').valueAsDate = new Date(); };
@@ -1017,6 +1031,20 @@
             scheduleLabel: `รอบที่ ${i+1} (ทุก 3 เดือน)`
           });
         }
+      } else if (scheduleType === 'custom') {
+        const customDays = parseInt(document.getElementById('health-custom-days').value) || 7;
+        const customCount = parseInt(document.getElementById('health-custom-count').value) || 5;
+        for (let i = 0; i < customCount; i++) {
+          let nextD = new Date(baseDate);
+          nextD.setDate(nextD.getDate() + (i * customDays));
+          recordsToCreate.push({
+            farmName: currentFarm,
+            birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
+            type, detail, medicine, cost, notes,
+            date: nextD.toISOString().split('T')[0],
+            scheduleLabel: `รอบที่ ${i+1} (ทุก ${customDays} วัน)`
+          });
+        }
       } else {
         recordsToCreate.push({
           farmName: currentFarm,
@@ -1185,6 +1213,8 @@
       document.getElementById('health-cost').value = health.cost || '';
       document.getElementById('health-notes').value = health.notes || '';
       document.getElementById('health-date').value = health.date || '';
+      document.getElementById('health-schedule-type').value = "none";
+      document.getElementById('health-custom-schedule-box').classList.add('hidden');
       openModal('modal-health');
     };
 
@@ -1527,7 +1557,6 @@
           totalEggsCount++;
           
           let statusStr = (data.status || "").toString();
-          // นับเฉพาะสถานะ "ฟักแล้ว" แท้ๆ เท่านั้น สำหรับช่อง ลูกนกที่ฟักแล้ว
           if(statusStr.includes('ฟักแล้ว')) { 
             totalHatchedCount++; 
           }
@@ -1789,6 +1818,7 @@
       window.toggleCustomSpecies();
       window.toggleCustomVisual();
       for(let i=1; i<=4; i++) window.toggleCustomSplit(i);
+      window.toggleHealthScheduleOptions();
       
       const lastTyped = localStorage.getItem("farm_sook_last_typed_name") || "";
       if (lastTyped && !document.getElementById('farm-name-input').value) {
@@ -1850,7 +1880,7 @@
         </div>
         <div class="flex items-start space-x-2">
           <span class="text-emerald-700 font-black">4.</span>
-          <div><strong>ปุ่มรีเซ็ตการคำนวณพันธุศาสตร์:</strong> ล้างค่าและกลับสู่ค่าเริ่มต้นในหน้าคำนวณสีได้อย่างรวดเร็วในคลิกเดียว</div>
+          <div><strong>กำหนดวันแจ้งเตือนสุขภาพเองแบบยืดหยุ่น:</strong> เพิ่มตัวเลือกกำหนดจำนวนวันและจำนวนรอบการทำซ้ำได้ตามต้องการ</div>
         </div>
       </div>
       <button type="button" onclick="closeUpdateModalAndRemember()" class="w-full bg-emerald-800 hover:bg-emerald-700 text-white py-3 rounded-2xl text-xs font-black shadow-lg transition mt-2">รับทราบและเริ่มใช้งาน V151</button>
@@ -2146,13 +2176,27 @@
           <div><label class="block text-xs font-bold text-slate-500 mb-1">วันที่เริ่มให้ยา</label><input type="date" id="health-date" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></div>
           <div>
             <label class="block text-xs font-bold text-slate-500 mb-1">รอบแจ้งเตือน</label>
-            <select id="health-schedule-type" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-black text-slate-800 bg-slate-50">
+            <select id="health-schedule-type" onchange="toggleHealthScheduleOptions()" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-black text-slate-800 bg-slate-50">
               <option value="none">📌 ครั้งเดียว (ไม่ทำซ้ำ)</option>
               <option value="every7days">🔄 ทุก 7 วัน</option>
               <option value="every14days">🔄 ทุก 14 วัน</option>
               <option value="monthly">🔄 ทุก 1 เดือน</option>
               <option value="every3months">🔄 ทุก 3 เดือน</option>
+              <option value="custom">🔢 กำหนดวันเอง (Custom)</option>
             </select>
+          </div>
+        </div>
+        <div id="health-custom-schedule-box" class="hidden p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
+          <div class="text-[11px] font-black text-slate-800">⚙️ ตั้งค่ากำหนดเองแบบยืดหยุ่น:</div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">ซ้ำทุกๆ กี่วัน:</label>
+              <input type="number" id="health-custom-days" min="1" value="7" class="w-full border border-slate-200 rounded-xl p-2 text-xs font-bold bg-white">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-500 mb-1">จำนวนครั้ง (รอบ):</label>
+              <input type="number" id="health-custom-count" min="1" max="30" value="5" class="w-full border border-slate-200 rounded-xl p-2 text-xs font-bold bg-white">
+            </div>
           </div>
         </div>
         <div class="flex space-x-2 pt-2"><button type="button" onclick="closeModal('modal-health')" class="w-1/2 border border-slate-200 py-3 rounded-2xl text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 transition">ยกเลิก</button><button type="submit" class="w-1/2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-2xl text-xs font-black shadow-md transition">บันทึกประวัติ</button></div>
