@@ -1336,8 +1336,20 @@
         const list = document.getElementById('finance-list');
         if(list) list.innerHTML = "";
 
+        let financeItems = [];
         snapshot.forEach(docSnap => {
-          const item = { id: docSnap.id, ...docSnap.data() };
+          financeItems.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        // เรียงลำดับรายการบัญชี: ล่าสุดขึ้นบน (เทียบจาก createdAt หรือ id)
+        financeItems.sort((a, b) => {
+          let tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          let tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          if (tA !== tB) return tB - tA;
+          return b.id.localeCompare(a.id);
+        });
+
+        financeItems.forEach(item => {
           if (item.type === 'รายรับ') { 
             totalBalance += item.amount; 
           } else { 
@@ -1408,10 +1420,13 @@
         if(list) list.innerHTML = ""; 
         let reminderHtml = "";
         let todayStr = new Date().toISOString().split('T')[0];
+        let medicineSet = new Set();
 
         snapshot.forEach(docSnap => {
           const item = { id: docSnap.id, ...docSnap.data() }; 
           globalHealth.push(item);
+          if (item.medicine) medicineSet.add(item.medicine.trim());
+
           let badge = item.scheduleLabel ? `<span class="bg-cyan-100 text-cyan-800 text-[9px] font-extrabold px-2 py-0.5 rounded-md ml-1">📅 ${item.scheduleLabel}</span>` : '';
           let costTag = item.cost ? `<span class="text-[10px] text-rose-600 font-bold ml-1">(-฿${item.cost.toLocaleString()})</span>` : '';
           
@@ -1442,6 +1457,14 @@
               </div>`;
           }
         });
+
+        const medDatalist = document.getElementById('medicines-list');
+        if (medDatalist) {
+          medDatalist.innerHTML = "";
+          medicineSet.forEach(med => {
+            medDatalist.innerHTML += `<option value="${med}">`;
+          });
+        }
 
         if (snapshot.size === 0 && list) list.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">ยังไม่มีบันทึกประวัติสุขภาพ</p>`;
         window.monthlyHealthReminders = reminderHtml;
@@ -2109,7 +2132,11 @@
         </div>
         <div><label class="block text-xs font-bold text-slate-500 mb-1">รายละเอียด / อาการ</label><input type="text" id="health-detail" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50" placeholder="เช่น ให้ยาป้องกันโรค..."></div>
         <div class="grid grid-cols-2 gap-2.5">
-          <div><label class="block text-xs font-bold text-slate-500 mb-1">ชื่อยา / โดสที่ใช้</label><input type="text" id="health-medicine" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50" placeholder="เช่น Ronivet S"></div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">ชื่อยา / โดสที่ใช้</label>
+            <input type="text" id="health-medicine" list="medicines-list" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50" placeholder="เช่น Ronivet S">
+            <datalist id="medicines-list"></datalist>
+          </div>
           <div><label class="block text-xs font-bold text-slate-500 mb-1">ค่าใช้จ่าย (บาท)</label><input type="number" id="health-cost" min="0" placeholder="0" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-bold bg-slate-50"></div>
         </div>
         <div><label class="block text-xs font-bold text-slate-500 mb-1">หมายเหตุ / บันทึกย่อ</label><input type="text" id="health-notes" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50" placeholder="เช่น อาการดีขึ้น น้ำหนักทรงตัว"></div>
