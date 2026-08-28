@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Farm Sook - Pro System V151</title>
+  <title>Farm Sook - Pro System V512</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -199,15 +199,15 @@
       document.getElementById('header-farm-title').innerText = currentFarm;
       initRealtimeListeners();
 
-      const seenV151 = localStorage.getItem(`farm_sook_seen_v151_${currentFarm}`);
-      if (!seenV151) {
-        openModal('modal-update-v151');
+      const seenV512 = localStorage.getItem(`farm_sook_seen_v512_${currentFarm}`);
+      if (!seenV512) {
+        openModal('modal-update-v512');
       }
     };
 
     window.closeUpdateModalAndRemember = () => {
-      localStorage.setItem(`farm_sook_seen_v151_${currentFarm}`, "true");
-      closeModal('modal-update-v151');
+      localStorage.setItem(`farm_sook_seen_v512_${currentFarm}`, "true");
+      closeModal('modal-update-v512');
     };
 
     window.switchFarmSystem = () => {
@@ -225,6 +225,18 @@
       document.getElementById('farm-pass-input').value = "";
     };
 
+    window.toggleHealthTypeOptions = () => {
+      const typeSelect = document.getElementById('health-type');
+      const customBox = document.getElementById('health-custom-type-box');
+      if (!typeSelect || !customBox) return;
+      if (typeSelect.value === 'Other') {
+        customBox.classList.remove('hidden');
+      } else {
+        customBox.classList.add('hidden');
+        document.getElementById('health-custom-type').value = '';
+      }
+    };
+
     window.toggleHealthScheduleOptions = () => {
       const scheduleType = document.getElementById('health-schedule-type').value;
       const customBox = document.getElementById('health-custom-schedule-box');
@@ -233,6 +245,32 @@
         customBox.classList.remove('hidden');
       } else {
         customBox.classList.add('hidden');
+      }
+    };
+
+    window.toggleArchivedEggs = (pairId) => {
+      const el = document.getElementById(`archived-eggs-${pairId}`);
+      const btn = document.getElementById(`toggle-archived-btn-${pairId}`);
+      if (!el || !btn) return;
+      if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        btn.innerText = "▲ ซ่อนประวัติไข่เก่า";
+      } else {
+        el.classList.add('hidden');
+        btn.innerText = "▼ ดูประวัติไข่ฟักแล้ว/ไม่มีเชื้อ/เสียเพิ่มเติม";
+      }
+    };
+
+    window.toggleArchivedHealth = () => {
+      const el = document.getElementById('archived-health-box');
+      const btn = document.getElementById('toggle-health-btn');
+      if (!el || !btn) return;
+      if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        btn.innerText = "▲ ซ่อนประวัติการให้ยาที่เสร็จสิ้นแล้ว";
+      } else {
+        el.classList.add('hidden');
+        btn.innerText = "▼ ดูประวัติการให้ยาที่เสร็จสิ้นแล้วทั้งหมด";
       }
     };
 
@@ -713,7 +751,7 @@
         </div>
         <div class="p-3 bg-slate-100 border border-slate-200 rounded-2xl space-y-1.5 text-[11px] relative">
           <div class="flex justify-between items-center">
-            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V151 Engine):</span></div>
+            <div class="font-extrabold text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V512 Engine):</span></div>
             <button onclick="openCustomGeneticsModal('${pair.id}', \`${pair.customGenetics ? pair.customGenetics.male : genetics.male}\`, \`${pair.customGenetics ? pair.customGenetics.female : genetics.female}\`)" class="bg-white text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold shadow-xs hover:bg-slate-50 transition">✏️ แก้ไขผลลัพธ์</button>
           </div>
           <div class="text-slate-800 leading-relaxed font-bold">ลูกตัวผู้ (Male):<br><div class="font-normal pl-2 mt-0.5 space-y-0.5">${maleDisplay}</div></div>
@@ -805,6 +843,7 @@
       document.getElementById('health-schedule-type').value = "none";
       document.getElementById('health-custom-days').value = "7";
       document.getElementById('health-custom-count').value = "5";
+      window.toggleHealthTypeOptions();
       window.toggleHealthScheduleOptions();
     };
 
@@ -971,7 +1010,14 @@
     window.submitHealthRecord = async (e) => {
       e.preventDefault();
       const birdId = document.getElementById('health-bird-select').value;
-      const type = document.getElementById('health-type').value;
+      
+      let typeVal = document.getElementById('health-type').value;
+      if (typeVal === 'Other') {
+        const customTypeText = document.getElementById('health-custom-type').value.trim();
+        if (!customTypeText) { showToast("กรุณากรอกประเภทการดูแลเพิ่มเติม", true); return; }
+        typeVal = customTypeText;
+      }
+
       const detail = document.getElementById('health-detail').value;
       const medicine = document.getElementById('health-medicine').value;
       const cost = Number(document.getElementById('health-cost').value) || 0;
@@ -990,7 +1036,7 @@
           recordsToCreate.push({
             farmName: currentFarm,
             birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
-            type, detail, medicine, cost, notes,
+            type: typeVal, detail, medicine, cost, notes,
             date: nextD.toISOString().split('T')[0],
             scheduleLabel: `รอบที่ ${i+1} (ทุก 7 วัน)`
           });
@@ -1002,7 +1048,7 @@
           recordsToCreate.push({
             farmName: currentFarm,
             birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
-            type, detail, medicine, cost, notes,
+            type: typeVal, detail, medicine, cost, notes,
             date: nextD.toISOString().split('T')[0],
             scheduleLabel: `รอบที่ ${i+1} (ทุก 14 วัน)`
           });
@@ -1014,7 +1060,7 @@
           recordsToCreate.push({
             farmName: currentFarm,
             birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
-            type, detail, medicine, cost, notes,
+            type: typeVal, detail, medicine, cost, notes,
             date: nextD.toISOString().split('T')[0],
             scheduleLabel: `รอบที่ ${i+1} (รายเดือน)`
           });
@@ -1026,7 +1072,7 @@
           recordsToCreate.push({
             farmName: currentFarm,
             birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
-            type, detail, medicine, cost, notes,
+            type: typeVal, detail, medicine, cost, notes,
             date: nextD.toISOString().split('T')[0],
             scheduleLabel: `รอบที่ ${i+1} (ทุก 3 เดือน)`
           });
@@ -1040,7 +1086,7 @@
           recordsToCreate.push({
             farmName: currentFarm,
             birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
-            type, detail, medicine, cost, notes,
+            type: typeVal, detail, medicine, cost, notes,
             date: nextD.toISOString().split('T')[0],
             scheduleLabel: `รอบที่ ${i+1} (ทุก ${customDays} วัน)`
           });
@@ -1049,7 +1095,7 @@
         recordsToCreate.push({
           farmName: currentFarm,
           birdId, birdName: bird ? bird.name : 'นกทุกตัวในฟาร์ม',
-          type, detail, medicine, cost, notes,
+          type: typeVal, detail, medicine, cost, notes,
           date, scheduleLabel: 'ครั้งเดียว'
         });
       }
@@ -1068,7 +1114,7 @@
             await addDoc(collection(db, "finances"), {
               farmName: currentFarm,
               type: "จ่าย",
-              detail: `ค่ารักษา/ค่ายา (${type}): ${detail}`,
+              detail: `ค่ารักษา/ค่ายา (${typeVal}): ${detail}`,
               amount: cost,
               date,
               createdAt: new Date().toISOString()
@@ -1207,7 +1253,19 @@
       editHealthId = id;
       document.getElementById('title-modal-health').innerHTML = "✏️ แก้ไขประวัติสุขภาพ";
       document.getElementById('health-bird-select').value = health.birdId || '';
-      document.getElementById('health-type').value = health.type || '';
+      
+      const typeSelect = document.getElementById('health-type');
+      const standardTypes = ["ยาถ่ายพยาธิ", "วิตามินและแคลเซียม", "หยดหลังป้องกันไร/เห็บ", "ยารักษาโรคทั่วไป", "ตรวจสุขภาพทั่วไป"];
+      if (standardTypes.includes(health.type)) {
+        typeSelect.value = health.type;
+        document.getElementById('health-custom-type-box').classList.add('hidden');
+        document.getElementById('health-custom-type').value = '';
+      } else {
+        typeSelect.value = "Other";
+        document.getElementById('health-custom-type-box').classList.remove('hidden');
+        document.getElementById('health-custom-type').value = health.type || '';
+      }
+
       document.getElementById('health-detail').value = health.detail || '';
       document.getElementById('health-medicine').value = health.medicine || '';
       document.getElementById('health-cost').value = health.cost || '';
@@ -1450,6 +1508,9 @@
         let reminderHtml = "";
         let todayStr = new Date().toISOString().split('T')[0];
         let medicineSet = new Set();
+        let activeHealthHtml = "";
+        let archivedHealthHtml = "";
+        let archivedHealthCount = 0;
 
         snapshot.forEach(docSnap => {
           const item = { id: docSnap.id, ...docSnap.data() }; 
@@ -1459,7 +1520,7 @@
           let badge = item.scheduleLabel ? `<span class="bg-cyan-100 text-cyan-800 text-[9px] font-extrabold px-2 py-0.5 rounded-md ml-1">📅 ${item.scheduleLabel}</span>` : '';
           let costTag = item.cost ? `<span class="text-[10px] text-rose-600 font-bold ml-1">(-฿${item.cost.toLocaleString()})</span>` : '';
           
-          list.innerHTML += `
+          let itemHtml = `
             <div class="p-3 bg-slate-50/80 border border-slate-100 rounded-2xl text-xs flex justify-between items-center mb-2 hover:bg-slate-50 transition">
               <div>
                 <div class="font-extrabold text-slate-800 flex items-center space-x-1.5 flex-wrap">
@@ -1479,13 +1540,28 @@
             </div>`;
 
           if (item.date && item.date >= todayStr) {
+            activeHealthHtml += itemHtml;
             reminderHtml += `
               <div class="p-3 bg-cyan-50/80 text-cyan-950 rounded-2xl border border-cyan-200 text-xs flex justify-between items-center shadow-xs">
                 <span>🔔 นัดให้ยา/ดูแล <strong>${item.type}</strong> (${item.birdName}): ${item.detail} ${item.scheduleLabel ? `[${item.scheduleLabel}]` : ''}</span>
                 <span class="text-[10px] bg-cyan-200/80 font-bold px-2.5 py-1 rounded-xl">📅 ${item.date}</span>
               </div>`;
+          } else {
+            archivedHealthHtml += itemHtml;
+            archivedHealthCount++;
           }
         });
+
+        if (list) {
+          list.innerHTML = activeHealthHtml || `<p class="text-xs text-slate-400 text-center py-2">ยังไม่มีประวัติสุขภาพที่ต้องดำเนินการ</p>`;
+          if (archivedHealthCount > 0) {
+            list.innerHTML += `
+              <div class="mt-3 pt-2 border-t border-slate-200">
+                <button type="button" id="toggle-health-btn" onclick="toggleArchivedHealth()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl text-[11px] font-bold transition">▼ ดูประวัติการให้ยาที่เสร็จสิ้นแล้วทั้งหมด (${archivedHealthCount} รายการ)</button>
+                <div id="archived-health-box" class="hidden mt-2 space-y-1.5">${archivedHealthHtml}</div>
+              </div>`;
+          }
+        }
 
         const medDatalist = document.getElementById('medicines-list');
         if (medDatalist) {
@@ -1495,7 +1571,6 @@
           });
         }
 
-        if (snapshot.size === 0 && list) list.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">ยังไม่มีบันทึกประวัติสุขภาพ</p>`;
         window.monthlyHealthReminders = reminderHtml;
         window.updateRemindersDisplay();
       }));
@@ -1575,19 +1650,42 @@
 
         for (const pairName in groupedEggs) {
           const eggs = groupedEggs[pairName].sort((a,b) => a.eggNo - b.eggNo);
-          let eggsHtml = '';
+          let activeEggsHtml = '';
+          let archivedEggsHtml = '';
+          let archivedCount = 0;
+          let safePairIdKey = pairName.replace(/[^a-zA-Z0-9]/g, '_');
+
           eggs.forEach(egg => {
             let statusBg = 'bg-slate-100 text-slate-600 border-slate-200';
             if (egg.status === 'มีเชื้อ') statusBg = 'bg-emerald-50 text-emerald-700 border-emerald-200';
             if (egg.status === 'ฟักแล้ว') statusBg = 'bg-emerald-700 text-white font-bold border-emerald-800 shadow-xs';
             if (egg.status === 'ไม่มีเชื้อ' || egg.status === 'แตก/เสีย') statusBg = 'bg-rose-50 text-rose-600 border-rose-200';
-            eggsHtml += `
+            
+            let eggCardHtml = `
               <div class="p-3 bg-slate-50/80 rounded-2xl border border-slate-100 flex justify-between items-center text-xs mb-2">
                 <div><span class="font-extrabold text-amber-900">🥚 ใบที่ ${egg.eggNo}</span><span class="text-[10px] text-slate-400 ml-1.5">ไข่: ${egg.layDate}</span><div class="text-[10px] text-emerald-700 font-medium mt-0.5">🐣 คาดการณ์ฟัก: ${egg.estHatchDate}</div></div>
                 <div class="flex items-center space-x-2"><span class="px-3 py-1 rounded-xl text-[10px] font-extrabold border ${statusBg}">${egg.status}</span><button onclick="openEditEgg('${egg.id}')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 p-1.5 rounded-xl transition">✏️</button><button onclick="deleteEgg('${egg.id}', '${egg.eggNo}', '${pairName}')" class="bg-rose-50 hover:bg-rose-100 text-rose-500 p-1.5 rounded-xl transition">🗑️</button></div>
               </div>`;
+
+            let isFinished = egg.status === 'ฟักแล้ว' || egg.status === 'ไม่มีเชื้อ' || egg.status === 'แตก/เสีย';
+            if (isFinished) {
+              archivedEggsHtml += eggCardHtml;
+              archivedCount++;
+            } else {
+              activeEggsHtml += eggCardHtml;
+            }
           });
-          if(list) list.innerHTML += `<div class="bg-white p-4 rounded-3xl border border-amber-100 shadow-xs space-y-2.5"><div class="flex justify-between items-center border-b border-amber-50 pb-2"><span class="font-black text-slate-900 text-xs flex items-center space-x-1.5"><span>🪺</span><span>${pairName}</span></span></div><div class="space-y-1">${eggsHtml}</div></div>`;
+
+          let pairContainerContent = `<div class="space-y-1">${activeEggsHtml || '<p class="text-[11px] text-slate-400 text-center py-1">ไม่มีไข่ที่กำลังดำเนินการในรอบนี้</p>'}</div>`;
+          if (archivedCount > 0) {
+            pairContainerContent += `
+              <div class="mt-2 pt-2 border-t border-amber-100">
+                <button type="button" id="toggle-archived-btn-${safePairIdKey}" onclick="toggleArchivedEggs('${safePairIdKey}')" class="w-full bg-amber-50 hover:bg-amber-100 text-amber-900 py-2 rounded-xl text-[11px] font-bold transition">▼ ดูประวัติไข่ฟักแล้ว/ไม่มีเชื้อ/เสียเพิ่มเติม (${archivedCount} ใบ)</button>
+                <div id="archived-eggs-${safePairIdKey}" class="hidden mt-2 space-y-1">${archivedEggsHtml}</div>
+              </div>`;
+          }
+
+          if(list) list.innerHTML += `<div class="bg-white p-4 rounded-3xl border border-amber-100 shadow-xs space-y-2.5"><div class="flex justify-between items-center border-b border-amber-50 pb-2"><span class="font-black text-slate-900 text-xs flex items-center space-x-1.5"><span>🪺</span><span>${pairName}</span></span></div>${pairContainerContent}</div>`;
         }
         if (snapshot.size === 0 && list) list.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">ยังไม่มีบันทึกข้อมูลไข่</p>`;
         
@@ -1788,7 +1886,7 @@
 
       resultDiv.innerHTML = `
         <div class="mt-4 p-4 bg-slate-100 border border-slate-300 rounded-2xl space-y-3 text-xs">
-          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V151 Engine):</span></div>
+          <div class="font-black text-slate-900 flex items-center space-x-1"><span>🧬</span><span>ผลพันธุศาสตร์ลูกนก (V512 Engine):</span></div>
           
           <div class="bg-white p-3 rounded-2xl border border-slate-200 text-slate-900 space-y-1">
             <div class="font-bold mb-1">ลูกตัวผู้ (Male):</div>
@@ -1818,6 +1916,7 @@
       window.toggleCustomSpecies();
       window.toggleCustomVisual();
       for(let i=1; i<=4; i++) window.toggleCustomSplit(i);
+      window.toggleHealthTypeOptions();
       window.toggleHealthScheduleOptions();
       
       const lastTyped = localStorage.getItem("farm_sook_last_typed_name") || "";
@@ -1855,35 +1954,35 @@
 
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
 
-  <!-- [V151 Update Notice] เด้งขึ้นมาครั้งเดียวเมื่อเข้าสู่ระบบ -->
-  <div id="modal-update-v151" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in">
+  <!-- [V512 Update Notice] เด้งขึ้นมาครั้งเดียวเมื่อเข้าสู่ระบบ -->
+  <div id="modal-update-v512" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-in">
     <div class="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 text-left border-4 border-emerald-800">
       <div class="flex items-center space-x-3 border-b border-slate-100 pb-3">
         <span class="text-3xl">🚀</span>
         <div>
-          <h3 class="font-black text-base text-slate-900">ประกาศอัปเดตระบบใหม่: Farm Sook V151</h3>
+          <h3 class="font-black text-base text-slate-900">ประกาศอัปเดตระบบใหม่: Farm Sook V512</h3>
           <p class="text-[10px] text-emerald-700 font-bold">อัปเดตฟีเจอร์ใหม่เพื่อการจัดการฟาร์มที่สมบูรณ์แบบยิ่งขึ้น</p>
         </div>
       </div>
       <div class="space-y-2.5 text-xs text-slate-700 leading-relaxed">
         <div class="flex items-start space-x-2">
           <span class="text-emerald-700 font-black">1.</span>
-          <div><strong>พิมพ์ระบุสีหลักและสปลิตเองได้:</strong> เลือกตัวเลือก "✍️ อื่นๆ (พิมพ์เพิ่มเติมเอง)" เพื่อกรอกชื่อหรือยีนแฝงตามต้องการ</div>
+          <div><strong>เพิ่มประเภทการดูแลสุขภาพแบบกำหนดเอง:</strong> เลือกตัวเลือก "✍️ อื่นๆ (พิมพ์เพิ่มเอง)" เพื่อกรอกชื่อหัวข้อการรักษาหรือบำรุงได้ตามต้องการ</div>
         </div>
         <div class="flex items-start space-x-2">
           <span class="text-emerald-700 font-black">2.</span>
-          <div><strong>สรุปรายรับ-รายจ่ายประจำเดือนอัตโนมัติ:</strong> เริ่มรอบใหม่ทุกเดือนอัตโนมัติ พร้อมรองรับการเปิดดูประวัติรายการย้อนหลังทั้งหมด</div>
+          <div><strong>จัดระเบียบตารางจัดการไข่:</strong> พับเก็บและซ่อนรายการไข่ที่ฟักแล้ว หรือไม่มีเชื้อ/เสียอัตโนมัติ พร้อมปุ่มกดเปิดดูประวัติย้อนหลังเพิ่มเติม</div>
         </div>
         <div class="flex items-start space-x-2">
           <span class="text-emerald-700 font-black">3.</span>
-          <div><strong>สถิติไข่ติดตัวพ่อแม่พันธุ์ถาวร:</strong> ตรวจสอบประวัติผลผลิตไข่และลูกนกของนกแต่ละตัวได้ต่อเนื่องแม้จะเปลี่ยนคู่</div>
+          <div><strong>จัดระเบียบประวัติการให้ยา:</strong> แยกรายการประวัติสุขภาพและการให้ยาที่เสร็จสิ้นแล้วไปไว้ในส่วนพับเก็บ เพื่อไม่ให้หน้าจอหลักรกตา</div>
         </div>
         <div class="flex items-start space-x-2">
           <span class="text-emerald-700 font-black">4.</span>
-          <div><strong>กำหนดวันแจ้งเตือนสุขภาพเองแบบยืดหยุ่น:</strong> เพิ่มตัวเลือกกำหนดจำนวนวันและจำนวนรอบการทำซ้ำได้ตามต้องการ</div>
+          <div><strong>อัปเดตระบบเป็นเวอร์ชัน V512:</strong> ปรับปรุงประสิทธิภาพการทำงานและความเสถียรของระบบให้ดียิ่งขึ้น</div>
         </div>
       </div>
-      <button type="button" onclick="closeUpdateModalAndRemember()" class="w-full bg-emerald-800 hover:bg-emerald-700 text-white py-3 rounded-2xl text-xs font-black shadow-lg transition mt-2">รับทราบและเริ่มใช้งาน V151</button>
+      <button type="button" onclick="closeUpdateModalAndRemember()" class="w-full bg-emerald-800 hover:bg-emerald-700 text-white py-3 rounded-2xl text-xs font-black shadow-lg transition mt-2">รับทราบและเริ่มใช้งาน V512</button>
     </div>
   </div>
 
@@ -1914,13 +2013,13 @@
           <div>
             <h1 class="text-base font-black tracking-wide flex items-center">
               <span id="header-farm-title">Farm Sook</span>
-              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v151</span>
+              <span class="ml-2 text-[9px] font-bold bg-emerald-700 px-2 py-0.5 rounded-lg border border-emerald-600 tracking-wider">v512</span>
             </h1>
             <p class="text-[10px] text-slate-400 font-medium cursor-pointer underline hover:text-white transition" onclick="switchFarmSystem()">เปลี่ยนฟาร์ม / ออก</p>
           </div>
         </div>
         <div class="flex space-x-2">
-          <button type="button" onclick="openModal('modal-update-v151')" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-2.5 py-2 rounded-2xl text-[10px] font-bold border border-slate-700 transition">🚀 ประกาศ V151</button>
+          <button type="button" onclick="openModal('modal-update-v512')" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 px-2.5 py-2 rounded-2xl text-[10px] font-bold border border-slate-700 transition">🚀 ประกาศ V512</button>
           <button type="button" onclick="resetBirdForm(); openModal('modal-bird')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-2xl text-xs font-black shadow-sm transition active:scale-95">+ เพิ่มนก</button>
         </div>
       </div>
@@ -2154,13 +2253,18 @@
         <div><label class="block text-xs font-bold text-slate-500 mb-1">เลือกรหัสนก / ฟาร์ม</label><select id="health-bird-select" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50"></select></div>
         <div>
           <label class="block text-xs font-bold text-slate-500 mb-1">ประเภทการดูแล</label>
-          <select id="health-type" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-black text-slate-800 bg-slate-50">
+          <select id="health-type" onchange="toggleHealthTypeOptions()" class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-black text-slate-800 bg-slate-50">
             <option value="ยาถ่ายพยาธิ">💊 ถ่ายพยาธิ</option>
             <option value="วิตามินและแคลเซียม">🧪 วิตามิน / แคลเซียม</option>
             <option value="หยดหลังป้องกันไร/เห็บ">🛡️ หยดหลังป้องกันไร/เห็บ</option>
             <option value="ยารักษาโรคทั่วไป">🏥 ยารักษาโรคทั่วไป</option>
             <option value="ตรวจสุขภาพทั่วไป">🩺 ตรวจสุขภาพทั่วไป</option>
+            <option value="Other">✍️ อื่นๆ (พิมพ์เพิ่มเอง)</option>
           </select>
+        </div>
+        <div id="health-custom-type-box" class="hidden">
+          <label class="block text-xs font-bold text-slate-500 mb-1">✍️ ระบุประเภทการดูแล (พิมพ์เอง)</label>
+          <input type="text" id="health-custom-type" placeholder="เช่น ฉีดวัคซีน, ตัดปากนก" class="w-full border border-slate-300 rounded-2xl p-2.5 text-xs font-bold bg-slate-50">
         </div>
         <div><label class="block text-xs font-bold text-slate-500 mb-1">รายละเอียด / อาการ</label><input type="text" id="health-detail" required class="w-full border border-slate-200 rounded-2xl p-2.5 text-xs font-medium bg-slate-50" placeholder="เช่น ให้ยาป้องกันโรค..."></div>
         <div class="grid grid-cols-2 gap-2.5">
